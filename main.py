@@ -19,9 +19,9 @@ app.config['UPLOAD_FOLDER'] = 'temp_uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # 初始化 Claude API - 修正版本
-api_key = os.environ.get('CLAUDE_API_KEY')
+api_key = os.environ.get('CLAUDE')
 if not api_key:
-    raise ValueError("請在 Secrets 中設定 CLAUDE_API_KEY")
+    raise ValueError("請在 Secrets 中設定 CLAUDE")
 
 try:
     client = anthropic.Anthropic(api_key=api_key)
