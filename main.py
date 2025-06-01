@@ -25,9 +25,7 @@ api_key = os.getenv('CLAUDE_API_KEY')
 if not api_key:
     raise ValueError("請在 Secrets 中設定 CLAUDE_API_KEY")
 
-client = anthropic.Anthropic(
-    api_key=api_key
-)
+client = anthropic.Anthropic(api_key=api_key)
 
 # 允許的檔案格式
 ALLOWED_EXTENSIONS = {'csv', 'txt'}
