@@ -10,6 +10,8 @@ from flask import Flask, render_template, request, jsonify, send_file
 import anthropic
 from werkzeug.utils import secure_filename
 import markdown
+import re
+from collections import defaultdict
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB 檔案上限
@@ -34,6 +36,116 @@ ALLOWED_EXTENSIONS = {'csv', 'txt'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def extract_daily_data(daily_log_content):
+    """從日誌中提取結構化數據"""
+    data = {
+        'bowel_movements': [],
+        'water_intake': [],
+        'food_intake': [],
+        'incidents': [],
+        'dates': []
+    }
+    
+    lines = daily_log_content.split('\n')
+    current_date = None
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        # 尋找日期
+        date_match = re.search(r'(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}[/-]\d{1,2}[/-]\d{1,2})', line)
+        if date_match:
+            current_date = date_match.group(1)
+            if current_date not in data['dates']:
+                data['dates'].append(current_date)
+        
+        if current_date:
+            # 排便記錄
+            if any(keyword in line.lower() for keyword in ['排便', 'bowel', '大便', 'stool']):
+                bowel_count = re.findall(r'(\d+)', line)
+                if bowel_count:
+                    data['bowel_movements'].append({'date': current_date, 'count': int(bowel_count[0])})
+            
+            # 飲水量
+            if any(keyword in line.lower() for keyword in ['飲水', 'water', '水分', 'ml', '毫升']):
+                water_amount = re.findall(r'(\d+)', line)
+                if water_amount:
+                    data['water_intake'].append({'date': current_date, 'amount': int(water_amount[0])})
+            
+            # 進食量 (百分比)
+            if any(keyword in line.lower() for keyword in ['進食', 'eating', '食量', '%']):
+                food_percent = re.findall(r'(\d+)%', line)
+                if food_percent:
+                    data['food_intake'].append({'date': current_date, 'percentage': int(food_percent[0])})
+            
+            # 異常事件
+            if any(keyword in line.lower() for keyword in ['跌倒', 'fall', '異常', '問題', '事故', '受傷', 'incident']):
+                severity = 'high' if any(s in line.lower() for s in ['嚴重', '緊急', '受傷']) else 'medium'
+                data['incidents'].append({
+                    'date': current_date,
+                    'description': line,
+                    'severity': severity
+                })
+    
+    return data
+
+def generate_care_plan(analysis_result, resident_name):
+    """生成新的護理計劃"""
+    care_plan_prompt = f"""根據以下分析結果，為住戶「{resident_name}」生成一個實用的護理計劃，格式為可執行的待辦清單：
+
+{analysis_result}
+
+請生成以下格式的護理計劃：
+
+# 護理計劃 - {resident_name}
+生成日期：{datetime.now().strftime('%Y年%m月%d日')}
+
+## 🔴 高優先級任務（立即執行）
+- [ ] 任務項目 1
+- [ ] 任務項目 2
+
+## 🟡 中優先級任務（本週內完成）
+- [ ] 任務項目 1
+- [ ] 任務項目 2
+
+## 🟢 低優先級任務（本月內完成）
+- [ ] 任務項目 1
+- [ ] 任務項目 2
+
+## 📋 日常護理檢查清單
+### 每日檢查
+- [ ] 檢查項目 1
+- [ ] 檢查項目 2
+
+### 每週檢查
+- [ ] 檢查項目 1
+- [ ] 檢查項目 2
+
+## 🏥 醫療跟進
+- [ ] 醫療任務 1
+- [ ] 醫療任務 2
+
+## 📞 聯絡事項
+- [ ] 需要聯絡的專業人員或家屬
+
+## 📅 下次檢討日期
+預定檢討日期：{(datetime.now().replace(day=datetime.now().day + 30) if datetime.now().day <= 28 else datetime.now().replace(month=datetime.now().month + 1, day=1)).strftime('%Y年%m月%d日')}
+
+請確保所有任務項目都具體、可測量且有時間框架。"""
+
+    try:
+        message = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=2000,
+            temperature=0.7,
+            messages=[{"role": "user", "content": care_plan_prompt}]
+        )
+        return message.content[0].text
+    except Exception as e:
+        return f"生成護理計劃時發生錯誤：{str(e)}"
 
 def read_csv_flexible(file_path):
     """靈活讀取CSV檔案，自動偵測編碼和格式"""
@@ -206,11 +318,18 @@ def analyze():
         daily_log_content = read_csv_flexible(daily_log_path)
         care_plan_content = read_csv_flexible(care_plan_path)
 
+        # 提取結構化數據
+        structured_data = extract_daily_data(daily_log_content)
+        
         # AI 分析
         analysis_result = analyze_with_claude(daily_log_content, care_plan_content, resident_name)
+        
+        # 生成新護理計劃
+        new_care_plan = generate_care_plan(analysis_result, resident_name)
 
         # 轉換 Markdown 為 HTML
         html_result = markdown.markdown(analysis_result, extensions=['extra', 'nl2br'])
+        care_plan_html = markdown.markdown(new_care_plan, extensions=['extra', 'nl2br'])
 
         # 清理暫存檔案
         os.remove(daily_log_path)
@@ -219,7 +338,12 @@ def analyze():
         return jsonify({
             'success': True,
             'markdown': analysis_result,
-            'html': html_result
+            'html': html_result,
+            'structured_data': structured_data,
+            'care_plan': {
+                'markdown': new_care_plan,
+                'html': care_plan_html
+            }
         })
 
     except Exception as e:

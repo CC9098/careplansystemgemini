@@ -252,8 +252,245 @@ footer {
   font-size: 14px;
 }
 
+/* 分頁導航 */
+.tab-navigation {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #ecf0f1;
+}
+
+.tab-btn {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #7f8c8d;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s;
+}
+
+.tab-btn:hover {
+  color: #2c3e50;
+  background-color: #f8f9fa;
+}
+
+.tab-btn.active {
+  color: #3498db;
+  border-bottom-color: #3498db;
+  background-color: #fff;
+}
+
+/* 分頁內容 */
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* 總覽頁面 */
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.overview-card {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+}
+
+.overview-card h3 {
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.stat-label {
+  color: #7f8c8d;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.alert-item {
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 5px;
+  background-color: #fff3cd;
+  border-left: 4px solid #ffc107;
+}
+
+.no-alerts {
+  padding: 15px;
+  text-align: center;
+  color: #27ae60;
+  background-color: #d4edda;
+  border-radius: 5px;
+}
+
+/* 圖表頁面 */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.chart-container {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.chart-container h3 {
+  margin-bottom: 15px;
+  text-align: center;
+  color: #2c3e50;
+}
+
+/* 問題日誌 */
+.incidents-list {
+  space-y: 15px;
+}
+
+.incident-item {
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid;
+  margin-bottom: 15px;
+  background: white;
+}
+
+.incident-item.high {
+  border-left-color: #e74c3c;
+  background-color: #fdf2f2;
+}
+
+.incident-item.medium {
+  border-left-color: #f39c12;
+  background-color: #fef9e7;
+}
+
+.incident-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.incident-date {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.severity-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.severity-badge.high {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.severity-badge.medium {
+  background-color: #f39c12;
+  color: white;
+}
+
+.incident-description {
+  color: #34495e;
+  line-height: 1.5;
+}
+
+.no-incidents {
+  text-align: center;
+  padding: 40px;
+  color: #27ae60;
+  font-style: italic;
+}
+
+/* 護理計劃 */
+.care-plan-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.care-plan-content h1 {
+  color: #2c3e50;
+  border-bottom: 3px solid #3498db;
+  padding-bottom: 10px;
+}
+
+.care-plan-content h2 {
+  margin-top: 25px;
+  margin-bottom: 15px;
+  color: #34495e;
+}
+
+.care-plan-content ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.care-plan-content li {
+  margin-bottom: 8px;
+  padding: 5px 0;
+}
+
+/* 列印樣式 */
+@media print {
+  .container {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .upload-section,
+  .results-header,
+  .tab-navigation,
+  .action-buttons {
+    display: none !important;
+  }
+  
+  .results-section {
+    box-shadow: none;
+    margin: 0;
+    padding: 20px;
+  }
+  
+  .tab-content {
+    display: block !important;
+  }
+  
+  .tab-content:not(.active) {
+    page-break-before: always;
+  }
+}
+
 @media (max-width: 768px) {
-  .upload-grid {
+  .upload-grid,
+  .overview-grid {
     grid-template-columns: 1fr;
   }
   
@@ -264,5 +501,19 @@ footer {
   
   .action-buttons {
     justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .tab-navigation {
+    flex-wrap: wrap;
+  }
+  
+  .tab-btn {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+  
+  .charts-grid {
+    grid-template-columns: 1fr;
   }
 }
