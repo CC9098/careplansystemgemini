@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>護理計劃 AI 分析平台</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏥 護理計劃 AI 分析平台</h1>
+            <p>上傳住戶日誌和現有護理計劃，AI 將為您分析並提供優化建議</p>
+        </header>
+
+        <main>
+            <form id="uploadForm" class="upload-section">
+                <div class="form-group">
+                    <label for="resident_name">住戶姓名：</label>
+                    <input type="text" id="resident_name" name="resident_name" placeholder="請輸入住戶姓名" required>
+                </div>
+
+                <div class="upload-grid">
+                    <div class="upload-box">
+                        <h3>📋 本月日誌記錄</h3>
+                        <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt" required>
+                        <label for="daily_log" class="file-label">
+                            <span>點擊選擇檔案或拖放到此處</span>
+                        </label>
+                        <p class="file-info"></p>
+                    </div>
+
+                    <div class="upload-box">
+                        <h3>📄 現有護理計劃</h3>
+                        <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt" required>
+                        <label for="care_plan" class="file-label">
+                            <span>點擊選擇檔案或拖放到此處</span>
+                        </label>
+                        <p class="file-info"></p>
+                    </div>
+                </div>
+
+                <button type="submit" class="analyze-btn">
+                    <span>🤖 開始 AI 分析</span>
+                </button>
+            </form>
+
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>AI 正在分析中，請稍候...</p>
+            </div>
+
+            <div id="results" class="results-section" style="display: none;">
+                <div class="results-header">
+                    <h2>分析報告</h2>
+                    <div class="action-buttons">
+                        <button id="copyBtn" class="action-btn">📋 複製</button>
+                        <button id="downloadBtn" class="action-btn">💾 下載</button>
+                        <button id="newAnalysisBtn" class="action-btn">🔄 新分析</button>
+                    </div>
+                </div>
+                <div id="reportContent" class="report-content"></div>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2024 護理計劃 AI 分析平台 | 所有上傳資料將在分析後立即刪除</p>
+        </footer>
+    </div>
+
+    <script>
+        // 檔案上傳處理
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function(e) {
+                const fileName = e.target.files[0]?.name || '未選擇檔案';
+                const fileInfo = e.target.parentElement.querySelector('.file-info');
+                fileInfo.textContent = `已選擇: ${fileName}`;
+            });
+        });
+
+        // 表單提交
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+
+            // 顯示載入中
+            loading.style.display = 'block';
+            results.style.display = 'none';
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // 顯示結果
+                    document.getElementById('reportContent').innerHTML = data.html;
+                    results.style.display = 'block';
+
+                    // 儲存 markdown 內容供下載
+                    window.currentReport = {
+                        content: data.markdown,
+                        resident_name: formData.get('resident_name')
+                    };
+                } else {
+                    alert('分析失敗：' + data.error);
+                }
+            } catch (error) {
+                alert('發生錯誤：' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        // 複製功能
+        document.getElementById('copyBtn').addEventListener('click', function() {
+            if (window.currentReport) {
+                navigator.clipboard.writeText(window.currentReport.content)
+                    .then(() => alert('已複製到剪貼簿！'))
+                    .catch(err => alert('複製失敗：' + err));
+            }
+        });
+
+        // 下載功能
+        document.getElementById('downloadBtn').addEventListener('click', async function() {
+            if (window.currentReport) {
+                try {
+                    const response = await fetch('/download', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(window.currentReport)
+                    });
+
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `護理計劃分析_${window.currentReport.resident_name}_${new Date().toISOString().slice(0,10)}.md`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                } catch (error) {
+                    alert('下載失敗：' + error.message);
+                }
+            }
+        });
+
+        // 新分析
+        document.getElementById('newAnalysisBtn').addEventListener('click', function() {
+            document.getElementById('uploadForm').reset();
+            document.querySelectorAll('.file-info').forEach(el => el.textContent = '');
+            document.getElementById('results').style.display = 'none';
+            window.currentReport = null;
+        });
+
+        // 拖放功能
+        document.querySelectorAll('.upload-box').forEach(box => {
+            const input = box.querySelector('input[type="file"]');
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                box.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    box.classList.add('drag-over');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                box.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    box.classList.remove('drag-over');
+                });
+            });
+
+            box.addEventListener('drop', function(e) {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    input.files = files;
+                    const event = new Event('change', { bubbles: true });
+                    input.dispatchEvent(event);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
