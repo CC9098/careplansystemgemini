@@ -1,22 +1,20 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Care Plan AI Analysis Platform</title>
+    <title>🏥 Care Plan AI Analysis Platform</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🏥 Care Plan AI Analysis Platform</h1>
-            <p>Upload resident daily logs and current care plan, AI will analyze and provide optimization recommendations</p>
+            <p>Upload resident logs and current care plan. AI will analyze and provide optimization suggestions.</p>
         </header>
 
         <main>
+            <!-- Step 1: File Upload -->
             <form id="uploadForm" class="upload-section">
                 <div class="form-group">
                     <label for="resident_name">Resident Name:</label>
@@ -25,321 +23,114 @@
 
                 <div class="upload-grid">
                     <div class="upload-box">
-                        <h3>📋 Monthly Daily Logs</h3>
+                        <h3>📋 Monthly Care Log</h3>
                         <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt" required>
                         <label for="daily_log" class="file-label">
-                            <span>Click to select file or drag and drop here</span>
+                            <span>Click to select log file</span>
                         </label>
-                        <p class="file-info"></p>
+                        <p class="file-info">Supports CSV and TXT files</p>
                     </div>
 
                     <div class="upload-box">
                         <h3>📄 Current Care Plan</h3>
                         <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt" required>
                         <label for="care_plan" class="file-label">
-                            <span>Click to select file or drag and drop here</span>
+                            <span>Click to select care plan</span>
                         </label>
-                        <p class="file-info"></p>
+                        <p class="file-info">Supports CSV and TXT files</p>
                     </div>
                 </div>
 
-                <button type="submit" class="analyze-btn">
-                    <span>🤖 Start AI Analysis</span>
-                </button>
+                <button type="submit" class="analyze-btn">📊 Analyze & Get Suggestions</button>
             </form>
 
+            <!-- Loading -->
             <div id="loading" class="loading" style="display: none;">
                 <div class="spinner"></div>
-                <p>AI is analyzing, please wait...</p>
+                <p>AI is analyzing files, please wait...</p>
             </div>
 
-            <div id="results" class="results-section" style="display: none;">
+            <!-- Step 2: Suggestion Selection -->
+            <div id="suggestions" class="results-section" style="display: none;">
+                <h2>📋 Care Plan Update Suggestions</h2>
+
+                <div id="analysisSummary" class="analysis-summary"></div>
+
+                <div class="suggestions-container">
+                    <h3>Select suggestions to implement:</h3>
+                    <div id="suggestionsList"></div>
+
+                    <div class="manager-comments">
+                        <h4>Additional Comments/Suggestions:</h4>
+                        <textarea id="managerComments" placeholder="Add your own observations or modifications..."></textarea>
+                    </div>
+
+                    <button id="generatePlanBtn" class="analyze-btn">✅ Generate Updated Care Plan</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Final Care Plan -->
+            <div id="finalPlan" class="results-section" style="display: none;">
                 <div class="results-header">
-                    <h2>Analysis Report</h2>
+                    <h2>📄 Updated Care Plan</h2>
                     <div class="action-buttons">
                         <button id="copyBtn" class="action-btn">📋 Copy</button>
-                        <button id="downloadBtn" class="action-btn">💾 Download Analysis</button>
-                        <button id="downloadCarePlanBtn" class="action-btn">📄 Download Care Plan</button>
-                        <button id="printBtn" class="action-btn">🖨️ Print</button>
-                        <button id="exportPdfBtn" class="action-btn">📄 Export PDF</button>
-                        <button id="newAnalysisBtn" class="action-btn">🔄 New Analysis</button>
+                        <button id="downloadBtn" class="action-btn">📥 Download</button>
+                        <button id="startOverBtn" class="action-btn">🔄 Start Over</button>
                     </div>
                 </div>
+                <div id="carePlanContent" class="content"></div>
+            </div>
 
-                <!-- Tab Navigation -->
-                <div class="tab-navigation">
-                    <button class="tab-btn active" data-tab="overview">📊 Overview</button>
-                    <button class="tab-btn" data-tab="charts">📈 Charts</button>
-                    <button class="tab-btn" data-tab="analysis">📋 Detailed Analysis</button>
-                    <button class="tab-btn" data-tab="incidents">⚠️ Incident Log</button>
-                    <button class="tab-btn" data-tab="careplan">📄 New Care Plan</button>
+            <!-- Data Visualization -->
+            <div id="charts" class="charts-section" style="display: none;">
+                <h2>📊 Care Data Analysis</h2>
+                <div class="charts-grid">
+                    <canvas id="waterChart"></canvas>
+                    <canvas id="bowelChart"></canvas>
+                    <canvas id="foodChart"></canvas>
                 </div>
-
-                <!-- Overview Tab -->
-                <div id="overview-tab" class="tab-content active">
-                    <div class="overview-grid">
-                        <div class="overview-card">
-                            <h3>📊 Monthly Statistics</h3>
-                            <div id="monthlyStats"></div>
-                        </div>
-                        <div class="overview-card">
-                            <h3>⚠️ Important Alerts</h3>
-                            <div id="importantAlerts"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Charts Tab -->
-                <div id="charts-tab" class="tab-content">
-                    <div class="charts-grid">
-                        <div class="chart-container">
-                            <h3>💧 Water Intake Trend</h3>
-                            <canvas id="waterChart"></canvas>
-                        </div>
-                        <div class="chart-container">
-                            <h3>🚽 Bowel Movement Frequency</h3>
-                            <canvas id="bowelChart"></canvas>
-                        </div>
-                        <div class="chart-container">
-                            <h3>🍽️ Food Intake Percentage</h3>
-                            <canvas id="foodChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Detailed Analysis Tab -->
-                <div id="analysis-tab" class="tab-content">
-                    <div id="reportContent" class="report-content"></div>
-                </div>
-
-                <!-- Incident Log Tab -->
-                <div id="incidents-tab" class="tab-content">
-                    <div id="incidentsList" class="incidents-list"></div>
-                </div>
-
-                <!-- New Care Plan Tab -->
-                <div id="careplan-tab" class="tab-content">
-                    <div id="carePlanContent" class="care-plan-content"></div>
-                </div>
+                <div id="statsDisplay" class="stats-display"></div>
             </div>
         </main>
-
-        <footer>
-            <p>© 2024 Care Plan AI Analysis Platform | All uploaded data will be deleted immediately after analysis</p>
-        </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        let currentData = null;
+        let currentData = {};
+        let charts = {};
 
-        // File upload handling
-        document.querySelectorAll('input[type="file"]').forEach(input => {
-            input.addEventListener('change', function(e) {
-                const fileName = e.target.files[0]?.name || 'No file selected';
-                const fileInfo = e.target.parentElement.querySelector('.file-info');
-                fileInfo.textContent = `Selected: ${fileName}`;
-            });
+        // File upload handlers
+        document.getElementById('daily_log').addEventListener('change', function(e) {
+            updateFileLabel(this, 'Click to select log file');
         });
 
-        // Tab handling
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const tabName = this.dataset.tab;
-                
-                // Update button state
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Update content display
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.remove('active');
-                });
-                document.getElementById(tabName + '-tab').classList.add('active');
-            });
+        document.getElementById('care_plan').addEventListener('change', function(e) {
+            updateFileLabel(this, 'Click to select care plan');
         });
 
-        // Generate charts
-        function createCharts(data) {
-            // Water intake chart - filter abnormal data
-            const validWater = data.water_intake.filter(item => item.amount >= 50 && item.amount <= 5000);
-            if (validWater.length > 0) {
-                const waterCtx = document.getElementById('waterChart').getContext('2d');
-                new Chart(waterCtx, {
-                    type: 'line',
-                    data: {
-                        labels: validWater.map(item => item.date),
-                        datasets: [{
-                            label: 'Water Intake (ml)',
-                            data: validWater.map(item => item.amount),
-                            borderColor: '#3498db',
-                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Bowel movement chart - filter abnormal data
-            const validBowel = data.bowel_movements.filter(item => item.count >= 0 && item.count <= 15);
-            if (validBowel.length > 0) {
-                const bowelCtx = document.getElementById('bowelChart').getContext('2d');
-                new Chart(bowelCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: validBowel.map(item => item.date),
-                        datasets: [{
-                            label: 'Bowel Movements',
-                            data: validBowel.map(item => item.count),
-                            backgroundColor: '#e67e22',
-                            borderColor: '#d35400',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                stepSize: 1
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Food intake chart - filter abnormal data
-            const validFood = data.food_intake.filter(item => item.percentage >= 0 && item.percentage <= 100);
-            if (validFood.length > 0) {
-                const foodCtx = document.getElementById('foodChart').getContext('2d');
-                new Chart(foodCtx, {
-                    type: 'line',
-                    data: {
-                        labels: validFood.map(item => item.date),
-                        datasets: [{
-                            label: 'Food Intake (%)',
-                            data: validFood.map(item => item.percentage),
-                            borderColor: '#27ae60',
-                            backgroundColor: 'rgba(39, 174, 96, 0.1)',
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100
-                            }
-                        }
-                    }
-                });
-            }
+        function updateFileLabel(input, defaultText) {
+            const label = input.nextElementSibling.querySelector('span');
+            label.textContent = input.files.length > 0 ? input.files[0].name : defaultText;
         }
 
-        // Display incidents
-        function displayIncidents(incidents) {
-            const incidentsList = document.getElementById('incidentsList');
-            if (incidents.length === 0) {
-                incidentsList.innerHTML = '<p class="no-incidents">No abnormal events recorded during this period</p>';
-                return;
-            }
-
-            const sortedIncidents = incidents.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            incidentsList.innerHTML = sortedIncidents.map(incident => `
-                <div class="incident-item ${incident.severity}">
-                    <div class="incident-header">
-                        <span class="incident-date">${incident.date}</span>
-                        <span class="severity-badge ${incident.severity}">
-                            ${incident.severity === 'high' ? '🔴 High' : '🟡 Medium'}
-                        </span>
-                    </div>
-                    <div class="incident-description">${incident.description}</div>
-                </div>
-            `).join('');
-        }
-
-        // Generate overview statistics
-        function generateOverview(data) {
-            // Filter abnormal data
-            const validWater = data.water_intake.filter(item => item.amount >= 50 && item.amount <= 5000);
-            const validBowel = data.bowel_movements.filter(item => item.count >= 0 && item.count <= 15);
-            const validFood = data.food_intake.filter(item => item.percentage >= 0 && item.percentage <= 100);
-            
-            const avgWater = validWater.length > 0 ? 
-                Math.round(validWater.reduce((sum, item) => sum + item.amount, 0) / validWater.length) : 0;
-            const avgBowel = validBowel.length > 0 ? 
-                (validBowel.reduce((sum, item) => sum + item.count, 0) / validBowel.length).toFixed(1) : 0;
-            const avgFood = validFood.length > 0 ? 
-                Math.round(validFood.reduce((sum, item) => sum + item.percentage, 0) / validFood.length) : 0;
-
-            document.getElementById('monthlyStats').innerHTML = `
-                <div class="stat-item">
-                    <span class="stat-label">Average Water Intake:</span>
-                    <span class="stat-value">${avgWater} ml</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Average Bowel Movements:</span>
-                    <span class="stat-value">${avgBowel} times/day</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Average Food Intake:</span>
-                    <span class="stat-value">${avgFood}%</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Incident Events:</span>
-                    <span class="stat-value">${data.incidents.length} items</span>
-                </div>
-            `;
-
-            // Important alerts
-            const alerts = [];
-            if (avgWater < 1500) alerts.push('⚠️ Low water intake, need to increase fluid consumption');
-            if (avgBowel < 1) alerts.push('⚠️ Low bowel movement frequency, need to monitor bowel health');
-            if (avgFood < 70) alerts.push('⚠️ Insufficient food intake, need nutritionist assessment');
-            if (data.incidents.filter(i => i.severity === 'high').length > 0) {
-                alerts.push('🚨 High severity incidents require immediate attention');
-            }
-
-            document.getElementById('importantAlerts').innerHTML = alerts.length > 0 ? 
-                alerts.map(alert => `<div class="alert-item">${alert}</div>`).join('') :
-                '<div class="no-alerts">✅ No special concerns at this time</div>';
-        }
-
-        // Form submission
+        // Step 1: Upload and analyze
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const dailyLogFile = document.getElementById('daily_log').files[0];
-            const carePlanFile = document.getElementById('care_plan').files[0];
-            const residentName = document.getElementById('resident_name').value;
-
-            if (!dailyLogFile || !carePlanFile) {
-                alert('Please select both files before submitting');
-                return;
-            }
-
-            if (!residentName.trim()) {
-                alert('Please enter resident name');
-                return;
-            }
-
-            const formData = new FormData(this);
             const loading = document.getElementById('loading');
-            const results = document.getElementById('results');
+            const suggestions = document.getElementById('suggestions');
+            const finalPlan = document.getElementById('finalPlan');
+            const charts = document.getElementById('charts');
 
+            // Hide all sections
+            suggestions.style.display = 'none';
+            finalPlan.style.display = 'none';
+            charts.style.display = 'none';
             loading.style.display = 'block';
-            results.style.display = 'none';
 
             try {
+                const formData = new FormData(this);
                 const response = await fetch('/analyze', {
                     method: 'POST',
                     body: formData
@@ -347,19 +138,16 @@
 
                 const data = await response.json();
 
-                if (data.success) {
+                if (data.success && data.step === 'suggestions') {
                     currentData = data;
-                    
-                    // Display tab content
-                    document.getElementById('reportContent').innerHTML = data.html;
-                    document.getElementById('carePlanContent').innerHTML = data.care_plan.html;
-                    
-                    // Generate charts and statistics
-                    createCharts(data.structured_data);
-                    generateOverview(data.structured_data);
-                    displayIncidents(data.structured_data.incidents);
-                    
-                    results.style.display = 'block';
+                    displaySuggestions(data);
+                    suggestions.style.display = 'block';
+
+                    // Show charts if data available
+                    if (data.structured_data) {
+                        displayCharts(data.structured_data);
+                        charts.style.display = 'block';
+                    }
                 } else {
                     alert('Analysis failed: ' + data.error);
                 }
@@ -370,35 +158,113 @@
             }
         });
 
-        // Copy function
+        function displaySuggestions(data) {
+            // Display analysis summary
+            document.getElementById('analysisSummary').innerHTML = `
+                <h4>Analysis Summary:</h4>
+                <p>${data.analysis_summary}</p>
+            `;
+
+            // Display suggestions as checkboxes
+            const suggestionsList = document.getElementById('suggestionsList');
+            suggestionsList.innerHTML = '';
+
+            data.suggestions.forEach((suggestion, index) => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.innerHTML = `
+                    <label class="suggestion-label">
+                        <input type="checkbox" name="suggestion" value="${index}" checked>
+                        <span class="priority priority-${suggestion.priority.toLowerCase()}">${suggestion.priority}</span>
+                        <strong>${suggestion.category}:</strong> ${suggestion.suggestion}
+                        <small class="reason">Reason: ${suggestion.reason}</small>
+                    </label>
+                `;
+                suggestionsList.appendChild(div);
+            });
+        }
+
+        // Step 3: Generate final care plan
+        document.getElementById('generatePlanBtn').addEventListener('click', async function() {
+            const loading = document.getElementById('loading');
+            const finalPlan = document.getElementById('finalPlan');
+
+            loading.style.display = 'block';
+
+            try {
+                // Get selected suggestions
+                const selectedCheckboxes = document.querySelectorAll('input[name="suggestion"]:checked');
+                const selectedSuggestions = Array.from(selectedCheckboxes).map(cb => 
+                    currentData.suggestions[parseInt(cb.value)]
+                );
+
+                const managerComments = document.getElementById('managerComments').value;
+
+                const response = await fetch('/generate_care_plan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        original_care_plan: currentData.original_care_plan,
+                        selected_suggestions: selectedSuggestions,
+                        manager_comments: managerComments,
+                        resident_name: currentData.resident_name
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('carePlanContent').innerHTML = data.care_plan.html;
+                    finalPlan.style.display = 'block';
+
+                    // Store for download
+                    window.currentReport = {
+                        content: data.care_plan.markdown,
+                        resident_name: currentData.resident_name
+                    };
+
+                    // Scroll to results
+                    finalPlan.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('Care plan generation failed: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error occurred: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        // Copy functionality
         document.getElementById('copyBtn').addEventListener('click', function() {
-            if (currentData) {
-                navigator.clipboard.writeText(currentData.markdown)
+            if (window.currentReport) {
+                navigator.clipboard.writeText(window.currentReport.content)
                     .then(() => alert('Copied to clipboard!'))
                     .catch(err => alert('Copy failed: ' + err));
             }
         });
 
-        // Download analysis report
+        // Download functionality
         document.getElementById('downloadBtn').addEventListener('click', async function() {
-            if (currentData) {
+            if (window.currentReport) {
                 try {
                     const response = await fetch('/download', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({
-                            content: currentData.markdown,
-                            resident_name: document.getElementById('resident_name').value
-                        })
+                        body: JSON.stringify(window.currentReport)
                     });
 
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
+                    a.style.display = 'none';
                     a.href = url;
-                    a.download = `Care_Plan_Analysis_${document.getElementById('resident_name').value}_${new Date().toISOString().slice(0,10)}.md`;
+                    a.download = `Care_Plan_${window.currentReport.resident_name}_${new Date().getTime()}.md`;
+                    document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);
                 } catch (error) {
@@ -407,115 +273,171 @@
             }
         });
 
-        // Download care plan
-        document.getElementById('downloadCarePlanBtn').addEventListener('click', async function() {
-            if (currentData) {
-                try {
-                    const response = await fetch('/download', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            content: currentData.care_plan.markdown,
-                            resident_name: document.getElementById('resident_name').value
-                        })
-                    });
-
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `New_Care_Plan_${document.getElementById('resident_name').value}_${new Date().toISOString().slice(0,10)}.md`;
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                } catch (error) {
-                    alert('Download failed: ' + error.message);
-                }
-            }
-        });
-
-        // Print function
-        document.getElementById('printBtn').addEventListener('click', function() {
-            window.print();
-        });
-
-        // Export PDF function - using print approach
-        document.getElementById('exportPdfBtn').addEventListener('click', function() {
-            if (currentData) {
-                // Create new window for printing
-                const printWindow = window.open('', '_blank');
-                const residentName = document.getElementById('resident_name').value;
-                
-                printWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>Care Plan Analysis Report - ${residentName}</title>
-                        <meta charset="UTF-8">
-                        <style>
-                            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-                            h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-                            h2 { color: #34495e; margin-top: 25px; }
-                            h3 { color: #7f8c8d; }
-                            ul { margin-left: 20px; }
-                            li { margin-bottom: 5px; }
-                            @media print {
-                                body { margin: 0; }
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        ${currentData.html}
-                    </body>
-                    </html>
-                `);
-                
-                printWindow.document.close();
-                printWindow.focus();
-                
-                // Auto print after content loads
-                setTimeout(() => {
-                    printWindow.print();
-                }, 500);
-            }
-        });
-
-        // New analysis
-        document.getElementById('newAnalysisBtn').addEventListener('click', function() {
+        // Start over functionality
+        document.getElementById('startOverBtn').addEventListener('click', function() {
+            document.getElementById('suggestions').style.display = 'none';
+            document.getElementById('finalPlan').style.display = 'none';
+            document.getElementById('charts').style.display = 'none';
             document.getElementById('uploadForm').reset();
-            document.querySelectorAll('.file-info').forEach(el => el.textContent = '');
-            document.getElementById('results').style.display = 'none';
-            currentData = null;
+            updateFileLabel(document.getElementById('daily_log'), 'Click to select log file');
+            updateFileLabel(document.getElementById('care_plan'), 'Click to select care plan');
+            window.currentReport = null;
+            currentData = {};
         });
 
-        // Drag and drop functionality
-        document.querySelectorAll('.upload-box').forEach(box => {
-            const input = box.querySelector('input[type="file"]');
+        // Chart display functions
+        function displayCharts(data) {
+            displayStats(data);
+            createWaterChart(data.water_intake);
+            createBowelChart(data.bowel_movements);
+            createFoodChart(data.food_intake);
+        }
 
-            ['dragenter', 'dragover'].forEach(eventName => {
-                box.addEventListener(eventName, function(e) {
-                    e.preventDefault();
-                    box.classList.add('drag-over');
-                });
-            });
+        function displayStats(data) {
+            const avgWater = data.water_intake.length > 0 
+                ? Math.round(data.water_intake.reduce((sum, item) => sum + item.amount, 0) / data.water_intake.length)
+                : 0;
 
-            ['dragleave', 'drop'].forEach(eventName => {
-                box.addEventListener(eventName, function(e) {
-                    e.preventDefault();
-                    box.classList.remove('drag-over');
-                });
-            });
+            const avgBowel = data.bowel_movements.length > 0 
+                ? (data.bowel_movements.reduce((sum, item) => sum + item.count, 0) / data.bowel_movements.length).toFixed(1)
+                : 0;
 
-            box.addEventListener('drop', function(e) {
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    input.files = files;
-                    const event = new Event('change', { bubbles: true });
-                    input.dispatchEvent(event);
+            const avgFood = data.food_intake.length > 0 
+                ? Math.round(data.food_intake.reduce((sum, item) => sum + item.percentage, 0) / data.food_intake.length)
+                : 0;
+
+            document.getElementById('statsDisplay').innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <h4>Average Water Intake:</h4>
+                        <p>${avgWater} ml</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>Average Bowel Movements:</h4>
+                        <p>${avgBowel} times/day</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>Average Food Intake:</h4>
+                        <p>${avgFood}%</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>Incident Events:</h4>
+                        <p>${data.incidents.length} events</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createWaterChart(waterData) {
+            const ctx = document.getElementById('waterChart').getContext('2d');
+            if (charts.waterChart) charts.waterChart.destroy();
+
+            const labels = waterData.map(item => item.date);
+            const amounts = waterData.map(item => item.amount);
+
+            charts.waterChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Water Intake (ml)',
+                        data: amounts,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Daily Water Intake'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 4000
+                        }
+                    }
                 }
             });
-        });
+        }
+
+        function createBowelChart(bowelData) {
+            const ctx = document.getElementById('bowelChart').getContext('2d');
+            if (charts.bowelChart) charts.bowelChart.destroy();
+
+            const labels = bowelData.map(item => item.date);
+            const counts = bowelData.map(item => item.count);
+
+            charts.bowelChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Bowel Movements',
+                        data: counts,
+                        backgroundColor: 'rgba(230, 126, 34, 0.8)',
+                        borderColor: '#e67e22',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Daily Bowel Movements'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10
+                        }
+                    }
+                }
+            });
+        }
+
+        function createFoodChart(foodData) {
+            const ctx = document.getElementById('foodChart').getContext('2d');
+            if (charts.foodChart) charts.foodChart.destroy();
+
+            const labels = foodData.map(item => item.date);
+            const percentages = foodData.map(item => item.percentage);
+
+            charts.foodChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Food Intake (%)',
+                        data: percentages,
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Daily Food Intake Percentage'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>

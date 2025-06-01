@@ -65,9 +65,8 @@ def extract_daily_data(daily_log_content):
                 data['dates'].append(current_date)
         
         if current_date:
-            # Bowel movement records - using config validation
+            # Bowel movement records
             if any(keyword in line.lower() for keyword in BOWEL_MOVEMENT_CONFIG['keywords']):
-                # Look for numbers in the line
                 numbers = re.findall(r'\b(\d{1,2})\b', line)
                 for num in numbers:
                     count = int(num)
@@ -75,9 +74,8 @@ def extract_daily_data(daily_log_content):
                         data['bowel_movements'].append({'date': current_date, 'count': count})
                         break
             
-            # Water intake - using config validation
+            # Water intake
             if any(keyword in line.lower() for keyword in WATER_INTAKE_CONFIG['keywords']):
-                # Look for numbers with ml or without unit
                 water_matches = re.findall(r'(\d{2,4})(?:\s*(?:ml|毫升|liter|l))?', line.lower())
                 for match in water_matches:
                     amount = int(match)
@@ -85,16 +83,14 @@ def extract_daily_data(daily_log_content):
                         data['water_intake'].append({'date': current_date, 'amount': amount})
                         break
             
-            # Food intake (percentage) - using config validation
+            # Food intake (percentage)
             if any(keyword in line.lower() for keyword in FOOD_INTAKE_CONFIG['keywords']):
-                # Look for percentages or fractions
                 percent_match = re.search(r'(\d{1,3})(?:%|percent)', line.lower())
                 if percent_match:
                     percentage = int(percent_match.group(1))
                     if is_valid_food_intake(percentage):
                         data['food_intake'].append({'date': current_date, 'percentage': percentage})
                 else:
-                    # Look for fractions like 3/4, 1/2
                     fraction_match = re.search(r'(\d+)/(\d+)', line)
                     if fraction_match:
                         numerator = int(fraction_match.group(1))
@@ -104,7 +100,7 @@ def extract_daily_data(daily_log_content):
                             if is_valid_food_intake(percentage):
                                 data['food_intake'].append({'date': current_date, 'percentage': percentage})
             
-            # Incidents - using config validation
+            # Incidents
             if any(keyword in line.lower() for keyword in INCIDENT_CONFIG['general_keywords']):
                 severity = get_incident_severity(line)
                 data['incidents'].append({
@@ -115,56 +111,102 @@ def extract_daily_data(daily_log_content):
     
     return data
 
-def generate_care_plan(analysis_result, resident_name):
-    """Generate new care plan"""
-    care_plan_prompt = f"""Based on the following analysis results, generate a practical care plan for resident "{resident_name}" in checklist format:
+def analyze_and_suggest_changes(daily_log, current_care_plan, resident_name):
+    """Step 1: Analyze and suggest changes"""
+    
+    prompt = f"""You are a care home management assistant. Your task is to analyze the resident's care log and current care plan, then provide specific suggestions for updating the care plan.
 
-{analysis_result}
+RESIDENT: {resident_name}
 
-Please generate a care plan in the following format:
+CARE LOG (this month):
+{daily_log}
 
-# Care Plan - {resident_name}
-Generated Date: {datetime.now().strftime('%Y-%m-%d')}
+CURRENT CARE PLAN:
+{current_care_plan}
 
-## 🔴 High Priority Tasks (Immediate Action)
-- [ ] Task item 1
-- [ ] Task item 2
+Please analyze the care log and current care plan, then provide a list of specific, actionable suggestions for updating the care plan.
 
-## 🟡 Medium Priority Tasks (Complete this week)
-- [ ] Task item 1
-- [ ] Task item 2
+Format your response as a JSON object with this structure:
+{{
+    "analysis_summary": "Brief summary of key findings from the care log",
+    "suggestions": [
+        {{
+            "id": 1,
+            "category": "Personal Care|Eating & Drinking|Continence|Mobility|Health & Medication|Daily Routine|Skin Care|Choice & Communication|Behavior|Other",
+            "suggestion": "Specific, actionable suggestion text",
+            "reason": "Brief explanation of why this change is needed based on the log data",
+            "priority": "High|Medium|Low"
+        }}
+    ]
+}}
 
-## 🟢 Low Priority Tasks (Complete this month)
-- [ ] Task item 1
-- [ ] Task item 2
-
-## 📋 Daily Care Checklist
-### Daily Checks
-- [ ] Check item 1
-- [ ] Check item 2
-
-### Weekly Checks
-- [ ] Check item 1
-- [ ] Check item 2
-
-## 🏥 Medical Follow-up
-- [ ] Medical task 1
-- [ ] Medical task 2
-
-## 📞 Contact Items
-- [ ] Need to contact professionals or family members
-
-## 📅 Next Review Date
-Scheduled review date: {(datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')}
-
-Please ensure all task items are specific, measurable and time-framed."""
+Guidelines:
+- Each suggestion should be specific and actionable
+- Base suggestions only on evidence found in the care log
+- Include 5-15 suggestions maximum
+- Prioritize suggestions that address safety, health, or significant changes in behavior/needs
+- Make suggestions suitable for checkbox selection by a manager"""
 
     try:
         message = client.messages.create(
             model="claude-3-5-sonnet-20241022",
-            max_tokens=2000,
+            max_tokens=3000,
             temperature=0.7,
-            messages=[{"role": "user", "content": care_plan_prompt}]
+            messages=[{"role": "user", "content": prompt}]
+        )
+        
+        response_text = message.content[0].text
+        # Try to extract JSON from the response
+        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+        if json_match:
+            return json.loads(json_match.group())
+        else:
+            # Fallback if JSON parsing fails
+            return {
+                "analysis_summary": "Analysis completed",
+                "suggestions": []
+            }
+            
+    except Exception as e:
+        return {
+            "analysis_summary": f"Error during analysis: {str(e)}",
+            "suggestions": []
+        }
+
+def generate_final_care_plan(original_care_plan, selected_suggestions, manager_comments, resident_name):
+    """Step 3: Generate final care plan based on selected suggestions"""
+    
+    # Format selected suggestions for the prompt
+    selected_text = ""
+    for suggestion in selected_suggestions:
+        selected_text += f"- {suggestion['suggestion']} (Reason: {suggestion['reason']})\n"
+    
+    prompt = f"""You are a care home management assistant. Generate a new, comprehensive care plan for resident "{resident_name}" by updating the original care plan with the manager's selected suggestions and comments.
+
+ORIGINAL CARE PLAN:
+{original_care_plan}
+
+MANAGER'S SELECTED SUGGESTIONS:
+{selected_text}
+
+MANAGER'S ADDITIONAL COMMENTS:
+{manager_comments}
+
+Please create a new, complete care plan that:
+1. Incorporates all the selected suggestions
+2. Includes the manager's additional comments
+3. Maintains all relevant information from the original plan
+4. Is professionally formatted and ready for daily use
+5. Is clear and actionable for care staff
+
+Format the care plan as a comprehensive document with appropriate sections. Do not include any process history - only the final care plan."""
+
+    try:
+        message = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=4000,
+            temperature=0.7,
+            messages=[{"role": "user", "content": prompt}]
         )
         return message.content[0].text
     except Exception as e:
@@ -178,14 +220,12 @@ def read_csv_flexible(file_path):
         try:
             with open(file_path, 'r', encoding=encoding) as file:
                 content = file.read()
-                # Try to read as CSV
                 file.seek(0)
                 dialect = csv.Sniffer().sniff(file.read(1024))
                 file.seek(0)
                 reader = csv.reader(file, dialect)
                 rows = list(reader)
 
-                # Convert to readable format
                 if rows:
                     headers = rows[0] if len(rows) > 0 else []
                     data_rows = rows[1:] if len(rows) > 1 else []
@@ -194,7 +234,7 @@ def read_csv_flexible(file_path):
                     for i, row in enumerate(data_rows, 1):
                         formatted_content += f"Record {i}:\n"
                         for j, (header, value) in enumerate(zip(headers, row)):
-                            if value.strip():  # Only show non-empty fields
+                            if value.strip():
                                 formatted_content += f"  {header}: {value}\n"
                         formatted_content += "\n"
 
@@ -205,105 +245,11 @@ def read_csv_flexible(file_path):
         except Exception as e:
             continue
 
-    # If all encodings fail, return raw content
     try:
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
             return file.read()
     except:
         return "Unable to read file content"
-
-def analyze_with_claude(daily_log, current_care_plan, resident_name):
-    """Analyze using Claude API and generate recommendations"""
-
-    prompt = f"""You are a senior nursing home care expert. Please provide professional care plan analysis and recommendations for resident "{resident_name}" based on the following data.
-
-【Resident Monthly Log Records】
-{daily_log}
-
-【Current Care Plan】
-{current_care_plan}
-
-Please provide an analysis report in the following format:
-
-# Care Plan Analysis Report - {resident_name}
-Generated Date: {datetime.now().strftime('%Y-%m-%d')}
-
-## 1. Monthly Key Observations Summary
-(List 3-5 important behavioral patterns or changes discovered from the logs)
-
-## 2. Current Care Plan Assessment
-(Analyze the appropriateness of the existing plan, pointing out which aspects are still effective and which need adjustment)
-
-## 3. Recommended Revision Points
-(Provide specific revision recommendations based on the following categories)
-
-### Personal Care
-- Current Assessment:
-- Revision Recommendations:
-
-### Eating & Drinking
-- Current Assessment:
-- Revision Recommendations:
-
-### Continence
-- Current Assessment:
-- Revision Recommendations:
-
-### Mobility
-- Current Assessment:
-- Revision Recommendations:
-
-### Health & Medication
-- Current Assessment:
-- Revision Recommendations:
-
-### Daily Routine
-- Current Assessment:
-- Revision Recommendations:
-
-### Skin Care
-- Current Assessment:
-- Revision Recommendations:
-
-### Choice & Communication
-- Current Assessment:
-- Revision Recommendations:
-
-### Behavior
-- Current Assessment:
-- Revision Recommendations:
-
-### Other Areas of Concern
-(If applicable, please specify)
-
-## 4. Priority Action Items
-(List 3-5 items that need immediate attention, ordered by urgency)
-
-## 5. Recommended New Care Plan Outline
-(Provide a framework for a new care plan that integrates all revision recommendations)
-
-## 6. Follow-up Recommendations
-(Including review cycles, professionals to consult, etc.)
-
-Please ensure all recommendations are specific, feasible, and in the resident's best interest."""
-
-    try:
-        message = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
-            max_tokens=4000,
-            temperature=0.7,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        )
-
-        return message.content[0].text
-
-    except Exception as e:
-        return f"AI analysis error: {str(e)}"
 
 @app.route('/')
 def index():
@@ -341,18 +287,11 @@ def analyze():
         daily_log_content = read_csv_flexible(daily_log_path)
         care_plan_content = read_csv_flexible(care_plan_path)
 
-        # Extract structured data
+        # Extract structured data for charts
         structured_data = extract_daily_data(daily_log_content)
         
-        # AI analysis
-        analysis_result = analyze_with_claude(daily_log_content, care_plan_content, resident_name)
-        
-        # Generate new care plan
-        new_care_plan = generate_care_plan(analysis_result, resident_name)
-
-        # Convert Markdown to HTML
-        html_result = markdown.markdown(analysis_result, extensions=['extra', 'nl2br'])
-        care_plan_html = markdown.markdown(new_care_plan, extensions=['extra', 'nl2br'])
+        # Step 1: Get suggestions
+        analysis_result = analyze_and_suggest_changes(daily_log_content, care_plan_content, resident_name)
 
         # Clean up temp files
         os.remove(daily_log_path)
@@ -360,30 +299,60 @@ def analyze():
 
         return jsonify({
             'success': True,
-            'markdown': analysis_result,
-            'html': html_result,
+            'step': 'suggestions',
+            'analysis_summary': analysis_result.get('analysis_summary', ''),
+            'suggestions': analysis_result.get('suggestions', []),
             'structured_data': structured_data,
-            'care_plan': {
-                'markdown': new_care_plan,
-                'html': care_plan_html
-            }
+            'resident_name': resident_name,
+            'original_care_plan': care_plan_content
         })
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/generate_care_plan', methods=['POST'])
+def generate_care_plan():
+    """Step 3: Generate final care plan based on manager's selections"""
+    try:
+        data = request.get_json()
+        
+        original_care_plan = data.get('original_care_plan', '')
+        selected_suggestions = data.get('selected_suggestions', [])
+        manager_comments = data.get('manager_comments', '')
+        resident_name = data.get('resident_name', 'Unnamed Resident')
+        
+        # Generate final care plan
+        final_care_plan = generate_final_care_plan(
+            original_care_plan, 
+            selected_suggestions, 
+            manager_comments, 
+            resident_name
+        )
+        
+        # Convert to HTML for display
+        care_plan_html = markdown.markdown(final_care_plan, extensions=['extra', 'nl2br'])
+        
+        return jsonify({
+            'success': True,
+            'care_plan': {
+                'markdown': final_care_plan,
+                'html': care_plan_html
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/download', methods=['POST'])
 def download():
-    """Download analysis report as Markdown file"""
+    """Download care plan as Markdown file"""
     try:
         data = request.get_json()
         content = data.get('content', '')
         resident_name = data.get('resident_name', 'Unnamed_Resident')
 
-        # Create filename
-        filename = f"Care_Plan_Analysis_{resident_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+        filename = f"Care_Plan_{resident_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
 
-        # Create in-memory file
         output = io.BytesIO()
         output.write(content.encode('utf-8'))
         output.seek(0)
