@@ -18,12 +18,17 @@ BOWEL_MOVEMENT_CONFIG = {
     'min_count': 0,          # Minimum allowed bowel movements per day
     'max_count': 10,         # Maximum allowed bowel movements per day (reduced from 15)
     
-    # Keywords to identify bowel movement records
-    # 識別排便記錄的關鍵字
-    'keywords': [
-        'bowel', 'stool', 'defecation', 'bm', 'toilet',
-        '排便', '大便', '廁所', '如廁', '便便'
-    ],
+    # Keywords to uniquely identify bowel movement records
+    # 獨立識別排便記錄的關鍵字
+    'unique_keywords': {
+        'single_column': [
+            'bowel', 'stool', 'defecation', 'bm', 'toilet',
+            '排便', '大便'
+        ],
+        'multi_column': [
+            '如廁', '便便'  # Ensure occurrences are counted only once across three columns
+        ]
+    },
     
     # Alert thresholds
     # 警報閾值
