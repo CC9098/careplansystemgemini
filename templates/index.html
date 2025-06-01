@@ -160,16 +160,17 @@
 
         // 生成圖表
         function createCharts(data) {
-            // 飲水量圖表
-            if (data.water_intake.length > 0) {
+            // 飲水量圖表 - 過濾異常數據
+            const validWater = data.water_intake.filter(item => item.amount >= 10 && item.amount <= 5000);
+            if (validWater.length > 0) {
                 const waterCtx = document.getElementById('waterChart').getContext('2d');
                 new Chart(waterCtx, {
                     type: 'line',
                     data: {
-                        labels: data.water_intake.map(item => item.date),
+                        labels: validWater.map(item => item.date),
                         datasets: [{
                             label: '飲水量 (ml)',
-                            data: data.water_intake.map(item => item.amount),
+                            data: validWater.map(item => item.amount),
                             borderColor: '#3498db',
                             backgroundColor: 'rgba(52, 152, 219, 0.1)',
                             tension: 0.4
@@ -186,16 +187,17 @@
                 });
             }
 
-            // 排便次數圖表
-            if (data.bowel_movements.length > 0) {
+            // 排便次數圖表 - 過濾異常數據
+            const validBowel = data.bowel_movements.filter(item => item.count >= 0 && item.count <= 10);
+            if (validBowel.length > 0) {
                 const bowelCtx = document.getElementById('bowelChart').getContext('2d');
                 new Chart(bowelCtx, {
                     type: 'bar',
                     data: {
-                        labels: data.bowel_movements.map(item => item.date),
+                        labels: validBowel.map(item => item.date),
                         datasets: [{
                             label: '排便次數',
-                            data: data.bowel_movements.map(item => item.count),
+                            data: validBowel.map(item => item.count),
                             backgroundColor: '#e67e22',
                             borderColor: '#d35400',
                             borderWidth: 1
@@ -213,16 +215,17 @@
                 });
             }
 
-            // 進食量圖表
-            if (data.food_intake.length > 0) {
+            // 進食量圖表 - 過濾異常數據
+            const validFood = data.food_intake.filter(item => item.percentage >= 0 && item.percentage <= 100);
+            if (validFood.length > 0) {
                 const foodCtx = document.getElementById('foodChart').getContext('2d');
                 new Chart(foodCtx, {
                     type: 'line',
                     data: {
-                        labels: data.food_intake.map(item => item.date),
+                        labels: validFood.map(item => item.date),
                         datasets: [{
                             label: '進食量 (%)',
-                            data: data.food_intake.map(item => item.percentage),
+                            data: validFood.map(item => item.percentage),
                             borderColor: '#27ae60',
                             backgroundColor: 'rgba(39, 174, 96, 0.1)',
                             tension: 0.4
@@ -266,12 +269,17 @@
 
         // 生成總覽統計
         function generateOverview(data) {
-            const avgWater = data.water_intake.length > 0 ? 
-                Math.round(data.water_intake.reduce((sum, item) => sum + item.amount, 0) / data.water_intake.length) : 0;
-            const avgBowel = data.bowel_movements.length > 0 ? 
-                Math.round(data.bowel_movements.reduce((sum, item) => sum + item.count, 0) / data.bowel_movements.length) : 0;
-            const avgFood = data.food_intake.length > 0 ? 
-                Math.round(data.food_intake.reduce((sum, item) => sum + item.percentage, 0) / data.food_intake.length) : 0;
+            // 過濾異常數據
+            const validWater = data.water_intake.filter(item => item.amount >= 10 && item.amount <= 5000);
+            const validBowel = data.bowel_movements.filter(item => item.count >= 0 && item.count <= 10);
+            const validFood = data.food_intake.filter(item => item.percentage >= 0 && item.percentage <= 100);
+            
+            const avgWater = validWater.length > 0 ? 
+                Math.round(validWater.reduce((sum, item) => sum + item.amount, 0) / validWater.length) : 0;
+            const avgBowel = validBowel.length > 0 ? 
+                Math.round(validBowel.reduce((sum, item) => sum + item.count, 0) / validBowel.length) : 0;
+            const avgFood = validFood.length > 0 ? 
+                Math.round(validFood.reduce((sum, item) => sum + item.percentage, 0) / validFood.length) : 0;
 
             document.getElementById('monthlyStats').innerHTML = `
                 <div class="stat-item">
@@ -432,22 +440,44 @@
             window.print();
         });
 
-        // 匯出PDF功能
+        // 匯出PDF功能 - 使用列印方式
         document.getElementById('exportPdfBtn').addEventListener('click', function() {
             if (currentData) {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
+                // 建立新視窗進行列印
+                const printWindow = window.open('', '_blank');
+                const residentName = document.getElementById('resident_name').value;
                 
-                doc.setFont("helvetica");
-                doc.setFontSize(16);
-                doc.text('護理計劃分析報告', 20, 20);
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>護理計劃分析報告 - ${residentName}</title>
+                        <meta charset="UTF-8">
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+                            h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+                            h2 { color: #34495e; margin-top: 25px; }
+                            h3 { color: #7f8c8d; }
+                            ul { margin-left: 20px; }
+                            li { margin-bottom: 5px; }
+                            @media print {
+                                body { margin: 0; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        ${currentData.html}
+                    </body>
+                    </html>
+                `);
                 
-                const content = currentData.markdown.replace(/[^\x00-\x7F]/g, "?");
-                const lines = doc.splitTextToSize(content, 170);
-                doc.setFontSize(10);
-                doc.text(lines, 20, 40);
+                printWindow.document.close();
+                printWindow.focus();
                 
-                doc.save(`護理計劃分析_${document.getElementById('resident_name').value}.pdf`);
+                // 等待內容載入後自動列印
+                setTimeout(() => {
+                    printWindow.print();
+                }, 500);
             }
         });
 

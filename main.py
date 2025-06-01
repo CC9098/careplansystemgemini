@@ -63,23 +63,23 @@ def extract_daily_data(daily_log_content):
                 data['dates'].append(current_date)
         
         if current_date:
-            # 排便記錄
+            # 排便記錄 - 更精確的模式匹配
             if any(keyword in line.lower() for keyword in ['排便', 'bowel', '大便', 'stool']):
-                bowel_count = re.findall(r'(\d+)', line)
-                if bowel_count:
-                    data['bowel_movements'].append({'date': current_date, 'count': int(bowel_count[0])})
+                bowel_match = re.search(r'(?:排便|bowel|大便|stool)[^\d]*(\d{1,2})', line.lower())
+                if bowel_match and int(bowel_match.group(1)) <= 10:  # 合理範圍檢查
+                    data['bowel_movements'].append({'date': current_date, 'count': int(bowel_match.group(1))})
             
-            # 飲水量
-            if any(keyword in line.lower() for keyword in ['飲水', 'water', '水分', 'ml', '毫升']):
-                water_amount = re.findall(r'(\d+)', line)
-                if water_amount:
-                    data['water_intake'].append({'date': current_date, 'amount': int(water_amount[0])})
+            # 飲水量 - 更精確的模式匹配
+            if any(keyword in line.lower() for keyword in ['飲水', 'water', '水分']) and ('ml' in line.lower() or '毫升' in line.lower()):
+                water_match = re.search(r'(\d{1,4})(?:\s*(?:ml|毫升))', line.lower())
+                if water_match and 10 <= int(water_match.group(1)) <= 5000:  # 合理範圍檢查
+                    data['water_intake'].append({'date': current_date, 'amount': int(water_match.group(1))})
             
-            # 進食量 (百分比)
-            if any(keyword in line.lower() for keyword in ['進食', 'eating', '食量', '%']):
-                food_percent = re.findall(r'(\d+)%', line)
-                if food_percent:
-                    data['food_intake'].append({'date': current_date, 'percentage': int(food_percent[0])})
+            # 進食量 (百分比) - 更精確的模式匹配
+            if any(keyword in line.lower() for keyword in ['進食', 'eating', '食量']) and '%' in line:
+                food_match = re.search(r'(\d{1,3})%', line)
+                if food_match and int(food_match.group(1)) <= 100:  # 合理範圍檢查
+                    data['food_intake'].append({'date': current_date, 'percentage': int(food_match.group(1))})
             
             # 異常事件
             if any(keyword in line.lower() for keyword in ['跌倒', 'fall', '異常', '問題', '事故', '受傷', 'incident']):
