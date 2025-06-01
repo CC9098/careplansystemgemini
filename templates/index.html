@@ -83,6 +83,21 @@
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
+            // 檢查檔案是否已選擇
+            const dailyLogFile = document.getElementById('daily_log').files[0];
+            const carePlanFile = document.getElementById('care_plan').files[0];
+            const residentName = document.getElementById('resident_name').value;
+
+            if (!dailyLogFile || !carePlanFile) {
+                alert('請選擇兩個檔案後再提交');
+                return;
+            }
+
+            if (!residentName.trim()) {
+                alert('請輸入住戶姓名');
+                return;
+            }
+
             const formData = new FormData(this);
             const loading = document.getElementById('loading');
             const results = document.getElementById('results');

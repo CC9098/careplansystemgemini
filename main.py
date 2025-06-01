@@ -187,8 +187,11 @@ def analyze():
         daily_log_file = request.files['daily_log']
         care_plan_file = request.files['care_plan']
 
-        if daily_log_file.filename == '' or care_plan_file.filename == '':
+        if not daily_log_file or daily_log_file.filename == '' or not care_plan_file or care_plan_file.filename == '':
             return jsonify({'error': '請選擇檔案'}), 400
+
+        if not allowed_file(daily_log_file.filename) or not allowed_file(care_plan_file.filename):
+            return jsonify({'error': '只允許上傳 CSV 或 TXT 檔案'}), 400
 
         # 儲存檔案
         daily_log_path = os.path.join(app.config['UPLOAD_FOLDER'], 
