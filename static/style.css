@@ -1,3 +1,4 @@
+
 * {
   margin: 0;
   padding: 0;
@@ -190,44 +191,48 @@ header p {
 
 .action-btn {
   padding: 8px 16px;
-  background-color: #ecf0f1;
+  background-color: #95a5a6;
+  color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.3s;
 }
 
 .action-btn:hover {
-  background-color: #d5dbdb;
+  background-color: #7f8c8d;
 }
 
 .report-content {
   line-height: 1.8;
-  color: #2c3e50;
 }
 
-.report-content h1 {
+.report-content h1, .report-content h2, .report-content h3 {
   color: #2c3e50;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #3498db;
-}
-
-.report-content h2 {
-  color: #34495e;
   margin-top: 30px;
   margin-bottom: 15px;
 }
 
-.report-content h3 {
-  color: #7f8c8d;
-  margin-top: 20px;
-  margin-bottom: 10px;
+.report-content h1 {
+  font-size: 2em;
+  border-bottom: 3px solid #3498db;
+  padding-bottom: 10px;
 }
 
-.report-content ul {
-  margin-left: 30px;
+.report-content h2 {
+  font-size: 1.5em;
+  border-bottom: 2px solid #ecf0f1;
+  padding-bottom: 8px;
+}
+
+.report-content h3 {
+  font-size: 1.2em;
+  color: #34495e;
+}
+
+.report-content ul, .report-content ol {
+  margin-left: 20px;
   margin-bottom: 15px;
 }
 
@@ -241,23 +246,23 @@ header p {
 
 footer {
   text-align: center;
-  margin-top: 50px;
+  margin-top: 40px;
   padding: 20px;
   color: #7f8c8d;
+  font-size: 14px;
 }
 
 @media (max-width: 768px) {
   .upload-grid {
-      grid-template-columns: 1fr;
+    grid-template-columns: 1fr;
   }
-
+  
   .results-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 15px;
+    flex-direction: column;
+    gap: 15px;
   }
-
-  header h1 {
-      font-size: 2em;
+  
+  .action-buttons {
+    justify-content: center;
   }
 }
