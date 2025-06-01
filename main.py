@@ -5,7 +5,7 @@ os.environ['HTTPX_DISABLE_PROXY'] = 'true'
 import csv
 import io
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, send_file
 import anthropic
 from werkzeug.utils import secure_filename
@@ -132,7 +132,7 @@ def generate_care_plan(analysis_result, resident_name):
 - [ ] 需要聯絡的專業人員或家屬
 
 ## 📅 下次檢討日期
-預定檢討日期：{(datetime.now().replace(day=datetime.now().day + 30) if datetime.now().day <= 28 else datetime.now().replace(month=datetime.now().month + 1, day=1)).strftime('%Y年%m月%d日')}
+預定檢討日期：{(datetime.now() + timedelta(days=30)).strftime('%Y年%m月%d日')}
 
 請確保所有任務項目都具體、可測量且有時間框架。"""
 
