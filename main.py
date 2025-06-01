@@ -1,5 +1,6 @@
+
 import os
-# 設定環境變數來避免 proxy 問題
+# Set environment variables to avoid proxy issues
 os.environ['HTTPX_DISABLE_PROXY'] = 'true'
 
 import csv
@@ -14,31 +15,31 @@ import re
 from collections import defaultdict
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB 檔案上限
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB file limit
 app.config['UPLOAD_FOLDER'] = 'temp_uploads'
 
-# 建立暫存資料夾
+# Create temp folder
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# 初始化 Claude API - 修正版本
+# Initialize Claude API
 api_key = os.environ.get('CLAUDE')
 if not api_key:
-    raise ValueError("請在 Secrets 中設定 CLAUDE")
+    raise ValueError("Please set CLAUDE in Secrets")
 
 try:
     client = anthropic.Anthropic(api_key=api_key)
 except Exception as e:
-    print(f"Anthropic 初始化錯誤: {e}")
+    print(f"Anthropic initialization error: {e}")
     client = None
 
-# 允許的檔案格式
+# Allowed file formats
 ALLOWED_EXTENSIONS = {'csv', 'txt'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def extract_daily_data(daily_log_content):
-    """從日誌中提取結構化數據"""
+    """Extract structured data from daily logs"""
     data = {
         'bowel_movements': [],
         'water_intake': [],
@@ -55,7 +56,7 @@ def extract_daily_data(daily_log_content):
         if not line:
             continue
             
-        # 尋找日期
+        # Find dates
         date_match = re.search(r'(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}[/-]\d{1,2}[/-]\d{1,2})', line)
         if date_match:
             current_date = date_match.group(1)
@@ -63,27 +64,51 @@ def extract_daily_data(daily_log_content):
                 data['dates'].append(current_date)
         
         if current_date:
-            # 排便記錄 - 更精確的模式匹配
-            if any(keyword in line.lower() for keyword in ['排便', 'bowel', '大便', 'stool']):
-                bowel_match = re.search(r'(?:排便|bowel|大便|stool)[^\d]*(\d{1,2})', line.lower())
-                if bowel_match and int(bowel_match.group(1)) <= 10:  # 合理範圍檢查
-                    data['bowel_movements'].append({'date': current_date, 'count': int(bowel_match.group(1))})
+            # Bowel movement records - more flexible pattern matching
+            bowel_keywords = ['bowel', 'stool', 'defecation', 'bm', '排便', '大便']
+            if any(keyword in line.lower() for keyword in bowel_keywords):
+                # Look for numbers in the line (more flexible)
+                numbers = re.findall(r'\b(\d{1,2})\b', line)
+                for num in numbers:
+                    count = int(num)
+                    if 0 <= count <= 15:  # More reasonable range
+                        data['bowel_movements'].append({'date': current_date, 'count': count})
+                        break
             
-            # 飲水量 - 更精確的模式匹配
-            if any(keyword in line.lower() for keyword in ['飲水', 'water', '水分']) and ('ml' in line.lower() or '毫升' in line.lower()):
-                water_match = re.search(r'(\d{1,4})(?:\s*(?:ml|毫升))', line.lower())
-                if water_match and 10 <= int(water_match.group(1)) <= 5000:  # 合理範圍檢查
-                    data['water_intake'].append({'date': current_date, 'amount': int(water_match.group(1))})
+            # Water intake - more flexible pattern matching
+            water_keywords = ['water', 'fluid', 'drink', 'ml', 'liter', '飲水', '水分', '毫升']
+            if any(keyword in line.lower() for keyword in water_keywords):
+                # Look for numbers with ml or without unit
+                water_matches = re.findall(r'(\d{2,4})(?:\s*(?:ml|毫升|liter|l))?', line.lower())
+                for match in water_matches:
+                    amount = int(match)
+                    if 50 <= amount <= 5000:  # More reasonable range
+                        data['water_intake'].append({'date': current_date, 'amount': amount})
+                        break
             
-            # 進食量 (百分比) - 更精確的模式匹配
-            if any(keyword in line.lower() for keyword in ['進食', 'eating', '食量']) and '%' in line:
-                food_match = re.search(r'(\d{1,3})%', line)
-                if food_match and int(food_match.group(1)) <= 100:  # 合理範圍檢查
-                    data['food_intake'].append({'date': current_date, 'percentage': int(food_match.group(1))})
+            # Food intake (percentage) - more flexible pattern matching
+            food_keywords = ['food', 'eat', 'meal', 'intake', 'consumption', '%', 'percent', '進食', '食量']
+            if any(keyword in line.lower() for keyword in food_keywords):
+                # Look for percentages or fractions
+                percent_match = re.search(r'(\d{1,3})(?:%|percent)', line.lower())
+                if percent_match:
+                    percentage = int(percent_match.group(1))
+                    if 0 <= percentage <= 100:
+                        data['food_intake'].append({'date': current_date, 'percentage': percentage})
+                else:
+                    # Look for fractions like 3/4, 1/2
+                    fraction_match = re.search(r'(\d+)/(\d+)', line)
+                    if fraction_match:
+                        numerator = int(fraction_match.group(1))
+                        denominator = int(fraction_match.group(2))
+                        if denominator > 0:
+                            percentage = int((numerator / denominator) * 100)
+                            data['food_intake'].append({'date': current_date, 'percentage': percentage})
             
-            # 異常事件
-            if any(keyword in line.lower() for keyword in ['跌倒', 'fall', '異常', '問題', '事故', '受傷', 'incident']):
-                severity = 'high' if any(s in line.lower() for s in ['嚴重', '緊急', '受傷']) else 'medium'
+            # Incidents
+            incident_keywords = ['fall', 'incident', 'accident', 'injury', 'problem', 'concern', '跌倒', '異常', '問題', '事故', '受傷']
+            if any(keyword in line.lower() for keyword in incident_keywords):
+                severity = 'high' if any(s in line.lower() for s in ['severe', 'serious', 'emergency', 'injury', '嚴重', '緊急', '受傷']) else 'medium'
                 data['incidents'].append({
                     'date': current_date,
                     'description': line,
@@ -93,48 +118,48 @@ def extract_daily_data(daily_log_content):
     return data
 
 def generate_care_plan(analysis_result, resident_name):
-    """生成新的護理計劃"""
-    care_plan_prompt = f"""根據以下分析結果，為住戶「{resident_name}」生成一個實用的護理計劃，格式為可執行的待辦清單：
+    """Generate new care plan"""
+    care_plan_prompt = f"""Based on the following analysis results, generate a practical care plan for resident "{resident_name}" in checklist format:
 
 {analysis_result}
 
-請生成以下格式的護理計劃：
+Please generate a care plan in the following format:
 
-# 護理計劃 - {resident_name}
-生成日期：{datetime.now().strftime('%Y年%m月%d日')}
+# Care Plan - {resident_name}
+Generated Date: {datetime.now().strftime('%Y-%m-%d')}
 
-## 🔴 高優先級任務（立即執行）
-- [ ] 任務項目 1
-- [ ] 任務項目 2
+## 🔴 High Priority Tasks (Immediate Action)
+- [ ] Task item 1
+- [ ] Task item 2
 
-## 🟡 中優先級任務（本週內完成）
-- [ ] 任務項目 1
-- [ ] 任務項目 2
+## 🟡 Medium Priority Tasks (Complete this week)
+- [ ] Task item 1
+- [ ] Task item 2
 
-## 🟢 低優先級任務（本月內完成）
-- [ ] 任務項目 1
-- [ ] 任務項目 2
+## 🟢 Low Priority Tasks (Complete this month)
+- [ ] Task item 1
+- [ ] Task item 2
 
-## 📋 日常護理檢查清單
-### 每日檢查
-- [ ] 檢查項目 1
-- [ ] 檢查項目 2
+## 📋 Daily Care Checklist
+### Daily Checks
+- [ ] Check item 1
+- [ ] Check item 2
 
-### 每週檢查
-- [ ] 檢查項目 1
-- [ ] 檢查項目 2
+### Weekly Checks
+- [ ] Check item 1
+- [ ] Check item 2
 
-## 🏥 醫療跟進
-- [ ] 醫療任務 1
-- [ ] 醫療任務 2
+## 🏥 Medical Follow-up
+- [ ] Medical task 1
+- [ ] Medical task 2
 
-## 📞 聯絡事項
-- [ ] 需要聯絡的專業人員或家屬
+## 📞 Contact Items
+- [ ] Need to contact professionals or family members
 
-## 📅 下次檢討日期
-預定檢討日期：{(datetime.now() + timedelta(days=30)).strftime('%Y年%m月%d日')}
+## 📅 Next Review Date
+Scheduled review date: {(datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')}
 
-請確保所有任務項目都具體、可測量且有時間框架。"""
+Please ensure all task items are specific, measurable and time-framed."""
 
     try:
         message = client.messages.create(
@@ -145,33 +170,33 @@ def generate_care_plan(analysis_result, resident_name):
         )
         return message.content[0].text
     except Exception as e:
-        return f"生成護理計劃時發生錯誤：{str(e)}"
+        return f"Error generating care plan: {str(e)}"
 
 def read_csv_flexible(file_path):
-    """靈活讀取CSV檔案，自動偵測編碼和格式"""
+    """Flexibly read CSV files, auto-detect encoding and format"""
     encodings = ['utf-8', 'big5', 'gb2312', 'gbk', 'latin1']
 
     for encoding in encodings:
         try:
             with open(file_path, 'r', encoding=encoding) as file:
                 content = file.read()
-                # 嘗試用CSV讀取
+                # Try to read as CSV
                 file.seek(0)
                 dialect = csv.Sniffer().sniff(file.read(1024))
                 file.seek(0)
                 reader = csv.reader(file, dialect)
                 rows = list(reader)
 
-                # 轉換為易讀格式
+                # Convert to readable format
                 if rows:
                     headers = rows[0] if len(rows) > 0 else []
                     data_rows = rows[1:] if len(rows) > 1 else []
 
-                    formatted_content = f"欄位: {', '.join(headers)}\n\n"
+                    formatted_content = f"Columns: {', '.join(headers)}\n\n"
                     for i, row in enumerate(data_rows, 1):
-                        formatted_content += f"記錄 {i}:\n"
+                        formatted_content += f"Record {i}:\n"
                         for j, (header, value) in enumerate(zip(headers, row)):
-                            if value.strip():  # 只顯示有值的欄位
+                            if value.strip():  # Only show non-empty fields
                                 formatted_content += f"  {header}: {value}\n"
                         formatted_content += "\n"
 
@@ -182,87 +207,87 @@ def read_csv_flexible(file_path):
         except Exception as e:
             continue
 
-    # 如果所有編碼都失敗，返回原始內容
+    # If all encodings fail, return raw content
     try:
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
             return file.read()
     except:
-        return "無法讀取檔案內容"
+        return "Unable to read file content"
 
 def analyze_with_claude(daily_log, current_care_plan, resident_name):
-    """使用 Claude API 分析並生成建議"""
+    """Analyze using Claude API and generate recommendations"""
 
-    prompt = f"""你是一位資深的安老院護理專家。請根據以下資料，為住戶「{resident_name}」提供專業的護理計劃分析和建議。
+    prompt = f"""You are a senior nursing home care expert. Please provide professional care plan analysis and recommendations for resident "{resident_name}" based on the following data.
 
-【住戶本月日誌記錄】
+【Resident Monthly Log Records】
 {daily_log}
 
-【現有護理計劃 (Care Plan)】
+【Current Care Plan】
 {current_care_plan}
 
-請按以下格式提供分析報告：
+Please provide an analysis report in the following format:
 
-# 護理計劃分析報告 - {resident_name}
-生成日期：{datetime.now().strftime('%Y年%m月%d日')}
+# Care Plan Analysis Report - {resident_name}
+Generated Date: {datetime.now().strftime('%Y-%m-%d')}
 
-## 1. 本月重點觀察摘要
-（請列出3-5個從日誌中發現的重要行為模式或變化）
+## 1. Monthly Key Observations Summary
+(List 3-5 important behavioral patterns or changes discovered from the logs)
 
-## 2. 現有護理計劃評估
-（分析現有計劃的適切性，指出哪些方面仍然有效，哪些需要調整）
+## 2. Current Care Plan Assessment
+(Analyze the appropriateness of the existing plan, pointing out which aspects are still effective and which need adjustment)
 
-## 3. 建議修訂重點
-（根據以下類別，提出具體的修訂建議）
+## 3. Recommended Revision Points
+(Provide specific revision recommendations based on the following categories)
 
-### 個人護理 (Personal Care)
-- 現況評估：
-- 修訂建議：
+### Personal Care
+- Current Assessment:
+- Revision Recommendations:
 
-### 飲食 (Eating & Drinking)
-- 現況評估：
-- 修訂建議：
+### Eating & Drinking
+- Current Assessment:
+- Revision Recommendations:
 
-### 失禁護理 (Continence)
-- 現況評估：
-- 修訂建議：
+### Continence
+- Current Assessment:
+- Revision Recommendations:
 
-### 活動能力 (Mobility)
-- 現況評估：
-- 修訂建議：
+### Mobility
+- Current Assessment:
+- Revision Recommendations:
 
-### 健康與藥物 (Health & Medication)
-- 現況評估：
-- 修訂建議：
+### Health & Medication
+- Current Assessment:
+- Revision Recommendations:
 
-### 日常作息 (Daily Routine)
-- 現況評估：
-- 修訂建議：
+### Daily Routine
+- Current Assessment:
+- Revision Recommendations:
 
-### 皮膚護理 (Skin)
-- 現況評估：
-- 修訂建議：
+### Skin Care
+- Current Assessment:
+- Revision Recommendations:
 
-### 選擇與溝通 (Choice & Communication)
-- 現況評估：
-- 修訂建議：
+### Choice & Communication
+- Current Assessment:
+- Revision Recommendations:
 
-### 行為 (Behaviour)
-- 現況評估：
-- 修訂建議：
+### Behavior
+- Current Assessment:
+- Revision Recommendations:
 
-### 其他需要關注的範疇
-（如適用，請說明）
+### Other Areas of Concern
+(If applicable, please specify)
 
-## 4. 優先行動項目
-（列出3-5個最需要立即處理的事項，按緊急程度排序）
+## 4. Priority Action Items
+(List 3-5 items that need immediate attention, ordered by urgency)
 
-## 5. 建議的新護理計劃大綱
-（提供一個整合了所有修訂建議的新護理計劃框架）
+## 5. Recommended New Care Plan Outline
+(Provide a framework for a new care plan that integrates all revision recommendations)
 
-## 6. 跟進建議
-（包括檢討週期、需要諮詢的專業人員等）
+## 6. Follow-up Recommendations
+(Including review cycles, professionals to consult, etc.)
 
-請確保所有建議都具體、可行，並以住戶的最佳利益為依歸。"""
+Please ensure all recommendations are specific, feasible, and in the resident's best interest."""
 
     try:
         message = client.messages.create(
@@ -280,7 +305,7 @@ def analyze_with_claude(daily_log, current_care_plan, resident_name):
         return message.content[0].text
 
     except Exception as e:
-        return f"AI 分析時發生錯誤：{str(e)}"
+        return f"AI analysis error: {str(e)}"
 
 @app.route('/')
 def index():
@@ -289,23 +314,23 @@ def index():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
-        # 獲取表單資料
-        resident_name = request.form.get('resident_name', '未命名住戶')
+        # Get form data
+        resident_name = request.form.get('resident_name', 'Unnamed Resident')
 
-        # 檢查檔案
+        # Check files
         if 'daily_log' not in request.files or 'care_plan' not in request.files:
-            return jsonify({'error': '請上傳兩個檔案'}), 400
+            return jsonify({'error': 'Please upload both files'}), 400
 
         daily_log_file = request.files['daily_log']
         care_plan_file = request.files['care_plan']
 
         if not daily_log_file or daily_log_file.filename == '' or not care_plan_file or care_plan_file.filename == '':
-            return jsonify({'error': '請選擇檔案'}), 400
+            return jsonify({'error': 'Please select files'}), 400
 
         if not allowed_file(daily_log_file.filename) or not allowed_file(care_plan_file.filename):
-            return jsonify({'error': '只允許上傳 CSV 或 TXT 檔案'}), 400
+            return jsonify({'error': 'Only CSV or TXT files allowed'}), 400
 
-        # 儲存檔案
+        # Save files
         daily_log_path = os.path.join(app.config['UPLOAD_FOLDER'], 
                                       secure_filename(f"daily_{datetime.now().timestamp()}.csv"))
         care_plan_path = os.path.join(app.config['UPLOAD_FOLDER'], 
@@ -314,24 +339,24 @@ def analyze():
         daily_log_file.save(daily_log_path)
         care_plan_file.save(care_plan_path)
 
-        # 讀取檔案內容
+        # Read file content
         daily_log_content = read_csv_flexible(daily_log_path)
         care_plan_content = read_csv_flexible(care_plan_path)
 
-        # 提取結構化數據
+        # Extract structured data
         structured_data = extract_daily_data(daily_log_content)
         
-        # AI 分析
+        # AI analysis
         analysis_result = analyze_with_claude(daily_log_content, care_plan_content, resident_name)
         
-        # 生成新護理計劃
+        # Generate new care plan
         new_care_plan = generate_care_plan(analysis_result, resident_name)
 
-        # 轉換 Markdown 為 HTML
+        # Convert Markdown to HTML
         html_result = markdown.markdown(analysis_result, extensions=['extra', 'nl2br'])
         care_plan_html = markdown.markdown(new_care_plan, extensions=['extra', 'nl2br'])
 
-        # 清理暫存檔案
+        # Clean up temp files
         os.remove(daily_log_path)
         os.remove(care_plan_path)
 
@@ -351,16 +376,16 @@ def analyze():
 
 @app.route('/download', methods=['POST'])
 def download():
-    """下載分析報告為 Markdown 檔案"""
+    """Download analysis report as Markdown file"""
     try:
         data = request.get_json()
         content = data.get('content', '')
-        resident_name = data.get('resident_name', '未命名住戶')
+        resident_name = data.get('resident_name', 'Unnamed_Resident')
 
-        # 建立檔案
-        filename = f"護理計劃分析_{resident_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+        # Create filename
+        filename = f"Care_Plan_Analysis_{resident_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
 
-        # 建立記憶體中的檔案
+        # Create in-memory file
         output = io.BytesIO()
         output.write(content.encode('utf-8'))
         output.seek(0)

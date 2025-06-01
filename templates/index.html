@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>護理計劃 AI 分析平台</title>
+    <title>Care Plan AI Analysis Platform</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -12,112 +12,112 @@
 <body>
     <div class="container">
         <header>
-            <h1>🏥 護理計劃 AI 分析平台</h1>
-            <p>上傳住戶日誌和現有護理計劃，AI 將為您分析並提供優化建議</p>
+            <h1>🏥 Care Plan AI Analysis Platform</h1>
+            <p>Upload resident daily logs and current care plan, AI will analyze and provide optimization recommendations</p>
         </header>
 
         <main>
             <form id="uploadForm" class="upload-section">
                 <div class="form-group">
-                    <label for="resident_name">住戶姓名：</label>
-                    <input type="text" id="resident_name" name="resident_name" placeholder="請輸入住戶姓名" required>
+                    <label for="resident_name">Resident Name:</label>
+                    <input type="text" id="resident_name" name="resident_name" placeholder="Enter resident name" required>
                 </div>
 
                 <div class="upload-grid">
                     <div class="upload-box">
-                        <h3>📋 本月日誌記錄</h3>
+                        <h3>📋 Monthly Daily Logs</h3>
                         <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt" required>
                         <label for="daily_log" class="file-label">
-                            <span>點擊選擇檔案或拖放到此處</span>
+                            <span>Click to select file or drag and drop here</span>
                         </label>
                         <p class="file-info"></p>
                     </div>
 
                     <div class="upload-box">
-                        <h3>📄 現有護理計劃</h3>
+                        <h3>📄 Current Care Plan</h3>
                         <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt" required>
                         <label for="care_plan" class="file-label">
-                            <span>點擊選擇檔案或拖放到此處</span>
+                            <span>Click to select file or drag and drop here</span>
                         </label>
                         <p class="file-info"></p>
                     </div>
                 </div>
 
                 <button type="submit" class="analyze-btn">
-                    <span>🤖 開始 AI 分析</span>
+                    <span>🤖 Start AI Analysis</span>
                 </button>
             </form>
 
             <div id="loading" class="loading" style="display: none;">
                 <div class="spinner"></div>
-                <p>AI 正在分析中，請稍候...</p>
+                <p>AI is analyzing, please wait...</p>
             </div>
 
             <div id="results" class="results-section" style="display: none;">
                 <div class="results-header">
-                    <h2>分析報告</h2>
+                    <h2>Analysis Report</h2>
                     <div class="action-buttons">
-                        <button id="copyBtn" class="action-btn">📋 複製</button>
-                        <button id="downloadBtn" class="action-btn">💾 下載分析</button>
-                        <button id="downloadCarePlanBtn" class="action-btn">📄 下載護理計劃</button>
-                        <button id="printBtn" class="action-btn">🖨️ 列印</button>
-                        <button id="exportPdfBtn" class="action-btn">📄 匯出PDF</button>
-                        <button id="newAnalysisBtn" class="action-btn">🔄 新分析</button>
+                        <button id="copyBtn" class="action-btn">📋 Copy</button>
+                        <button id="downloadBtn" class="action-btn">💾 Download Analysis</button>
+                        <button id="downloadCarePlanBtn" class="action-btn">📄 Download Care Plan</button>
+                        <button id="printBtn" class="action-btn">🖨️ Print</button>
+                        <button id="exportPdfBtn" class="action-btn">📄 Export PDF</button>
+                        <button id="newAnalysisBtn" class="action-btn">🔄 New Analysis</button>
                     </div>
                 </div>
 
-                <!-- 分頁導航 -->
+                <!-- Tab Navigation -->
                 <div class="tab-navigation">
-                    <button class="tab-btn active" data-tab="overview">📊 總覽</button>
-                    <button class="tab-btn" data-tab="charts">📈 圖表</button>
-                    <button class="tab-btn" data-tab="analysis">📋 詳細分析</button>
-                    <button class="tab-btn" data-tab="incidents">⚠️ 問題日誌</button>
-                    <button class="tab-btn" data-tab="careplan">📄 新護理計劃</button>
+                    <button class="tab-btn active" data-tab="overview">📊 Overview</button>
+                    <button class="tab-btn" data-tab="charts">📈 Charts</button>
+                    <button class="tab-btn" data-tab="analysis">📋 Detailed Analysis</button>
+                    <button class="tab-btn" data-tab="incidents">⚠️ Incident Log</button>
+                    <button class="tab-btn" data-tab="careplan">📄 New Care Plan</button>
                 </div>
 
-                <!-- 總覽頁面 -->
+                <!-- Overview Tab -->
                 <div id="overview-tab" class="tab-content active">
                     <div class="overview-grid">
                         <div class="overview-card">
-                            <h3>📊 本月統計</h3>
+                            <h3>📊 Monthly Statistics</h3>
                             <div id="monthlyStats"></div>
                         </div>
                         <div class="overview-card">
-                            <h3>⚠️ 重要提醒</h3>
+                            <h3>⚠️ Important Alerts</h3>
                             <div id="importantAlerts"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 圖表頁面 -->
+                <!-- Charts Tab -->
                 <div id="charts-tab" class="tab-content">
                     <div class="charts-grid">
                         <div class="chart-container">
-                            <h3>💧 飲水量趨勢</h3>
+                            <h3>💧 Water Intake Trend</h3>
                             <canvas id="waterChart"></canvas>
                         </div>
                         <div class="chart-container">
-                            <h3>🚽 排便次數</h3>
+                            <h3>🚽 Bowel Movement Frequency</h3>
                             <canvas id="bowelChart"></canvas>
                         </div>
                         <div class="chart-container">
-                            <h3>🍽️ 進食量百分比</h3>
+                            <h3>🍽️ Food Intake Percentage</h3>
                             <canvas id="foodChart"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- 詳細分析頁面 -->
+                <!-- Detailed Analysis Tab -->
                 <div id="analysis-tab" class="tab-content">
                     <div id="reportContent" class="report-content"></div>
                 </div>
 
-                <!-- 問題日誌頁面 -->
+                <!-- Incident Log Tab -->
                 <div id="incidents-tab" class="tab-content">
                     <div id="incidentsList" class="incidents-list"></div>
                 </div>
 
-                <!-- 新護理計劃頁面 -->
+                <!-- New Care Plan Tab -->
                 <div id="careplan-tab" class="tab-content">
                     <div id="carePlanContent" class="care-plan-content"></div>
                 </div>
@@ -125,32 +125,32 @@
         </main>
 
         <footer>
-            <p>© 2024 護理計劃 AI 分析平台 | 所有上傳資料將在分析後立即刪除</p>
+            <p>© 2024 Care Plan AI Analysis Platform | All uploaded data will be deleted immediately after analysis</p>
         </footer>
     </div>
 
     <script>
         let currentData = null;
 
-        // 檔案上傳處理
+        // File upload handling
         document.querySelectorAll('input[type="file"]').forEach(input => {
             input.addEventListener('change', function(e) {
-                const fileName = e.target.files[0]?.name || '未選擇檔案';
+                const fileName = e.target.files[0]?.name || 'No file selected';
                 const fileInfo = e.target.parentElement.querySelector('.file-info');
-                fileInfo.textContent = `已選擇: ${fileName}`;
+                fileInfo.textContent = `Selected: ${fileName}`;
             });
         });
 
-        // 分頁處理
+        // Tab handling
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const tabName = this.dataset.tab;
                 
-                // 更新按鈕狀態
+                // Update button state
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 
-                // 更新內容顯示
+                // Update content display
                 document.querySelectorAll('.tab-content').forEach(content => {
                     content.classList.remove('active');
                 });
@@ -158,10 +158,10 @@
             });
         });
 
-        // 生成圖表
+        // Generate charts
         function createCharts(data) {
-            // 飲水量圖表 - 過濾異常數據
-            const validWater = data.water_intake.filter(item => item.amount >= 10 && item.amount <= 5000);
+            // Water intake chart - filter abnormal data
+            const validWater = data.water_intake.filter(item => item.amount >= 50 && item.amount <= 5000);
             if (validWater.length > 0) {
                 const waterCtx = document.getElementById('waterChart').getContext('2d');
                 new Chart(waterCtx, {
@@ -169,7 +169,7 @@
                     data: {
                         labels: validWater.map(item => item.date),
                         datasets: [{
-                            label: '飲水量 (ml)',
+                            label: 'Water Intake (ml)',
                             data: validWater.map(item => item.amount),
                             borderColor: '#3498db',
                             backgroundColor: 'rgba(52, 152, 219, 0.1)',
@@ -187,8 +187,8 @@
                 });
             }
 
-            // 排便次數圖表 - 過濾異常數據
-            const validBowel = data.bowel_movements.filter(item => item.count >= 0 && item.count <= 10);
+            // Bowel movement chart - filter abnormal data
+            const validBowel = data.bowel_movements.filter(item => item.count >= 0 && item.count <= 15);
             if (validBowel.length > 0) {
                 const bowelCtx = document.getElementById('bowelChart').getContext('2d');
                 new Chart(bowelCtx, {
@@ -196,7 +196,7 @@
                     data: {
                         labels: validBowel.map(item => item.date),
                         datasets: [{
-                            label: '排便次數',
+                            label: 'Bowel Movements',
                             data: validBowel.map(item => item.count),
                             backgroundColor: '#e67e22',
                             borderColor: '#d35400',
@@ -215,7 +215,7 @@
                 });
             }
 
-            // 進食量圖表 - 過濾異常數據
+            // Food intake chart - filter abnormal data
             const validFood = data.food_intake.filter(item => item.percentage >= 0 && item.percentage <= 100);
             if (validFood.length > 0) {
                 const foodCtx = document.getElementById('foodChart').getContext('2d');
@@ -224,7 +224,7 @@
                     data: {
                         labels: validFood.map(item => item.date),
                         datasets: [{
-                            label: '進食量 (%)',
+                            label: 'Food Intake (%)',
                             data: validFood.map(item => item.percentage),
                             borderColor: '#27ae60',
                             backgroundColor: 'rgba(39, 174, 96, 0.1)',
@@ -244,11 +244,11 @@
             }
         }
 
-        // 顯示問題日誌
+        // Display incidents
         function displayIncidents(incidents) {
             const incidentsList = document.getElementById('incidentsList');
             if (incidents.length === 0) {
-                incidentsList.innerHTML = '<p class="no-incidents">本期間無記錄異常事件</p>';
+                incidentsList.innerHTML = '<p class="no-incidents">No abnormal events recorded during this period</p>';
                 return;
             }
 
@@ -259,7 +259,7 @@
                     <div class="incident-header">
                         <span class="incident-date">${incident.date}</span>
                         <span class="severity-badge ${incident.severity}">
-                            ${incident.severity === 'high' ? '🔴 高' : '🟡 中'}
+                            ${incident.severity === 'high' ? '🔴 High' : '🟡 Medium'}
                         </span>
                     </div>
                     <div class="incident-description">${incident.description}</div>
@@ -267,54 +267,54 @@
             `).join('');
         }
 
-        // 生成總覽統計
+        // Generate overview statistics
         function generateOverview(data) {
-            // 過濾異常數據
-            const validWater = data.water_intake.filter(item => item.amount >= 10 && item.amount <= 5000);
-            const validBowel = data.bowel_movements.filter(item => item.count >= 0 && item.count <= 10);
+            // Filter abnormal data
+            const validWater = data.water_intake.filter(item => item.amount >= 50 && item.amount <= 5000);
+            const validBowel = data.bowel_movements.filter(item => item.count >= 0 && item.count <= 15);
             const validFood = data.food_intake.filter(item => item.percentage >= 0 && item.percentage <= 100);
             
             const avgWater = validWater.length > 0 ? 
                 Math.round(validWater.reduce((sum, item) => sum + item.amount, 0) / validWater.length) : 0;
             const avgBowel = validBowel.length > 0 ? 
-                Math.round(validBowel.reduce((sum, item) => sum + item.count, 0) / validBowel.length) : 0;
+                (validBowel.reduce((sum, item) => sum + item.count, 0) / validBowel.length).toFixed(1) : 0;
             const avgFood = validFood.length > 0 ? 
                 Math.round(validFood.reduce((sum, item) => sum + item.percentage, 0) / validFood.length) : 0;
 
             document.getElementById('monthlyStats').innerHTML = `
                 <div class="stat-item">
-                    <span class="stat-label">平均飲水量：</span>
+                    <span class="stat-label">Average Water Intake:</span>
                     <span class="stat-value">${avgWater} ml</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">平均排便次數：</span>
-                    <span class="stat-value">${avgBowel} 次/日</span>
+                    <span class="stat-label">Average Bowel Movements:</span>
+                    <span class="stat-value">${avgBowel} times/day</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">平均進食量：</span>
+                    <span class="stat-label">Average Food Intake:</span>
                     <span class="stat-value">${avgFood}%</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">異常事件：</span>
-                    <span class="stat-value">${data.incidents.length} 項</span>
+                    <span class="stat-label">Incident Events:</span>
+                    <span class="stat-value">${data.incidents.length} items</span>
                 </div>
             `;
 
-            // 重要提醒
+            // Important alerts
             const alerts = [];
-            if (avgWater < 1500) alerts.push('⚠️ 飲水量偏低，需要增加水分攝取');
-            if (avgBowel < 1) alerts.push('⚠️ 排便次數偏少，需要關注腸道健康');
-            if (avgFood < 70) alerts.push('⚠️ 進食量不足，需要營養師評估');
+            if (avgWater < 1500) alerts.push('⚠️ Low water intake, need to increase fluid consumption');
+            if (avgBowel < 1) alerts.push('⚠️ Low bowel movement frequency, need to monitor bowel health');
+            if (avgFood < 70) alerts.push('⚠️ Insufficient food intake, need nutritionist assessment');
             if (data.incidents.filter(i => i.severity === 'high').length > 0) {
-                alerts.push('🚨 有高嚴重性事件需要立即處理');
+                alerts.push('🚨 High severity incidents require immediate attention');
             }
 
             document.getElementById('importantAlerts').innerHTML = alerts.length > 0 ? 
                 alerts.map(alert => `<div class="alert-item">${alert}</div>`).join('') :
-                '<div class="no-alerts">✅ 目前無需特別關注事項</div>';
+                '<div class="no-alerts">✅ No special concerns at this time</div>';
         }
 
-        // 表單提交
+        // Form submission
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
@@ -323,12 +323,12 @@
             const residentName = document.getElementById('resident_name').value;
 
             if (!dailyLogFile || !carePlanFile) {
-                alert('請選擇兩個檔案後再提交');
+                alert('Please select both files before submitting');
                 return;
             }
 
             if (!residentName.trim()) {
-                alert('請輸入住戶姓名');
+                alert('Please enter resident name');
                 return;
             }
 
@@ -350,36 +350,36 @@
                 if (data.success) {
                     currentData = data;
                     
-                    // 顯示各個頁面內容
+                    // Display tab content
                     document.getElementById('reportContent').innerHTML = data.html;
                     document.getElementById('carePlanContent').innerHTML = data.care_plan.html;
                     
-                    // 生成圖表和統計
+                    // Generate charts and statistics
                     createCharts(data.structured_data);
                     generateOverview(data.structured_data);
                     displayIncidents(data.structured_data.incidents);
                     
                     results.style.display = 'block';
                 } else {
-                    alert('分析失敗：' + data.error);
+                    alert('Analysis failed: ' + data.error);
                 }
             } catch (error) {
-                alert('發生錯誤：' + error.message);
+                alert('Error occurred: ' + error.message);
             } finally {
                 loading.style.display = 'none';
             }
         });
 
-        // 複製功能
+        // Copy function
         document.getElementById('copyBtn').addEventListener('click', function() {
             if (currentData) {
                 navigator.clipboard.writeText(currentData.markdown)
-                    .then(() => alert('已複製到剪貼簿！'))
-                    .catch(err => alert('複製失敗：' + err));
+                    .then(() => alert('Copied to clipboard!'))
+                    .catch(err => alert('Copy failed: ' + err));
             }
         });
 
-        // 下載分析報告
+        // Download analysis report
         document.getElementById('downloadBtn').addEventListener('click', async function() {
             if (currentData) {
                 try {
@@ -398,16 +398,16 @@
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `護理計劃分析_${document.getElementById('resident_name').value}_${new Date().toISOString().slice(0,10)}.md`;
+                    a.download = `Care_Plan_Analysis_${document.getElementById('resident_name').value}_${new Date().toISOString().slice(0,10)}.md`;
                     a.click();
                     window.URL.revokeObjectURL(url);
                 } catch (error) {
-                    alert('下載失敗：' + error.message);
+                    alert('Download failed: ' + error.message);
                 }
             }
         });
 
-        // 下載護理計劃
+        // Download care plan
         document.getElementById('downloadCarePlanBtn').addEventListener('click', async function() {
             if (currentData) {
                 try {
@@ -426,24 +426,24 @@
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `新護理計劃_${document.getElementById('resident_name').value}_${new Date().toISOString().slice(0,10)}.md`;
+                    a.download = `New_Care_Plan_${document.getElementById('resident_name').value}_${new Date().toISOString().slice(0,10)}.md`;
                     a.click();
                     window.URL.revokeObjectURL(url);
                 } catch (error) {
-                    alert('下載失敗：' + error.message);
+                    alert('Download failed: ' + error.message);
                 }
             }
         });
 
-        // 列印功能
+        // Print function
         document.getElementById('printBtn').addEventListener('click', function() {
             window.print();
         });
 
-        // 匯出PDF功能 - 使用列印方式
+        // Export PDF function - using print approach
         document.getElementById('exportPdfBtn').addEventListener('click', function() {
             if (currentData) {
-                // 建立新視窗進行列印
+                // Create new window for printing
                 const printWindow = window.open('', '_blank');
                 const residentName = document.getElementById('resident_name').value;
                 
@@ -451,7 +451,7 @@
                     <!DOCTYPE html>
                     <html>
                     <head>
-                        <title>護理計劃分析報告 - ${residentName}</title>
+                        <title>Care Plan Analysis Report - ${residentName}</title>
                         <meta charset="UTF-8">
                         <style>
                             body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
@@ -474,14 +474,14 @@
                 printWindow.document.close();
                 printWindow.focus();
                 
-                // 等待內容載入後自動列印
+                // Auto print after content loads
                 setTimeout(() => {
                     printWindow.print();
                 }, 500);
             }
         });
 
-        // 新分析
+        // New analysis
         document.getElementById('newAnalysisBtn').addEventListener('click', function() {
             document.getElementById('uploadForm').reset();
             document.querySelectorAll('.file-info').forEach(el => el.textContent = '');
@@ -489,7 +489,7 @@
             currentData = null;
         });
 
-        // 拖放功能
+        // Drag and drop functionality
         document.querySelectorAll('.upload-box').forEach(box => {
             const input = box.querySelector('input[type="file"]');
 
