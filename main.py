@@ -25,13 +25,15 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Initialize Claude API
 api_key = os.environ.get('CLAUDE')
 if not api_key:
-    raise ValueError("Please set CLAUDE in Secrets")
-
-try:
-    client = anthropic.Anthropic(api_key=api_key)
-except Exception as e:
-    print(f"Anthropic initialization error: {e}")
+    print("Warning: CLAUDE API key not found in environment variables")
     client = None
+else:
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        print("Claude API client initialized successfully")
+    except Exception as e:
+        print(f"Anthropic initialization error: {e}")
+        client = None
 
 # Allowed file formats
 ALLOWED_EXTENSIONS = {'csv', 'txt'}
@@ -257,6 +259,9 @@ def index():
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
+    if not client:
+        return jsonify({'error': 'Claude API not available. Please check your CLAUDE environment variable.'}), 500
+    
     try:
         # Get form data
         resident_name = request.form.get('resident_name', 'Unnamed Resident')
@@ -313,6 +318,9 @@ def analyze():
 @app.route('/generate_care_plan', methods=['POST'])
 def generate_care_plan():
     """Step 3: Generate final care plan based on manager's selections"""
+    if not client:
+        return jsonify({'error': 'Claude API not available. Please check your CLAUDE environment variable.'}), 500
+    
     try:
         data = request.get_json()
         
