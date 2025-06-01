@@ -13,6 +13,7 @@ from werkzeug.utils import secure_filename
 import markdown
 import re
 from collections import defaultdict
+from data_validation_config import *
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB file limit
@@ -64,36 +65,33 @@ def extract_daily_data(daily_log_content):
                 data['dates'].append(current_date)
         
         if current_date:
-            # Bowel movement records - more flexible pattern matching
-            bowel_keywords = ['bowel', 'stool', 'defecation', 'bm', '排便', '大便']
-            if any(keyword in line.lower() for keyword in bowel_keywords):
-                # Look for numbers in the line (more flexible)
+            # Bowel movement records - using config validation
+            if any(keyword in line.lower() for keyword in BOWEL_MOVEMENT_CONFIG['keywords']):
+                # Look for numbers in the line
                 numbers = re.findall(r'\b(\d{1,2})\b', line)
                 for num in numbers:
                     count = int(num)
-                    if 0 <= count <= 15:  # More reasonable range
+                    if is_valid_bowel_movement(count):
                         data['bowel_movements'].append({'date': current_date, 'count': count})
                         break
             
-            # Water intake - more flexible pattern matching
-            water_keywords = ['water', 'fluid', 'drink', 'ml', 'liter', '飲水', '水分', '毫升']
-            if any(keyword in line.lower() for keyword in water_keywords):
+            # Water intake - using config validation
+            if any(keyword in line.lower() for keyword in WATER_INTAKE_CONFIG['keywords']):
                 # Look for numbers with ml or without unit
                 water_matches = re.findall(r'(\d{2,4})(?:\s*(?:ml|毫升|liter|l))?', line.lower())
                 for match in water_matches:
                     amount = int(match)
-                    if 50 <= amount <= 5000:  # More reasonable range
+                    if is_valid_water_intake(amount):
                         data['water_intake'].append({'date': current_date, 'amount': amount})
                         break
             
-            # Food intake (percentage) - more flexible pattern matching
-            food_keywords = ['food', 'eat', 'meal', 'intake', 'consumption', '%', 'percent', '進食', '食量']
-            if any(keyword in line.lower() for keyword in food_keywords):
+            # Food intake (percentage) - using config validation
+            if any(keyword in line.lower() for keyword in FOOD_INTAKE_CONFIG['keywords']):
                 # Look for percentages or fractions
                 percent_match = re.search(r'(\d{1,3})(?:%|percent)', line.lower())
                 if percent_match:
                     percentage = int(percent_match.group(1))
-                    if 0 <= percentage <= 100:
+                    if is_valid_food_intake(percentage):
                         data['food_intake'].append({'date': current_date, 'percentage': percentage})
                 else:
                     # Look for fractions like 3/4, 1/2
@@ -103,12 +101,12 @@ def extract_daily_data(daily_log_content):
                         denominator = int(fraction_match.group(2))
                         if denominator > 0:
                             percentage = int((numerator / denominator) * 100)
-                            data['food_intake'].append({'date': current_date, 'percentage': percentage})
+                            if is_valid_food_intake(percentage):
+                                data['food_intake'].append({'date': current_date, 'percentage': percentage})
             
-            # Incidents
-            incident_keywords = ['fall', 'incident', 'accident', 'injury', 'problem', 'concern', '跌倒', '異常', '問題', '事故', '受傷']
-            if any(keyword in line.lower() for keyword in incident_keywords):
-                severity = 'high' if any(s in line.lower() for s in ['severe', 'serious', 'emergency', 'injury', '嚴重', '緊急', '受傷']) else 'medium'
+            # Incidents - using config validation
+            if any(keyword in line.lower() for keyword in INCIDENT_CONFIG['general_keywords']):
+                severity = get_incident_severity(line)
                 data['incidents'].append({
                     'date': current_date,
                     'description': line,
