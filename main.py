@@ -1,4 +1,7 @@
 import os
+# 設定環境變數來避免 proxy 問題
+os.environ['HTTPX_DISABLE_PROXY'] = 'true'
+
 import csv
 import io
 import json
@@ -7,10 +10,6 @@ from flask import Flask, render_template, request, jsonify, send_file
 import anthropic
 from werkzeug.utils import secure_filename
 import markdown
-from dotenv import load_dotenv
-
-# 載入環境變數
-load_dotenv()
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB 檔案上限
@@ -19,13 +18,16 @@ app.config['UPLOAD_FOLDER'] = 'temp_uploads'
 # 建立暫存資料夾
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# 初始化 Claude API
-# 初始化 Claude API
-api_key = os.getenv('CLAUDE_API_KEY')
+# 初始化 Claude API - 修正版本
+api_key = os.environ.get('CLAUDE_API_KEY')
 if not api_key:
     raise ValueError("請在 Secrets 中設定 CLAUDE_API_KEY")
 
-client = anthropic.Anthropic(api_key=api_key)
+try:
+    client = anthropic.Anthropic(api_key=api_key)
+except Exception as e:
+    print(f"Anthropic 初始化錯誤: {e}")
+    client = None
 
 # 允許的檔案格式
 ALLOWED_EXTENSIONS = {'csv', 'txt'}
