@@ -299,7 +299,8 @@ def is_table_format(text):
 def convert_pdf_table_to_csv(text):
     """Convert PDF text to CSV format"""
     lines = text.strip().split('\n')
-    csv_lines = []for line in lines:
+    csv_lines = []
+    for line in lines:
         line = line.strip()
         if not line:
             continue
