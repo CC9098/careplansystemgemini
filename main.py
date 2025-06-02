@@ -244,22 +244,24 @@ def extract_pdf_text(pdf_file):
 def is_table_format(text):
     """Check if text appears to be in table format"""
     lines = text.strip().split('\n')
-    if len(lines) < 3:  # Need at least header + 2 data rows
+    if len(lines) < 2:  # Need at least 2 lines
         return False
 
     # Look for common table indicators
     common_delimiters = [',', '\t', '|', ';']
-    structured_indicators = ['date', 'time', 'name', 'amount', 'count', '/', '-']
+    structured_indicators = ['date', 'time', 'name', 'amount', 'count', 'resident', 'care', 'bowel', 'water', 'food', 'intake', 'plan']
 
     delimiter_count = 0
     structure_count = 0
 
-    for line in lines[:10]:  # Check first 10 lines
-        line_lower = line.lower()
+    for line in lines[:15]:  # Check first 15 lines
+        line_lower = line.lower().strip()
+        if not line_lower:
+            continue
 
         # Count delimiter usage
         for delimiter in common_delimiters:
-            if delimiter in line and line.count(delimiter) >= 2:
+            if delimiter in line and line.count(delimiter) >= 1:
                 delimiter_count += 1
                 break
 
@@ -269,8 +271,8 @@ def is_table_format(text):
                 structure_count += 1
                 break
 
-    # Consider it table format if we have delimiters or structure indicators
-    return delimiter_count >= 2 or structure_count >= 3
+    # More lenient criteria - accept if we have some structure
+    return delimiter_count >= 1 or structure_count >= 2 or len(lines) >= 5
 
 def convert_pdf_table_to_csv(text):
     """Convert PDF text to CSV format"""
@@ -366,7 +368,7 @@ def analyze():
             return jsonify({'error': 'Please select files'}), 400
 
         if not allowed_file(daily_log_file.filename) or not allowed_file(care_plan_file.filename):
-            return jsonify({'error': 'Only CSV or TXT files allowed'}), 400
+            return jsonify({'error': 'Only CSV, TXT, and PDF files are allowed'}), 400
 
         # Process daily log file
         daily_log_content = ""

@@ -18,13 +18,13 @@
             <form id="uploadForm" class="upload-section">
                 <div class="form-group">
                     <label for="resident_name">Resident Name:</label>
-                    <input type="text" id="resident_name" name="resident_name" placeholder="Enter resident name" required>
+                    <input type="text" id="resident_name" name="resident_name" placeholder="Enter resident name" required oninvalid="this.setCustomValidity('Please enter resident name')" oninput="this.setCustomValidity('')">
                 </div>
 
                 <div class="upload-grid">
                     <div class="upload-box">
                         <h3>📋 Monthly Care Log</h3>
-                        <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt,.pdf" required>
+                        <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt,.pdf" required oninvalid="this.setCustomValidity('Please select a care log file')" oninput="this.setCustomValidity('')">
                         <label for="daily_log" class="file-label">
                             <span>Click to select log file</span>
                         </label>
@@ -33,7 +33,7 @@
 
                     <div class="upload-box">
                         <h3>📄 Current Care Plan</h3>
-                        <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt,.pdf" required>
+                        <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt,.pdf" required oninvalid="this.setCustomValidity('Please select a care plan file')" oninput="this.setCustomValidity('')">
                         <label for="care_plan" class="file-label">
                             <span>Click to select care plan</span>
                         </label>
