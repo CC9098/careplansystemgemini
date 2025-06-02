@@ -14,6 +14,7 @@ import markdown
 import re
 from collections import defaultdict
 from data_validation_config import *
+from structure_analyzer import analyze_csv_structure, smart_compress_csv, is_large_file
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB file limit
@@ -292,11 +293,30 @@ def analyze():
         daily_log_content = read_csv_flexible(daily_log_path)
         care_plan_content = read_csv_flexible(care_plan_path)
 
-        # Extract structured data for charts
+        # Dual AI System Implementation
+        processed_daily_log = daily_log_content
+        processing_steps = []
+        
+        # Check if daily log file is large and needs processing
+        if is_large_file(daily_log_content):
+            # Stage 1: Structure Analysis
+            processing_steps.append("🔍 Analyzing file structure...")
+            structure_info = analyze_csv_structure(daily_log_content)
+            
+            # Stage 2: Smart Compression
+            processing_steps.append("📊 Optimizing data...")
+            processed_daily_log = smart_compress_csv(daily_log_content, structure_info)
+            
+            # Stage 3: Deep Analysis indicator
+            processing_steps.append("🧠 Generating deep analysis...")
+        else:
+            processing_steps.append("🧠 Generating analysis...")
+
+        # Extract structured data for charts (use original content for accuracy)
         structured_data = extract_daily_data(daily_log_content)
         
-        # Step 1: Get suggestions
-        analysis_result = analyze_and_suggest_changes(daily_log_content, care_plan_content, resident_name)
+        # Get suggestions using processed content
+        analysis_result = analyze_and_suggest_changes(processed_daily_log, care_plan_content, resident_name)
 
         # Clean up temp files
         os.remove(daily_log_path)
@@ -309,7 +329,9 @@ def analyze():
             'suggestions': analysis_result.get('suggestions', []),
             'structured_data': structured_data,
             'resident_name': resident_name,
-            'original_care_plan': care_plan_content
+            'original_care_plan': care_plan_content,
+            'processing_steps': processing_steps,
+            'was_compressed': is_large_file(daily_log_content)
         })
 
     except Exception as e:
