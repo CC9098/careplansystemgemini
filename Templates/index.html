@@ -3,13 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>護理計劃 AI 分析平台</title>
+    <title>Care Buddy AI - 護理計劃分析平台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🏥 護理計劃 AI 分析平台</h1>
+            <div class="header-decoration">
+                <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="header-svg header-svg-left">
+                    <path d="M60 110C87.6142 110 110 87.6142 110 60C110 32.3858 87.6142 10 60 10C32.3858 10 10 32.3858 10 60C10 87.6142 32.3858 110 60 110Z" fill="#FADADD" fill-opacity="0.2"/>
+                    <path d="M60 100C82.0914 100 100 82.0914 100 60C100 37.9086 82.0914 20 60 20C37.9086 20 20 37.9086 20 60C20 82.0914 37.9086 100 60 100Z" stroke="#F08080" stroke-width="2" stroke-dasharray="4 4"/>
+                    <path d="M70 50C75.5228 50 80 45.5228 80 40C80 34.4772 75.5228 30 70 30C64.4772 30 60 34.4772 60 40C60 45.5228 64.4772 50 70 50Z" fill="#F08080" fill-opacity="0.3"/>
+                </svg>
+                
+                <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="header-svg header-svg-right">
+                    <path d="M60 110C87.6142 110 110 87.6142 110 60C110 32.3858 87.6142 10 60 10C32.3858 10 10 32.3858 10 60C10 87.6142 32.3858 110 60 110Z" fill="#FADADD" fill-opacity="0.2"/>
+                    <path d="M40 80C45.5228 80 50 75.5228 50 70C50 64.4772 45.5228 60 40 60C34.4772 60 30 64.4772 30 70C30 75.5228 34.4772 80 40 80Z" fill="#F08080" fill-opacity="0.3"/>
+                    <path d="M85 75L75 85M75 75L85 85" stroke="#F08080" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            
+            <div class="brand-container">
+                <div class="brand-logo">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.27 2 8.5C2 5.41 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.08C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.41 22 8.5C22 12.27 18.6 15.36 13.45 20.03L12 21.35Z" fill="#F08080"/>
+                        <path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.27 2 8.5C2 5.41 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.08C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.41 22 8.5C22 12.27 18.6 15.36 13.45 20.03L12 21.35Z" fill="url(#paint0_linear)" fill-opacity="0.6"/>
+                        <path d="M16.5 8.5C16.5 6.5 14.5 5 12 8C9.5 5 7.5 6.5 7.5 8.5C7.5 10.5 9.5 12.5 12 14C14.5 12.5 16.5 10.5 16.5 8.5Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="paint0_linear" x1="12" y1="3" x2="12" y2="21.35" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#FFC07F"/>
+                                <stop offset="1" stop-color="#F08080"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>Care Buddy AI</h1>
+                    <div class="brand-accent"></div>
+                </div>
+            </div>
+            
             <p>上傳住戶日誌和現有護理計劃，AI 將為您分析並提供優化建議</p>
         </header>
 
@@ -22,7 +58,16 @@
 
                 <div class="upload-grid">
                     <div class="upload-box">
-                        <h3>📋 本月日誌記錄</h3>
+                        <div class="upload-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M14 2V8H20" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M16 13H8" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M16 17H8" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M10 9H9H8" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <h3>本月日誌記錄</h3>
                         <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt" required>
                         <label for="daily_log" class="file-label">
                             <span>點擊選擇檔案或拖放到此處</span>
@@ -31,7 +76,16 @@
                     </div>
 
                     <div class="upload-box">
-                        <h3>📄 現有護理計劃</h3>
+                        <div class="upload-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M14 3V7C14 7.26522 14.1054 7.51957 14.2929 7.70711C14.4804 7.89464 14.7348 8 15 8H19" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M17 21H7C6.46957 21 5.96086 20.7893 5.58579 20.4142C5.21071 20.0391 5 19.5304 5 19V5C5 4.46957 5.21071 3.96086 5.58579 3.58579C5.96086 3.21071 6.46957 3 7 3H14L19 8V19C19 19.5304 18.7893 20.0391 18.4142 20.4142C18.0391 20.7893 17.5304 21 17 21Z" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M9 7H10" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M9 13H15" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M9 17H15" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <h3>現有護理計劃</h3>
                         <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt" required>
                         <label for="care_plan" class="file-label">
                             <span>點擊選擇檔案或拖放到此處</span>
@@ -41,7 +95,10 @@
                 </div>
 
                 <button type="submit" class="analyze-btn">
-                    <span>🤖 開始 AI 分析</span>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 6C13.93 6 15.5 7.57 15.5 9.5C15.5 11.43 13.93 13 12 13C10.07 13 8.5 11.43 8.5 9.5C8.5 7.57 10.07 6 12 6ZM12 20C9.97 20 8.1 19.33 6.66 18.12C6.25 17.8 6 17.3 6 16.75C6 14.99 7.5 13.5 9.25 13.5H14.75C16.5 13.5 18 14.99 18 16.75C18 17.3 17.75 17.8 17.34 18.12C15.9 19.33 14.03 20 12 20Z" fill="#4A4A4A"/>
+                    </svg>
+                    <span>開始 AI 分析</span>
                 </button>
             </form>
 
@@ -54,9 +111,29 @@
                 <div class="results-header">
                     <h2>分析報告</h2>
                     <div class="action-buttons">
-                        <button id="copyBtn" class="action-btn">📋 複製</button>
-                        <button id="downloadBtn" class="action-btn">💾 下載</button>
-                        <button id="newAnalysisBtn" class="action-btn">🔄 新分析</button>
+                        <button id="copyBtn" class="action-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 5px;">
+                                <path d="M20 9H11C9.89543 9 9 9.89543 9 11V20C9 21.1046 9.89543 22 11 22H20C21.1046 22 22 21.1046 22 20V11C22 9.89543 21.1046 9 20 9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M5 15H4C3.46957 15 2.96086 14.7893 2.58579 14.4142C2.21071 14.0391 2 13.5304 2 13V4C2 3.46957 2.21071 2.96086 2.58579 2.58579C2.96086 2.21071 3.46957 2 4 2H13C13.5304 2 14.0391 2.21071 14.4142 2.58579C14.7893 2.96086 15 3.46957 15 4V5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            複製
+                        </button>
+                        <button id="downloadBtn" class="action-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 5px;">
+                                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            下載
+                        </button>
+                        <button id="newAnalysisBtn" class="action-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 5px;">
+                                <path d="M23 4V10H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M1 20V14H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M3.51 9.00001C4.01717 7.56455 4.87913 6.2854 6.01547 5.27543C7.1518 4.26547 8.52547 3.55978 10.0083 3.22427C11.4911 2.88877 13.0348 2.93436 14.4952 3.35679C15.9556 3.77922 17.2853 4.56473 18.36 5.64001L23 10M1 14L5.64 18.36C6.71475 19.4353 8.04437 20.2208 9.50481 20.6432C10.9652 21.0657 12.5089 21.1113 13.9917 20.7758C15.4745 20.4402 16.8482 19.7346 17.9845 18.7246C19.1209 17.7146 19.9828 16.4355 20.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            新分析
+                        </button>
                     </div>
                 </div>
                 <div id="reportContent" class="report-content"></div>
@@ -64,7 +141,7 @@
         </main>
 
         <footer>
-            <p>© 2024 護理計劃 AI 分析平台 | 所有上傳資料將在分析後立即刪除</p>
+            <p>© 2024 Care Buddy AI | 所有上傳資料將在分析後立即刪除</p>
         </footer>
     </div>
 
