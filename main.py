@@ -1,4 +1,3 @@
-
 import os
 # Set environment variables to avoid proxy issues
 os.environ['HTTPX_DISABLE_PROXY'] = 'true'
@@ -53,22 +52,22 @@ def extract_daily_data(daily_log_content):
         'incidents': [],
         'dates': []
     }
-    
+
     lines = daily_log_content.split('\n')
     current_date = None
-    
+
     for line in lines:
         line = line.strip()
         if not line:
             continue
-            
+
         # Find dates
         date_match = re.search(r'(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}[/-]\d{1,2}[/-]\d{1,2})', line)
         if date_match:
             current_date = date_match.group(1)
             if current_date not in data['dates']:
                 data['dates'].append(current_date)
-        
+
         if current_date:
             # Bowel movement records
             if any(keyword in line.lower() for keyword in BOWEL_MOVEMENT_CONFIG['keywords']):
@@ -78,7 +77,7 @@ def extract_daily_data(daily_log_content):
                     if is_valid_bowel_movement(count):
                         data['bowel_movements'].append({'date': current_date, 'count': count})
                         break
-            
+
             # Water intake
             if any(keyword in line.lower() for keyword in WATER_INTAKE_CONFIG['keywords']):
                 water_matches = re.findall(r'(\d{2,4})(?:\s*(?:ml|毫升|liter|l))?', line.lower())
@@ -87,7 +86,7 @@ def extract_daily_data(daily_log_content):
                     if is_valid_water_intake(amount):
                         data['water_intake'].append({'date': current_date, 'amount': amount})
                         break
-            
+
             # Food intake (percentage)
             if any(keyword in line.lower() for keyword in FOOD_INTAKE_CONFIG['keywords']):
                 percent_match = re.search(r'(\d{1,3})(?:%|percent)', line.lower())
@@ -104,7 +103,7 @@ def extract_daily_data(daily_log_content):
                             percentage = int((numerator / denominator) * 100)
                             if is_valid_food_intake(percentage):
                                 data['food_intake'].append({'date': current_date, 'percentage': percentage})
-            
+
             # Incidents
             if any(keyword in line.lower() for keyword in INCIDENT_CONFIG['general_keywords']):
                 severity = get_incident_severity(line)
@@ -113,12 +112,12 @@ def extract_daily_data(daily_log_content):
                     'description': line,
                     'severity': severity
                 })
-    
+
     return data
 
 def analyze_and_suggest_changes(daily_log, current_care_plan, resident_name):
     """Step 1: Analyze and suggest changes"""
-    
+
     prompt = f"""You are a care home management assistant. Your task is to analyze the resident's care log and current care plan, then provide specific suggestions for updating the care plan.
 
 RESIDENT: {resident_name}
@@ -159,7 +158,7 @@ Guidelines:
             temperature=0.7,
             messages=[{"role": "user", "content": prompt}]
         )
-        
+
         response_text = message.content[0].text
         # Try to extract JSON from the response
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
@@ -171,7 +170,7 @@ Guidelines:
                 "analysis_summary": "Analysis completed",
                 "suggestions": []
             }
-            
+
     except Exception as e:
         return {
             "analysis_summary": f"Error during analysis: {str(e)}",
@@ -180,12 +179,12 @@ Guidelines:
 
 def generate_final_care_plan(original_care_plan, selected_suggestions, manager_comments, resident_name):
     """Step 3: Generate final care plan based on selected suggestions"""
-    
+
     # Format selected suggestions for the prompt
     selected_text = ""
     for suggestion in selected_suggestions:
         selected_text += f"- {suggestion['suggestion']} (Reason: {suggestion['reason']})\n"
-    
+
     prompt = f"""You are a care home management assistant. Generate a new, comprehensive care plan for resident "{resident_name}" by updating the original care plan with the manager's selected suggestions and comments.
 
 ORIGINAL CARE PLAN:
@@ -222,23 +221,23 @@ def extract_pdf_text(pdf_file):
     try:
         pdf_reader = PyPDF2.PdfReader(pdf_file)
         text = ""
-        
+
         for page in pdf_reader.pages:
             page_text = page.extract_text()
             if page_text:
                 text += page_text + "\n"
-        
+
         if not text.strip():
             return None, "Error: PDF appears to be scanned or contains no extractable text. Please use CSV format."
-        
+
         # Check if it looks like table format (contains common delimiters or structured data)
         if not is_table_format(text):
             return None, "Error: PDF does not appear to contain structured table data. Please upload a CSV file instead."
-        
+
         # Convert PDF text to CSV-like format
         csv_content = convert_pdf_table_to_csv(text)
         return csv_content, None
-        
+
     except Exception as e:
         return None, f"Error analyzing PDF: {str(e)}"
 
@@ -247,29 +246,29 @@ def is_table_format(text):
     lines = text.strip().split('\n')
     if len(lines) < 3:  # Need at least header + 2 data rows
         return False
-    
+
     # Look for common table indicators
     common_delimiters = [',', '\t', '|', ';']
     structured_indicators = ['date', 'time', 'name', 'amount', 'count', '/', '-']
-    
+
     delimiter_count = 0
     structure_count = 0
-    
+
     for line in lines[:10]:  # Check first 10 lines
         line_lower = line.lower()
-        
+
         # Count delimiter usage
         for delimiter in common_delimiters:
             if delimiter in line and line.count(delimiter) >= 2:
                 delimiter_count += 1
                 break
-        
+
         # Count structure indicators
         for indicator in structured_indicators:
             if indicator in line_lower:
                 structure_count += 1
                 break
-    
+
     # Consider it table format if we have delimiters or structure indicators
     return delimiter_count >= 2 or structure_count >= 3
 
@@ -277,12 +276,12 @@ def convert_pdf_table_to_csv(text):
     """Convert PDF text to CSV format"""
     lines = text.strip().split('\n')
     csv_lines = []
-    
+
     for line in lines:
         line = line.strip()
         if not line:
             continue
-            
+
         # Try to detect and convert different table formats
         if ',' in line:
             # Already CSV-like
@@ -301,7 +300,7 @@ def convert_pdf_table_to_csv(text):
             else:
                 # Single column or free text
                 csv_lines.append(line)
-    
+
     return '\n'.join(csv_lines)
 
 def read_csv_flexible(file_path):
@@ -351,7 +350,7 @@ def index():
 def analyze():
     if not client:
         return jsonify({'error': 'Claude API not available. Please check your CLAUDE environment variable.'}), 500
-    
+
     try:
         # Get form data
         resident_name = request.form.get('resident_name', 'Unnamed Resident')
@@ -372,7 +371,7 @@ def analyze():
         # Process daily log file
         daily_log_content = ""
         daily_log_error = None
-        
+
         if daily_log_file.filename.lower().endswith('.pdf'):
             daily_log_content, daily_log_error = extract_pdf_text(daily_log_file)
         else:
@@ -382,14 +381,14 @@ def analyze():
             daily_log_file.save(daily_log_path)
             daily_log_content = read_csv_flexible(daily_log_path)
             os.remove(daily_log_path)
-        
+
         if daily_log_error:
             return jsonify({'error': daily_log_error}), 400
-        
+
         # Process care plan file
         care_plan_content = ""
         care_plan_error = None
-        
+
         if care_plan_file.filename.lower().endswith('.pdf'):
             care_plan_content, care_plan_error = extract_pdf_text(care_plan_file)
         else:
@@ -399,24 +398,24 @@ def analyze():
             care_plan_file.save(care_plan_path)
             care_plan_content = read_csv_flexible(care_plan_path)
             os.remove(care_plan_path)
-        
+
         if care_plan_error:
             return jsonify({'error': care_plan_error}), 400
 
         # Dual AI System Implementation
         processed_daily_log = daily_log_content
         processing_steps = []
-        
+
         # Check if daily log file is large and needs processing
         if is_large_file(daily_log_content):
             # Stage 1: Structure Analysis
             processing_steps.append("🔍 Analyzing file structure...")
             structure_info = analyze_csv_structure(daily_log_content)
-            
+
             # Stage 2: Smart Compression
             processing_steps.append("📊 Optimizing data...")
             processed_daily_log = smart_compress_csv(daily_log_content, structure_info)
-            
+
             # Stage 3: Deep Analysis indicator
             processing_steps.append("🧠 Generating deep analysis...")
         else:
@@ -424,7 +423,7 @@ def analyze():
 
         # Extract structured data for charts (use original content for accuracy)
         structured_data = extract_daily_data(daily_log_content)
-        
+
         # Get suggestions using processed content
         analysis_result = analyze_and_suggest_changes(processed_daily_log, care_plan_content, resident_name)
 
@@ -450,15 +449,15 @@ def generate_care_plan():
     """Step 3: Generate final care plan based on manager's selections"""
     if not client:
         return jsonify({'error': 'Claude API not available. Please check your CLAUDE environment variable.'}), 500
-    
+
     try:
         data = request.get_json()
-        
+
         original_care_plan = data.get('original_care_plan', '')
         selected_suggestions = data.get('selected_suggestions', [])
         manager_comments = data.get('manager_comments', '')
         resident_name = data.get('resident_name', 'Unnamed Resident')
-        
+
         # Generate final care plan
         final_care_plan = generate_final_care_plan(
             original_care_plan, 
@@ -466,10 +465,10 @@ def generate_care_plan():
             manager_comments, 
             resident_name
         )
-        
+
         # Convert to HTML for display
         care_plan_html = markdown.markdown(final_care_plan, extensions=['extra', 'nl2br'])
-        
+
         return jsonify({
             'success': True,
             'care_plan': {
@@ -477,7 +476,7 @@ def generate_care_plan():
                 'html': care_plan_html
             }
         })
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

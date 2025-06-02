@@ -1,7 +1,6 @@
 
 """
 Data Validation and Chart Configuration
-數據驗證和圖表配置文件
 
 This file contains all the rules and thresholds for data validation and chart display.
 You can modify these values to adjust how data is filtered and displayed.
@@ -22,7 +21,7 @@ BOWEL_MOVEMENT_CONFIG = {
     # 識別排便記錄的關鍵字
     'keywords': [
         'bowel', 'stool', 'defecation', 'bm', 'toilet',
-        '排便', '大便', '如廁', '便便'
+        'bowel movement', 'bathroom', 'restroom'
     ],
     
     # Alert thresholds
@@ -46,7 +45,7 @@ WATER_INTAKE_CONFIG = {
     # 識別飲水記錄的關鍵字
     'keywords': [
         'water', 'fluid', 'drink', 'ml', 'liter', 'hydration',
-        '飲水', '水分', '毫升', '升', '液體', '喝水'
+        'drinking', 'liquid', 'beverages', 'intake'
     ],
     
     # Alert thresholds
@@ -70,7 +69,7 @@ FOOD_INTAKE_CONFIG = {
     # 識別進食記錄的關鍵字
     'keywords': [
         'food', 'eat', 'meal', 'intake', 'consumption', '%', 'percent',
-        '進食', '食量', '用餐', '餐', '吃', '食物'
+        'eating', 'appetite', 'dining', 'nutrition', 'feeding'
     ],
     
     # Alert thresholds
@@ -90,7 +89,7 @@ INCIDENT_CONFIG = {
     'general_keywords': [
         'fall', 'incident', 'accident', 'injury', 'problem', 'concern',
         'unusual', 'abnormal', 'emergency', 'alert',
-        '跌倒', '異常', '問題', '事故', '受傷', '意外', '緊急', '警報'
+        'issue', 'event', 'situation', 'complication'
     ],
     
     # High severity keywords (will mark as high priority)
@@ -98,14 +97,14 @@ INCIDENT_CONFIG = {
     'high_severity_keywords': [
         'severe', 'serious', 'emergency', 'injury', 'hospital', 'doctor',
         'bleeding', 'fracture', 'unconscious',
-        '嚴重', '緊急', '受傷', '醫院', '醫生', '出血', '骨折', '昏迷'
+        'critical', 'urgent', 'medical', 'ambulance', 'trauma'
     ],
     
     # Medium severity keywords
     # 中等嚴重性關鍵字
     'medium_severity_keywords': [
         'minor', 'small', 'slight', 'bruise', 'scratch',
-        '輕微', '小', '擦傷', '瘀傷'
+        'mild', 'little', 'superficial', 'bump'
     ]
 }
 
