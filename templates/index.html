@@ -57,11 +57,11 @@
                 <div id="analysisSummary" class="analysis-summary"></div>
 
                 <div class="suggestions-container">
-                    <h3>Select suggestions to implement:</h3>
+                    <h3>📋 Select suggestions to implement:</h3>
                     <div id="suggestionsList"></div>
 
                     <div class="manager-comments">
-                        <h4>Additional Comments/Suggestions:</h4>
+                        <h4>💬 Additional Comments/Suggestions:</h4>
                         <textarea id="managerComments" placeholder="Add your own observations or modifications..."></textarea>
                     </div>
 
@@ -82,23 +82,12 @@
                 <div id="carePlanContent" class="content"></div>
             </div>
 
-            <!-- Data Visualization -->
-            <div id="charts" class="charts-section" style="display: none;">
-                <h2>📊 Care Data Analysis</h2>
-                <div class="charts-grid">
-                    <canvas id="waterChart"></canvas>
-                    <canvas id="bowelChart"></canvas>
-                    <canvas id="foodChart"></canvas>
-                </div>
-                <div id="statsDisplay" class="stats-display"></div>
-            </div>
+            
         </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         let currentData = {};
-        let charts = {};
 
         // File upload handlers
         document.getElementById('daily_log').addEventListener('change', function(e) {
@@ -143,11 +132,7 @@
                     displaySuggestions(data);
                     suggestions.style.display = 'block';
 
-                    // Show charts if data available
-                    if (data.structured_data) {
-                        displayCharts(data.structured_data);
-                        charts.style.display = 'block';
-                    }
+                    
                 } else {
                     alert('Analysis failed: ' + data.error);
                 }
@@ -159,29 +144,84 @@
         });
 
         function displaySuggestions(data) {
-            // Display analysis summary
+            // Display analysis summary with icon
             document.getElementById('analysisSummary').innerHTML = `
-                <h4>Analysis Summary:</h4>
+                <h4>🔍 Analysis Summary:</h4>
                 <p>${data.analysis_summary}</p>
             `;
 
-            // Display suggestions as checkboxes
+            // Display suggestions in WHAT-WHY-HOW format
             const suggestionsList = document.getElementById('suggestionsList');
             suggestionsList.innerHTML = '';
 
             data.suggestions.forEach((suggestion, index) => {
                 const div = document.createElement('div');
-                div.className = 'suggestion-item';
+                div.className = 'suggestion-card';
                 div.innerHTML = `
-                    <label class="suggestion-label">
-                        <input type="checkbox" name="suggestion" value="${index}" checked>
-                        <span class="priority priority-${suggestion.priority.toLowerCase()}">${suggestion.priority}</span>
-                        <strong>${suggestion.category}:</strong> ${suggestion.suggestion}
-                        <small class="reason">Reason: ${suggestion.reason}</small>
-                    </label>
+                    <div class="suggestion-header" onclick="toggleSuggestion(${index})">
+                        <div class="what-section">
+                            <span class="priority priority-${suggestion.priority.toLowerCase()}">${suggestion.priority}</span>
+                            <strong>🚨 WHAT - ${suggestion.category}</strong>
+                            <p class="problem-statement">${suggestion.suggestion}</p>
+                        </div>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    
+                    <div id="suggestion-details-${index}" class="suggestion-details" style="display: none;">
+                        <div class="why-section">
+                            <h4>🤔 WHY - Possible Reasons (select all that apply):</h4>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" name="reason-${index}" value="0"> Medical condition changes</label>
+                                <label><input type="checkbox" name="reason-${index}" value="1"> Environmental factors</label>
+                                <label><input type="checkbox" name="reason-${index}" value="2"> Medication side effects</label>
+                                <label><input type="checkbox" name="reason-${index}" value="3"> Behavioral patterns</label>
+                                <label><input type="checkbox" name="reason-${index}" value="4"> Care routine issues</label>
+                                <label class="custom-reason">
+                                    <input type="checkbox" name="reason-${index}" value="custom"> Other: 
+                                    <input type="text" name="custom-reason-${index}" placeholder="Specify custom reason">
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="how-section">
+                            <h4>✅ HOW - Suggested Interventions (select all that apply):</h4>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" name="intervention-${index}" value="0"> Increase monitoring frequency</label>
+                                <label><input type="checkbox" name="intervention-${index}" value="1"> Adjust care schedule</label>
+                                <label><input type="checkbox" name="intervention-${index}" value="2"> Consult healthcare professional</label>
+                                <label><input type="checkbox" name="intervention-${index}" value="3"> Update safety protocols</label>
+                                <label><input type="checkbox" name="intervention-${index}" value="4"> Staff training enhancement</label>
+                                <label><input type="checkbox" name="intervention-${index}" value="5"> Environmental modifications</label>
+                                <label class="custom-intervention">
+                                    <input type="checkbox" name="intervention-${index}" value="custom"> Custom: 
+                                    <input type="text" name="custom-intervention-${index}" placeholder="Specify custom intervention">
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="include-section">
+                            <label class="include-suggestion">
+                                <input type="checkbox" name="include-suggestion" value="${index}" checked>
+                                <strong>Include this suggestion in final care plan</strong>
+                            </label>
+                        </div>
+                    </div>
                 `;
                 suggestionsList.appendChild(div);
             });
+        }
+
+        function toggleSuggestion(index) {
+            const details = document.getElementById(`suggestion-details-${index}`);
+            const icon = details.previousElementSibling.querySelector('.expand-icon');
+            
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                details.style.display = 'none';
+                icon.textContent = '▼';
+            }
         }
 
         // Step 3: Generate final care plan
@@ -192,11 +232,46 @@
             loading.style.display = 'block';
 
             try {
-                // Get selected suggestions
-                const selectedCheckboxes = document.querySelectorAll('input[name="suggestion"]:checked');
-                const selectedSuggestions = Array.from(selectedCheckboxes).map(cb => 
-                    currentData.suggestions[parseInt(cb.value)]
-                );
+                // Get selected suggestions with WHAT-WHY-HOW data
+                const selectedSuggestions = [];
+                const includeCheckboxes = document.querySelectorAll('input[name="include-suggestion"]:checked');
+                
+                includeCheckboxes.forEach(checkbox => {
+                    const index = parseInt(checkbox.value);
+                    const suggestion = currentData.suggestions[index];
+                    
+                    // Collect WHY data (reasons)
+                    const reasons = [];
+                    const reasonCheckboxes = document.querySelectorAll(`input[name="reason-${index}"]:checked`);
+                    reasonCheckboxes.forEach(cb => {
+                        if (cb.value === 'custom') {
+                            const customReason = document.querySelector(`input[name="custom-reason-${index}"]`).value;
+                            if (customReason) reasons.push(customReason);
+                        } else {
+                            const reasonText = cb.parentElement.textContent.trim();
+                            reasons.push(reasonText);
+                        }
+                    });
+                    
+                    // Collect HOW data (interventions)
+                    const interventions = [];
+                    const interventionCheckboxes = document.querySelectorAll(`input[name="intervention-${index}"]:checked`);
+                    interventionCheckboxes.forEach(cb => {
+                        if (cb.value === 'custom') {
+                            const customIntervention = document.querySelector(`input[name="custom-intervention-${index}"]`).value;
+                            if (customIntervention) interventions.push(customIntervention);
+                        } else {
+                            const interventionText = cb.parentElement.textContent.trim();
+                            interventions.push(interventionText);
+                        }
+                    });
+                    
+                    selectedSuggestions.push({
+                        ...suggestion,
+                        reasons: reasons,
+                        interventions: interventions
+                    });
+                });
 
                 const managerComments = document.getElementById('managerComments').value;
 
@@ -285,159 +360,7 @@
             currentData = {};
         });
 
-        // Chart display functions
-        function displayCharts(data) {
-            displayStats(data);
-            createWaterChart(data.water_intake);
-            createBowelChart(data.bowel_movements);
-            createFoodChart(data.food_intake);
-        }
-
-        function displayStats(data) {
-            const avgWater = data.water_intake.length > 0 
-                ? Math.round(data.water_intake.reduce((sum, item) => sum + item.amount, 0) / data.water_intake.length)
-                : 0;
-
-            const avgBowel = data.bowel_movements.length > 0 
-                ? (data.bowel_movements.reduce((sum, item) => sum + item.count, 0) / data.bowel_movements.length).toFixed(1)
-                : 0;
-
-            const avgFood = data.food_intake.length > 0 
-                ? Math.round(data.food_intake.reduce((sum, item) => sum + item.percentage, 0) / data.food_intake.length)
-                : 0;
-
-            document.getElementById('statsDisplay').innerHTML = `
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <h4>Average Water Intake:</h4>
-                        <p>${avgWater} ml</p>
-                    </div>
-                    <div class="stat-item">
-                        <h4>Average Bowel Movements:</h4>
-                        <p>${avgBowel} times/day</p>
-                    </div>
-                    <div class="stat-item">
-                        <h4>Average Food Intake:</h4>
-                        <p>${avgFood}%</p>
-                    </div>
-                    <div class="stat-item">
-                        <h4>Incident Events:</h4>
-                        <p>${data.incidents.length} events</p>
-                    </div>
-                </div>
-            `;
-        }
-
-        function createWaterChart(waterData) {
-            const ctx = document.getElementById('waterChart').getContext('2d');
-            if (charts.waterChart) charts.waterChart.destroy();
-
-            const labels = waterData.map(item => item.date);
-            const amounts = waterData.map(item => item.amount);
-
-            charts.waterChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Water Intake (ml)',
-                        data: amounts,
-                        borderColor: '#3498db',
-                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Daily Water Intake'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 4000
-                        }
-                    }
-                }
-            });
-        }
-
-        function createBowelChart(bowelData) {
-            const ctx = document.getElementById('bowelChart').getContext('2d');
-            if (charts.bowelChart) charts.bowelChart.destroy();
-
-            const labels = bowelData.map(item => item.date);
-            const counts = bowelData.map(item => item.count);
-
-            charts.bowelChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Bowel Movements',
-                        data: counts,
-                        backgroundColor: 'rgba(230, 126, 34, 0.8)',
-                        borderColor: '#e67e22',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Daily Bowel Movements'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 10
-                        }
-                    }
-                }
-            });
-        }
-
-        function createFoodChart(foodData) {
-            const ctx = document.getElementById('foodChart').getContext('2d');
-            if (charts.foodChart) charts.foodChart.destroy();
-
-            const labels = foodData.map(item => item.date);
-            const percentages = foodData.map(item => item.percentage);
-
-            charts.foodChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Food Intake (%)',
-                        data: percentages,
-                        borderColor: '#27ae60',
-                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Daily Food Intake Percentage'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100
-                        }
-                    }
-                }
-            });
-        }
+        
     </script>
 </body>
 </html>

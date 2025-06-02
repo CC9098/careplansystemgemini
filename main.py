@@ -178,32 +178,55 @@ Guidelines:
         }
 
 def generate_final_care_plan(original_care_plan, selected_suggestions, manager_comments, resident_name):
-    """Step 3: Generate final care plan based on selected suggestions"""
+    """Step 3: Generate final care plan based on selected suggestions with WHAT-WHY-HOW structure"""
 
-    # Format selected suggestions for the prompt
+    # Format selected suggestions with detailed WHAT-WHY-HOW structure
     selected_text = ""
-    for suggestion in selected_suggestions:
-        selected_text += f"- {suggestion['suggestion']} (Reason: {suggestion['reason']})\n"
+    for i, suggestion in enumerate(selected_suggestions, 1):
+        selected_text += f"\n## Update {i}: {suggestion['category']}\n"
+        selected_text += f"**🚨 WHAT (Problem):** {suggestion['suggestion']}\n"
+        selected_text += f"**Original Reason:** {suggestion['reason']}\n\n"
+        
+        if suggestion.get('reasons'):
+            selected_text += f"**🤔 WHY (Manager's Selected Reasons):**\n"
+            for reason in suggestion['reasons']:
+                selected_text += f"• {reason}\n"
+            selected_text += "\n"
+        
+        if suggestion.get('interventions'):
+            selected_text += f"**✅ HOW (Selected Interventions):**\n"
+            for intervention in suggestion['interventions']:
+                selected_text += f"• {intervention}\n"
+            selected_text += "\n"
 
-    prompt = f"""You are a care home management assistant. Generate a new, comprehensive care plan for resident "{resident_name}" by updating the original care plan with the manager's selected suggestions and comments.
+    prompt = f"""You are a professional care home management assistant. Generate a comprehensive, updated care plan for resident "{resident_name}".
 
-ORIGINAL CARE PLAN:
+📋 **ORIGINAL CARE PLAN:**
 {original_care_plan}
 
-MANAGER'S SELECTED SUGGESTIONS:
+🔄 **MANAGER'S SELECTED UPDATES:**
 {selected_text}
 
-MANAGER'S ADDITIONAL COMMENTS:
+💬 **MANAGER'S ADDITIONAL COMMENTS:**
 {manager_comments}
 
-Please create a new, complete care plan that:
-1. Incorporates all the selected suggestions
-2. Includes the manager's additional comments
-3. Maintains all relevant information from the original plan
-4. Is professionally formatted and ready for daily use
-5. Is clear and actionable for care staff
+**INSTRUCTIONS:**
+Create a completely updated care plan that:
+1. ✅ Integrates all selected interventions from the WHAT-WHY-HOW analysis
+2. 🔄 Updates existing sections based on identified problems
+3. ➕ Adds new care protocols where needed
+4. 💬 Incorporates manager's additional comments
+5. 📝 Maintains professional formatting suitable for care staff
+6. 🎯 Ensures all interventions are specific and actionable
 
-Format the care plan as a comprehensive document with appropriate sections. Do not include any process history - only the final care plan."""
+**FORMAT REQUIREMENTS:**
+- Use clear headings with appropriate icons
+- Structure as: Personal Care, Daily Routine, Health Monitoring, Safety Protocols, etc.
+- Make each instruction specific and measurable
+- Include frequency, timing, and responsible staff where applicable
+- Maintain professional tone suitable for healthcare documentation
+
+Generate ONLY the final updated care plan - do not include analysis or process notes."""
 
     try:
         message = client.messages.create(
@@ -423,8 +446,7 @@ def analyze():
         else:
             processing_steps.append("🧠 Generating analysis...")
 
-        # Extract structured data for charts (use original content for accuracy)
-        structured_data = extract_daily_data(daily_log_content)
+        
 
         # Get suggestions using processed content
         analysis_result = analyze_and_suggest_changes(processed_daily_log, care_plan_content, resident_name)
@@ -436,7 +458,6 @@ def analyze():
             'step': 'suggestions',
             'analysis_summary': analysis_result.get('analysis_summary', ''),
             'suggestions': analysis_result.get('suggestions', []),
-            'structured_data': structured_data,
             'resident_name': resident_name,
             'original_care_plan': care_plan_content,
             'processing_steps': processing_steps,
