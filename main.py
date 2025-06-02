@@ -153,7 +153,7 @@ Guidelines:
 
     try:
         message = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-sonnet-4-20250514",
             max_tokens=3000,
             temperature=0.7,
             messages=[{"role": "user", "content": prompt}]
@@ -230,10 +230,11 @@ Generate ONLY the final updated care plan - do not include analysis or process n
 
     try:
         message = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-sonnet-4-20250514",
             max_tokens=4000,
             temperature=0.7,
             messages=[{"role": "user", "content": prompt}]
+        )
         return message.content[0].text
     except Exception as e:
         return f"Error generating care plan: {str(e)}"
