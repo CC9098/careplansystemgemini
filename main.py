@@ -477,11 +477,18 @@ def generate_care_plan():
 
     try:
         data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No JSON data received'}), 400
 
         original_care_plan = data.get('original_care_plan', '')
         selected_suggestions = data.get('selected_suggestions', [])
         manager_comments = data.get('manager_comments', '')
         resident_name = data.get('resident_name', 'Unnamed Resident')
+
+        print(f"Generating care plan for: {resident_name}")
+        print(f"Selected suggestions count: {len(selected_suggestions)}")
+        print(f"Manager comments length: {len(manager_comments)}")
 
         # Generate final care plan
         final_care_plan = generate_final_care_plan(
@@ -490,6 +497,9 @@ def generate_care_plan():
             manager_comments, 
             resident_name
         )
+
+        if final_care_plan.startswith("Error"):
+            return jsonify({'error': final_care_plan}), 500
 
         # Convert to HTML for display
         care_plan_html = markdown.markdown(final_care_plan, extensions=['extra', 'nl2br'])
@@ -503,7 +513,7 @@ def generate_care_plan():
         })
 
     except Exception as e:
-        print(f"Error in analyze endpoint: {str(e)}")
+        print(f"Error in generate_care_plan endpoint: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'Server error: {str(e)}'}), 500

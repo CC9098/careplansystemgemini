@@ -82,7 +82,7 @@
                 <div id="carePlanContent" class="content"></div>
             </div>
 
-            
+
         </main>
     </div>
 
@@ -187,7 +187,7 @@
                         </div>
                         <span class="expand-icon">▼</span>
                     </div>
-                    
+
                     <div id="suggestion-details-${index}" class="suggestion-details" style="display: none;">
                         <div class="why-section">
                             <h4>🤔 WHY - Possible Reasons (select all that apply):</h4>
@@ -203,7 +203,7 @@
                                 </label>
                             </div>
                         </div>
-                        
+
                         <div class="how-section">
                             <h4>✅ HOW - Suggested Interventions (select all that apply):</h4>
                             <div class="checkbox-group">
@@ -219,7 +219,7 @@
                                 </label>
                             </div>
                         </div>
-                        
+
                         <div class="include-section">
                             <label class="include-suggestion">
                                 <input type="checkbox" name="include-suggestion" value="${index}" checked>
@@ -235,7 +235,7 @@
         function toggleSuggestion(index) {
             const details = document.getElementById(`suggestion-details-${index}`);
             const icon = details.previousElementSibling.querySelector('.expand-icon');
-            
+
             if (details.style.display === 'none') {
                 details.style.display = 'block';
                 icon.textContent = '▲';
@@ -245,7 +245,7 @@
             }
         }
 
-        // Step 3: Generate final care plan
+        // Generate care plan functionality
         document.getElementById('generatePlanBtn').addEventListener('click', async function() {
             const loading = document.getElementById('loading');
             const finalPlan = document.getElementById('finalPlan');
@@ -253,14 +253,15 @@
             loading.style.display = 'block';
 
             try {
-                // Get selected suggestions with WHAT-WHY-HOW data
+                // Collect selected suggestions with WHAT-WHY-HOW data
                 const selectedSuggestions = [];
-                const includeCheckboxes = document.querySelectorAll('input[name="include-suggestion"]:checked');
-                
-                includeCheckboxes.forEach(checkbox => {
+
+                document.querySelectorAll('input[name="include-suggestion"]:checked').forEach(checkbox => {
                     const index = parseInt(checkbox.value);
                     const suggestion = currentData.suggestions[index];
-                    
+
+                    if (!suggestion) return;
+
                     // Collect WHY data (reasons)
                     const reasons = [];
                     const reasonCheckboxes = document.querySelectorAll(`input[name="reason-${index}"]:checked`);
@@ -273,7 +274,7 @@
                             reasons.push(reasonText);
                         }
                     });
-                    
+
                     // Collect HOW data (interventions)
                     const interventions = [];
                     const interventionCheckboxes = document.querySelectorAll(`input[name="intervention-${index}"]:checked`);
@@ -286,7 +287,7 @@
                             interventions.push(interventionText);
                         }
                     });
-                    
+
                     selectedSuggestions.push({
                         ...suggestion,
                         reasons: reasons,
@@ -294,7 +295,14 @@
                     });
                 });
 
-                const managerComments = document.getElementById('managerComments').value;
+                const managerComments = document.getElementById('managerComments').value || '';
+
+                console.log('Sending data:', {
+                    original_care_plan: currentData.original_care_plan,
+                    selected_suggestions: selectedSuggestions,
+                    manager_comments: managerComments,
+                    resident_name: currentData.resident_name
+                });
 
                 const response = await fetch('/generate_care_plan', {
                     method: 'POST',
@@ -309,7 +317,12 @@
                     })
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
+                console.log('Response data:', data);
 
                 if (data.success) {
                     document.getElementById('carePlanContent').innerHTML = data.care_plan.html;
@@ -324,9 +337,10 @@
                     // Scroll to results
                     finalPlan.scrollIntoView({ behavior: 'smooth' });
                 } else {
-                    alert('Care plan generation failed: ' + data.error);
+                    alert('Care plan generation failed: ' + (data.error || 'Unknown error'));
                 }
             } catch (error) {
+                console.error('Error in generate care plan:', error);
                 alert('Error occurred: ' + error.message);
             } finally {
                 loading.style.display = 'none';
@@ -381,7 +395,7 @@
             currentData = {};
         });
 
-        
+
     </script>
 </body>
 </html>
