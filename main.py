@@ -36,8 +36,10 @@ else:
         print(f"Anthropic initialization error: {e}")
         client = None
 
+import PyPDF2
+
 # Allowed file formats
-ALLOWED_EXTENSIONS = {'csv', 'txt'}
+ALLOWED_EXTENSIONS = {'csv', 'txt', 'pdf'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -215,6 +217,93 @@ Format the care plan as a comprehensive document with appropriate sections. Do n
     except Exception as e:
         return f"Error generating care plan: {str(e)}"
 
+def extract_pdf_text(pdf_file):
+    """Extract text from PDF file and convert to structured format"""
+    try:
+        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        text = ""
+        
+        for page in pdf_reader.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
+        
+        if not text.strip():
+            return None, "Error: PDF appears to be scanned or contains no extractable text. Please use CSV format."
+        
+        # Check if it looks like table format (contains common delimiters or structured data)
+        if not is_table_format(text):
+            return None, "Error: PDF does not appear to contain structured table data. Please upload a CSV file instead."
+        
+        # Convert PDF text to CSV-like format
+        csv_content = convert_pdf_table_to_csv(text)
+        return csv_content, None
+        
+    except Exception as e:
+        return None, f"Error analyzing PDF: {str(e)}"
+
+def is_table_format(text):
+    """Check if text appears to be in table format"""
+    lines = text.strip().split('\n')
+    if len(lines) < 3:  # Need at least header + 2 data rows
+        return False
+    
+    # Look for common table indicators
+    common_delimiters = [',', '\t', '|', ';']
+    structured_indicators = ['date', 'time', 'name', 'amount', 'count', '/', '-']
+    
+    delimiter_count = 0
+    structure_count = 0
+    
+    for line in lines[:10]:  # Check first 10 lines
+        line_lower = line.lower()
+        
+        # Count delimiter usage
+        for delimiter in common_delimiters:
+            if delimiter in line and line.count(delimiter) >= 2:
+                delimiter_count += 1
+                break
+        
+        # Count structure indicators
+        for indicator in structured_indicators:
+            if indicator in line_lower:
+                structure_count += 1
+                break
+    
+    # Consider it table format if we have delimiters or structure indicators
+    return delimiter_count >= 2 or structure_count >= 3
+
+def convert_pdf_table_to_csv(text):
+    """Convert PDF text to CSV format"""
+    lines = text.strip().split('\n')
+    csv_lines = []
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        # Try to detect and convert different table formats
+        if ',' in line:
+            # Already CSV-like
+            csv_lines.append(line)
+        elif '\t' in line:
+            # Tab-separated, convert to CSV
+            csv_lines.append(','.join(line.split('\t')))
+        elif '|' in line:
+            # Pipe-separated, convert to CSV
+            csv_lines.append(','.join([col.strip() for col in line.split('|') if col.strip()]))
+        else:
+            # Try to split by multiple spaces (common in PDF tables)
+            parts = [part.strip() for part in re.split(r'\s{2,}', line) if part.strip()]
+            if len(parts) > 1:
+                csv_lines.append(','.join(parts))
+            else:
+                # Single column or free text
+                csv_lines.append(line)
+    
+    return '\n'.join(csv_lines)
+
 def read_csv_flexible(file_path):
     """Flexibly read CSV files, auto-detect encoding and format"""
     encodings = ['utf-8', 'big5', 'gb2312', 'gbk', 'latin1']
@@ -280,18 +369,39 @@ def analyze():
         if not allowed_file(daily_log_file.filename) or not allowed_file(care_plan_file.filename):
             return jsonify({'error': 'Only CSV or TXT files allowed'}), 400
 
-        # Save files
-        daily_log_path = os.path.join(app.config['UPLOAD_FOLDER'], 
-                                      secure_filename(f"daily_{datetime.now().timestamp()}.csv"))
-        care_plan_path = os.path.join(app.config['UPLOAD_FOLDER'], 
-                                      secure_filename(f"care_{datetime.now().timestamp()}.csv"))
-
-        daily_log_file.save(daily_log_path)
-        care_plan_file.save(care_plan_path)
-
-        # Read file content
-        daily_log_content = read_csv_flexible(daily_log_path)
-        care_plan_content = read_csv_flexible(care_plan_path)
+        # Process daily log file
+        daily_log_content = ""
+        daily_log_error = None
+        
+        if daily_log_file.filename.lower().endswith('.pdf'):
+            daily_log_content, daily_log_error = extract_pdf_text(daily_log_file)
+        else:
+            # Save and read CSV/TXT files
+            daily_log_path = os.path.join(app.config['UPLOAD_FOLDER'], 
+                                          secure_filename(f"daily_{datetime.now().timestamp()}.csv"))
+            daily_log_file.save(daily_log_path)
+            daily_log_content = read_csv_flexible(daily_log_path)
+            os.remove(daily_log_path)
+        
+        if daily_log_error:
+            return jsonify({'error': daily_log_error}), 400
+        
+        # Process care plan file
+        care_plan_content = ""
+        care_plan_error = None
+        
+        if care_plan_file.filename.lower().endswith('.pdf'):
+            care_plan_content, care_plan_error = extract_pdf_text(care_plan_file)
+        else:
+            # Save and read CSV/TXT files
+            care_plan_path = os.path.join(app.config['UPLOAD_FOLDER'], 
+                                          secure_filename(f"care_{datetime.now().timestamp()}.csv"))
+            care_plan_file.save(care_plan_path)
+            care_plan_content = read_csv_flexible(care_plan_path)
+            os.remove(care_plan_path)
+        
+        if care_plan_error:
+            return jsonify({'error': care_plan_error}), 400
 
         # Dual AI System Implementation
         processed_daily_log = daily_log_content
@@ -318,9 +428,7 @@ def analyze():
         # Get suggestions using processed content
         analysis_result = analyze_and_suggest_changes(processed_daily_log, care_plan_content, resident_name)
 
-        # Clean up temp files
-        os.remove(daily_log_path)
-        os.remove(care_plan_path)
+        # File cleanup is handled in processing logic above
 
         return jsonify({
             'success': True,

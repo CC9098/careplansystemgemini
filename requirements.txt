@@ -3,3 +3,5 @@ flask
 anthropic
 markdown
 werkzeug
+PyPDF2
+PyPDF2
