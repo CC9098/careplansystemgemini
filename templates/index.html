@@ -107,15 +107,33 @@
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
+            // Check if files are selected
+            const residentName = document.getElementById('resident_name').value.trim();
+            const dailyLogFile = document.getElementById('daily_log').files[0];
+            const carePlanFile = document.getElementById('care_plan').files[0];
+
+            if (!residentName) {
+                alert('Please enter resident name');
+                return;
+            }
+
+            if (!dailyLogFile) {
+                alert('Please select a care log file');
+                return;
+            }
+
+            if (!carePlanFile) {
+                alert('Please select a care plan file');
+                return;
+            }
+
             const loading = document.getElementById('loading');
             const suggestions = document.getElementById('suggestions');
             const finalPlan = document.getElementById('finalPlan');
-            const charts = document.getElementById('charts');
 
             // Hide all sections
             suggestions.style.display = 'none';
             finalPlan.style.display = 'none';
-            charts.style.display = 'none';
             loading.style.display = 'block';
 
             try {
@@ -125,18 +143,21 @@
                     body: formData
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
 
                 if (data.success && data.step === 'suggestions') {
                     currentData = data;
                     displaySuggestions(data);
                     suggestions.style.display = 'block';
-
-                    
                 } else {
-                    alert('Analysis failed: ' + data.error);
+                    alert('Analysis failed: ' + (data.error || 'Unknown error'));
                 }
             } catch (error) {
+                console.error('Error occurred:', error);
                 alert('Error occurred: ' + error.message);
             } finally {
                 loading.style.display = 'none';

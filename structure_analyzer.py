@@ -236,3 +236,34 @@ def is_large_file(file_content, size_threshold=50000):
         bool: True if file is large
     """
     return len(file_content) > size_threshold
+"""
+Structure Analyzer for CSV files
+Provides functions to analyze and compress large CSV files
+"""
+
+def analyze_csv_structure(content):
+    """Analyze CSV structure and return metadata"""
+    lines = content.split('\n')
+    return {
+        'total_lines': len(lines),
+        'has_header': True,
+        'estimated_size': len(content),
+        'columns': lines[0].split(',') if lines else []
+    }
+
+def smart_compress_csv(content, structure_info):
+    """Smart compression of CSV content"""
+    lines = content.split('\n')
+    
+    # If file is very large (>1000 lines), keep every 3rd line after header
+    if len(lines) > 1000:
+        header = lines[0] if lines else ""
+        data_lines = lines[1::3]  # Keep every 3rd line
+        return header + '\n' + '\n'.join(data_lines)
+    
+    return content
+
+def is_large_file(content):
+    """Check if file is considered large"""
+    lines = content.split('\n')
+    return len(lines) > 500 or len(content) > 100000

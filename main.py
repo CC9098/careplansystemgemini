@@ -186,13 +186,13 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
         selected_text += f"\n## Update {i}: {suggestion['category']}\n"
         selected_text += f"**🚨 WHAT (Problem):** {suggestion['suggestion']}\n"
         selected_text += f"**Original Reason:** {suggestion['reason']}\n\n"
-        
+
         if suggestion.get('reasons'):
             selected_text += f"**🤔 WHY (Manager's Selected Reasons):**\n"
             for reason in suggestion['reasons']:
                 selected_text += f"• {reason}\n"
             selected_text += "\n"
-        
+
         if suggestion.get('interventions'):
             selected_text += f"**✅ HOW (Selected Interventions):**\n"
             for intervention in suggestion['interventions']:
@@ -234,7 +234,6 @@ Generate ONLY the final updated care plan - do not include analysis or process n
             max_tokens=4000,
             temperature=0.7,
             messages=[{"role": "user", "content": prompt}]
-        )
         return message.content[0].text
     except Exception as e:
         return f"Error generating care plan: {str(e)}"
@@ -300,9 +299,7 @@ def is_table_format(text):
 def convert_pdf_table_to_csv(text):
     """Convert PDF text to CSV format"""
     lines = text.strip().split('\n')
-    csv_lines = []
-
-    for line in lines:
+    csv_lines = []for line in lines:
         line = line.strip()
         if not line:
             continue
@@ -446,7 +443,7 @@ def analyze():
         else:
             processing_steps.append("🧠 Generating analysis...")
 
-        
+
 
         # Get suggestions using processed content
         analysis_result = analyze_and_suggest_changes(processed_daily_log, care_plan_content, resident_name)
@@ -465,7 +462,10 @@ def analyze():
         })
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error in analyze endpoint: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/generate_care_plan', methods=['POST'])
 def generate_care_plan():
@@ -501,7 +501,10 @@ def generate_care_plan():
         })
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error in analyze endpoint: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/download', methods=['POST'])
 def download():
