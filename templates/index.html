@@ -3,14 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏥 Care Plan AI Analysis Platform</title>
+    <title>CarePlanSync - AI Care Plan Analysis</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🏥 Care Plan AI Analysis Platform</h1>
+            <div class="brand-container">
+                <div class="brand-logo">
+                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Main circle background -->
+                        <circle cx="32" cy="32" r="30" fill="url(#gradient1)" stroke="#F08080" stroke-width="2"/>
+                        
+                        <!-- Heart symbol for care -->
+                        <path d="M32 45c-1.5-1.5-12-10.5-12-18 0-4.5 3.5-8 8-8 2.5 0 4.5 1 6 2.5C35.5 19 37.5 18 40 18c4.5 0 8 3.5 8 8 0 7.5-10.5 16.5-12 18z" fill="white" stroke="#F08080" stroke-width="1.5"/>
+                        
+                        <!-- Medical cross -->
+                        <rect x="29" y="24" width="6" height="16" rx="1" fill="#F08080"/>
+                        <rect x="24" y="29" width="16" height="6" rx="1" fill="#F08080"/>
+                        
+                        <!-- Sync arrows -->
+                        <path d="M18 15 L22 11 L22 13 L28 13 L28 17 L22 17 L22 19 Z" fill="#FFC07F" opacity="0.8"/>
+                        <path d="M46 49 L42 53 L42 51 L36 51 L36 47 L42 47 L42 45 Z" fill="#FFC07F" opacity="0.8"/>
+                        
+                        <!-- Data dots -->
+                        <circle cx="12" cy="32" r="2" fill="#A5CBAF"/>
+                        <circle cx="52" cy="32" r="2" fill="#A5CBAF"/>
+                        <circle cx="32" cy="12" r="2" fill="#A5CBAF"/>
+                        <circle cx="32" cy="52" r="2" fill="#A5CBAF"/>
+                        
+                        <defs>
+                            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FEF2F3;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#FADADD;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>CarePlanSync</h1>
+                    <div class="brand-accent"></div>
+                </div>
+            </div>
             <p>Upload resident logs and current care plan. AI will analyze and provide optimization suggestions.</p>
         </header>
 
