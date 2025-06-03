@@ -446,24 +446,74 @@
             }
         });
 
-        // Email functionality - Open Gmail with pre-filled content
+        // Email functionality - Open Gmail with pre-filled content focused on care plan changes
         document.getElementById('emailBtn').addEventListener('click', function() {
             if (window.currentReport) {
                 const subject = encodeURIComponent(`Care Plan Update - ${window.currentReport.resident_name}`);
-                const body = encodeURIComponent(`Dear Care Team,
-
-Please find the updated care plan for ${window.currentReport.resident_name}.
-
-Key updates and observations have been identified based on recent care logs. Please review the attached care plan and implement the recommended changes.
-
-Care Plan Summary:
-${window.currentReport.content.substring(0, 500)}...
-
-Best regards,
-Care Management Team
-
-Note: The full care plan document should be attached separately.`);
                 
+                // Extract key changes from the care plan
+                const content = window.currentReport.content;
+                let keyChanges = [];
+                
+                // Look for update sections marked with ✏️
+                const updateSections = content.match(/##\s*✏️[^#]*(?:#[^#][^#]*)*?(?=##|$)/g);
+                if (updateSections) {
+                    updateSections.forEach(section => {
+                        const lines = section.split('\n');
+                        const title = lines[0].replace(/##\s*✏️\s*/, '').trim();
+                        
+                        // Extract key interventions
+                        const interventions = [];
+                        lines.forEach(line => {
+                            if (line.includes('**Actions to Take:**')) {
+                                let i = lines.indexOf(line) + 1;
+                                while (i < lines.length && lines[i].startsWith('•')) {
+                                    interventions.push(lines[i].replace('•', '').trim());
+                                    i++;
+                                }
+                            }
+                        });
+                        
+                        if (interventions.length > 0) {
+                            keyChanges.push({
+                                issue: title,
+                                actions: interventions.slice(0, 3) // Top 3 actions
+                            });
+                        }
+                    });
+                }
+                
+                // Generate focused email body
+                let emailBody = `Dear Care Team,
+
+Updated care plan for ${window.currentReport.resident_name} is ready for implementation.
+
+KEY CHANGES REQUIRED:
+`;
+
+                if (keyChanges.length > 0) {
+                    keyChanges.forEach((change, index) => {
+                        emailBody += `\n${index + 1}. ${change.issue}\n`;
+                        change.actions.forEach(action => {
+                            emailBody += `   • ${action}\n`;
+                        });
+                    });
+                } else {
+                    emailBody += `\nPlease review the attached updated care plan for detailed changes and recommendations.`;
+                }
+
+                emailBody += `\nPLEASE:
+• Review and implement changes immediately
+• Update care staff on new procedures
+• Monitor resident response to changes
+• Report any concerns to management
+
+Full care plan document attached.
+
+Care Management Team
+Generated: ${new Date().toLocaleDateString()}`;
+
+                const body = encodeURIComponent(emailBody);
                 const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
                 window.open(gmailUrl, '_blank');
             }
