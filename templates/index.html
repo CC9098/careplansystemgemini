@@ -189,7 +189,7 @@
                 <p>${data.analysis_summary}</p>
             `;
 
-            // Display suggestions in WHAT-WHY-HOW format
+            // Display suggestions with specific issues and dynamic options
             const suggestionsList = document.getElementById('suggestionsList');
             suggestionsList.innerHTML = '';
 
@@ -199,14 +199,18 @@
             }
 
             data.suggestions.forEach((suggestion, index) => {
+                const issueIcon = suggestion.icon || '📋';
+                const specificIssue = suggestion.specific_issue || suggestion.suggestion || 'Care Issue';
+                const description = suggestion.description || suggestion.reason || 'No description available';
+                
                 const div = document.createElement('div');
                 div.className = 'suggestion-card';
                 div.innerHTML = `
                     <div class="suggestion-header priority-${suggestion.priority ? suggestion.priority.toLowerCase() : 'medium'}" onclick="toggleSuggestion(${index})">
                         <div class="what-section">
                             <span class="priority priority-${suggestion.priority ? suggestion.priority.toLowerCase() : 'medium'}">${suggestion.priority || 'Medium'}</span>
-                            <strong>📋 ${suggestion.category || 'General'}</strong>
-                            <p class="problem-statement">${suggestion.suggestion || 'No suggestion text available'}</p>
+                            <strong>${issueIcon} ${specificIssue}</strong>
+                            <p class="problem-statement">${description}</p>
                         </div>
                         <span class="expand-icon">▼</span>
                     </div>
@@ -215,11 +219,7 @@
                         <div class="why-section">
                             <h4>🤔 Possible Reasons (select all that apply):</h4>
                             <div class="checkbox-group">
-                                <label><input type="checkbox" name="reason-${index}" value="0"> Medical condition changes</label>
-                                <label><input type="checkbox" name="reason-${index}" value="1"> Environmental factors</label>
-                                <label><input type="checkbox" name="reason-${index}" value="2"> Medication side effects</label>
-                                <label><input type="checkbox" name="reason-${index}" value="3"> Behavioral patterns</label>
-                                <label><input type="checkbox" name="reason-${index}" value="4"> Care routine issues</label>
+                                ${generateReasonCheckboxes(suggestion.possible_reasons || [], index)}
                                 <label class="custom-reason">
                                     <input type="checkbox" name="reason-${index}" value="custom"> Other: 
                                     <input type="text" name="custom-reason-${index}" placeholder="Specify custom reason">
@@ -230,12 +230,7 @@
                         <div class="how-section">
                             <h4>✅ Suggested Interventions (select all that apply):</h4>
                             <div class="checkbox-group">
-                                <label><input type="checkbox" name="intervention-${index}" value="0"> Increase monitoring frequency</label>
-                                <label><input type="checkbox" name="intervention-${index}" value="1"> Adjust care schedule</label>
-                                <label><input type="checkbox" name="intervention-${index}" value="2"> Consult healthcare professional</label>
-                                <label><input type="checkbox" name="intervention-${index}" value="3"> Update safety protocols</label>
-                                <label><input type="checkbox" name="intervention-${index}" value="4"> Staff training enhancement</label>
-                                <label><input type="checkbox" name="intervention-${index}" value="5"> Environmental modifications</label>
+                                ${generateInterventionCheckboxes(suggestion.suggested_interventions || [], index)}
                                 <label class="custom-intervention">
                                     <input type="checkbox" name="intervention-${index}" value="custom"> Custom: 
                                     <input type="text" name="custom-intervention-${index}" placeholder="Specify custom intervention">
@@ -246,13 +241,25 @@
                         <div class="include-section">
                             <label class="include-suggestion">
                                 <input type="checkbox" name="include-suggestion" value="${index}">
-                                <strong>Include this suggestion in final care plan</strong>
+                                <strong>Include this issue in final care plan</strong>
                             </label>
                         </div>
                     </div>
                 `;
                 suggestionsList.appendChild(div);
             });
+        }
+
+        function generateReasonCheckboxes(reasons, index) {
+            return reasons.map((reason, i) => 
+                `<label><input type="checkbox" name="reason-${index}" value="${i}"> ${reason}</label>`
+            ).join('');
+        }
+
+        function generateInterventionCheckboxes(interventions, index) {
+            return interventions.map((intervention, i) => 
+                `<label><input type="checkbox" name="intervention-${index}" value="${i}"> ${intervention}</label>`
+            ).join('');
         }
 
         function toggleSuggestion(index) {
@@ -305,8 +312,10 @@
                             const customReason = document.querySelector(`input[name="custom-reason-${index}"]`).value;
                             if (customReason) reasons.push(customReason);
                         } else {
-                            const reasonText = cb.parentElement.textContent.trim();
-                            reasons.push(reasonText);
+                            const reasonIndex = parseInt(cb.value);
+                            if (suggestion.possible_reasons && suggestion.possible_reasons[reasonIndex]) {
+                                reasons.push(suggestion.possible_reasons[reasonIndex]);
+                            }
                         }
                     });
 
@@ -318,8 +327,10 @@
                             const customIntervention = document.querySelector(`input[name="custom-intervention-${index}"]`).value;
                             if (customIntervention) interventions.push(customIntervention);
                         } else {
-                            const interventionText = cb.parentElement.textContent.trim();
-                            interventions.push(interventionText);
+                            const interventionIndex = parseInt(cb.value);
+                            if (suggestion.suggested_interventions && suggestion.suggested_interventions[interventionIndex]) {
+                                interventions.push(suggestion.suggested_interventions[interventionIndex]);
+                            }
                         }
                     });
 

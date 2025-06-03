@@ -118,7 +118,7 @@ def extract_daily_data(daily_log_content):
 def analyze_and_suggest_changes(daily_log, current_care_plan, resident_name):
     """Step 1: Analyze and suggest changes"""
 
-    prompt = f"""You are a care home management assistant. Your task is to analyze the resident's care log and current care plan, then provide specific suggestions for updating the care plan.
+    prompt = f"""You are a care home management assistant. Your task is to analyze the resident's care log and current care plan, then identify specific behavioral or care issues that need attention.
 
 RESIDENT: {resident_name}
 
@@ -128,7 +128,7 @@ CARE LOG (this month):
 CURRENT CARE PLAN:
 {current_care_plan}
 
-Please analyze the care log and current care plan, then provide a list of specific, actionable suggestions for updating the care plan.
+Please analyze the care log and identify specific, concrete issues that need to be addressed. For each issue, provide customized possible reasons and suggested interventions based on the specific situation.
 
 Format your response as a JSON object with this structure:
 {{
@@ -137,19 +137,36 @@ Format your response as a JSON object with this structure:
         {{
             "id": 1,
             "category": "Personal Care|Eating & Drinking|Continence|Mobility|Health & Medication|Daily Routine|Skin Care|Choice & Communication|Behavior|Other",
-            "suggestion": "Specific, actionable suggestion text",
-            "reason": "Brief explanation of why this change is needed based on the log data",
-            "priority": "High|Medium|Low"
+            "specific_issue": "Specific concrete issue (e.g., 'Aggressive Behavior During Meal Times', 'Refusing Personal Care', 'Frequent Night-time Wandering')",
+            "description": "Detailed description of the issue based on log evidence",
+            "priority": "High|Medium|Low",
+            "icon": "😡|😰|😴|🚶|💊|🍽️|🚿|🗣️|⚠️|📋",
+            "possible_reasons": [
+                "Specific reason 1 related to this issue",
+                "Specific reason 2 related to this issue",
+                "Specific reason 3 related to this issue",
+                "Specific reason 4 related to this issue",
+                "Specific reason 5 related to this issue"
+            ],
+            "suggested_interventions": [
+                "Specific intervention 1 for this issue",
+                "Specific intervention 2 for this issue", 
+                "Specific intervention 3 for this issue",
+                "Specific intervention 4 for this issue",
+                "Specific intervention 5 for this issue"
+            ]
         }}
     ]
 }}
 
 Guidelines:
-- Each suggestion should be specific and actionable
-- Base suggestions only on evidence found in the care log
-- Include 5-15 suggestions maximum
-- Prioritize suggestions that address safety, health, or significant changes in behavior/needs
-- Make suggestions suitable for checkbox selection by a manager"""
+- Identify 5-12 specific, concrete issues (not generic categories)
+- Each issue should be a specific problem like "Aggressive Behavior During Meal Times" or "Refusing Medication"
+- Generate 5 specific possible reasons for each issue based on the context
+- Generate 5 specific interventions for each issue
+- Choose appropriate icons that match the issue type
+- Base all suggestions on evidence found in the care log
+- Make issues specific enough that care staff can understand exactly what to address"""
 
     try:
         message = client.messages.create(
@@ -178,57 +195,68 @@ Guidelines:
         }
 
 def generate_final_care_plan(original_care_plan, selected_suggestions, manager_comments, resident_name):
-    """Step 3: Generate final care plan based on selected suggestions with WHAT-WHY-HOW structure"""
+    """Step 3: Generate final care plan by integrating selected content without creating new content"""
+    
+    # Get current date
+    from datetime import datetime
+    today = datetime.now().strftime('%Y-%m-%d')
+    
+    # Format selected suggestions exactly as manager selected them
+    selected_updates = ""
+    if selected_suggestions:
+        selected_updates += "\n## ✏️ Recent Updates\n\n"
+        
+        for i, suggestion in enumerate(selected_suggestions, 1):
+            selected_updates += f"### ✏️ {suggestion.get('specific_issue', suggestion.get('suggestion', 'Update'))}\n"
+            selected_updates += f"**Issue:** {suggestion.get('description', suggestion.get('suggestion', ''))}\n\n"
+            
+            if suggestion.get('reasons'):
+                selected_updates += f"**Contributing Factors:**\n"
+                for reason in suggestion['reasons']:
+                    selected_updates += f"• {reason}\n"
+                selected_updates += "\n"
+            
+            if suggestion.get('interventions'):
+                selected_updates += f"**Actions to Take:**\n"
+                for intervention in suggestion['interventions']:
+                    selected_updates += f"• {intervention}\n"
+                selected_updates += "\n"
 
-    # Format selected suggestions with clear structure
-    selected_text = ""
-    for i, suggestion in enumerate(selected_suggestions, 1):
-        selected_text += f"\n## Update {i}: {suggestion['category']}\n"
-        selected_text += f"**Issue Identified:** {suggestion['suggestion']}\n"
-        selected_text += f"**Background:** {suggestion['reason']}\n\n"
+    prompt = f"""You are a professional care home management assistant. Your task is to rewrite and organize the existing care plan, incorporating the manager's selected updates exactly as provided.
 
-        if suggestion.get('reasons'):
-            selected_text += f"**Contributing Factors:**\n"
-            for reason in suggestion['reasons']:
-                selected_text += f"• {reason}\n"
-            selected_text += "\n"
-
-        if suggestion.get('interventions'):
-            selected_text += f"**Recommended Actions:**\n"
-            for intervention in suggestion['interventions']:
-                selected_text += f"• {intervention}\n"
-            selected_text += "\n"
-
-    prompt = f"""You are a professional care home management assistant. Generate a comprehensive, updated care plan for resident "{resident_name}".
-
-📋 **ORIGINAL CARE PLAN:**
+**ORIGINAL CARE PLAN:**
 {original_care_plan}
 
-🔄 **MANAGER'S SELECTED UPDATES:**
-{selected_text}
+**MANAGER'S SELECTED UPDATES TO INTEGRATE:**
+{selected_updates}
 
-💬 **MANAGER'S ADDITIONAL COMMENTS:**
+**MANAGER'S ADDITIONAL COMMENTS:**
 {manager_comments}
 
+**TODAY'S DATE:** {today}
+
 **INSTRUCTIONS:**
-Create a completely updated care plan that:
-1. ✅ Integrates all selected interventions from the analysis
-2. 🔄 Updates existing sections based on identified problems
-3. ➕ Adds new care protocols where needed
-4. 💬 Incorporates manager's additional comments
-5. 📝 Ensures all interventions are specific and actionable
-6. 🎯 Mark ONLY the most important NEW additions with a single pen emoji (✏️) - use sparingly
+1. 📋 **Rewrite the original care plan** - keep all existing content but organize it clearly and concisely
+2. 🔄 **Integrate the selected updates exactly as provided** - do not modify or create new content for the updates
+3. 💬 **Add manager's comments** if provided
+4. 📅 **Add update tracking information**
+
+**IMPORTANT RULES:**
+- Do NOT create or modify the content of the selected updates
+- Do NOT add new interventions beyond what the manager selected
+- Only reformat and organize existing content clearly
+- Keep the ✏️ symbols only where they already appear in the selected updates
+- Maintain all original care plan content unless it directly conflicts with selected updates
+- Include "Last Updated: {today}" at the top
+- If there was a previous update date in the original plan, preserve it as "Previous Update: [date]"
 
 **FORMAT REQUIREMENTS:**
-- Use clear headings with minimal emojis
-- Structure as: Personal Care, Daily Routine, Health Monitoring, Safety Protocols, etc.
-- Make each instruction specific and measurable
-- Include frequency, timing, and responsible staff where applicable
-- Use ✏️ symbol only for truly significant new interventions (maximum 3-5 items)
-- Maintain professional tone suitable for healthcare documentation
-- Focus on practical, actionable care instructions
+- Start with update tracking dates
+- Clear section headers (Personal Care, Daily Routine, Health Monitoring, etc.)
+- Professional healthcare documentation style
+- Organize content logically and concisely
 
-Generate ONLY the final updated care plan - do not include analysis or process notes."""
+Generate the complete updated care plan following these exact requirements."""
 
     try:
         message = client.messages.create(
