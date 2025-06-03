@@ -112,7 +112,13 @@
                     <div class="action-buttons">
                         <button id="copyContentBtn" class="action-btn">📋 Copy Content</button>
                         <button id="editBtn" class="action-btn">✏️ Edit Plan</button>
-                        <button id="emailBtn" class="action-btn">📧 Email Plan</button>
+                        <div class="email-dropdown">
+                            <button id="emailBtn" class="action-btn dropdown-toggle">📧 Email Plan ▼</button>
+                            <div class="email-options">
+                                <button id="emailCareTeamBtn" class="email-option">👥 Email Care Team</button>
+                                <button id="emailFamilyBtn" class="email-option">👨‍👩‍👧‍👦 Email Family</button>
+                            </div>
+                        </div>
                         <button id="downloadBtn" class="action-btn">📥 Download PDF</button>
                         <button id="startOverBtn" class="action-btn">🔄 Start Over</button>
                     </div>
@@ -481,10 +487,30 @@
             }
         });
 
-        // Email functionality - Open Gmail with pre-filled content focused on care plan changes
-        document.getElementById('emailBtn').addEventListener('click', function() {
+        // Email dropdown toggle
+        document.getElementById('emailBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const dropdown = this.parentElement;
+            const options = dropdown.querySelector('.email-options');
+            const isVisible = options.style.display === 'block';
+            
+            // Hide all other dropdowns first
+            document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+            
+            options.style.display = isVisible ? 'none' : 'block';
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.email-dropdown')) {
+                document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+            }
+        });
+
+        // Email to Care Team functionality
+        document.getElementById('emailCareTeamBtn').addEventListener('click', function() {
             if (window.currentReport) {
-                const subject = encodeURIComponent(`Care Plan Update - ${window.currentReport.resident_name}`);
+                const subject = encodeURIComponent(`URGENT: Care Plan Update - ${window.currentReport.resident_name}`);
                 
                 // Extract key changes from the care plan
                 const content = window.currentReport.content;
@@ -518,12 +544,12 @@
                     });
                 }
                 
-                // Generate focused email body
+                // Generate Care Team email body
                 let emailBody = `Dear Care Team,
 
-Updated care plan for ${window.currentReport.resident_name} is ready for implementation.
+Updated care plan for ${window.currentReport.resident_name} is ready for IMMEDIATE implementation.
 
-KEY CHANGES REQUIRED:
+🚨 KEY CHANGES REQUIRED:
 `;
 
                 if (keyChanges.length > 0) {
@@ -537,21 +563,123 @@ KEY CHANGES REQUIRED:
                     emailBody += `\nPlease review the attached updated care plan for detailed changes and recommendations.`;
                 }
 
-                emailBody += `\nPLEASE:
-• Review and implement changes immediately
-• Update care staff on new procedures
-• Monitor resident response to changes
-• Report any concerns to management
+                emailBody += `\n📋 ACTION REQUIRED:
+• Review and implement changes during next shift
+• Brief all care staff on new procedures
+• Monitor resident response closely
+• Document any observations or concerns
+• Report issues to nursing supervisor immediately
 
-Full care plan document attached.
+⏰ IMPLEMENTATION DEADLINE: Next shift
+📞 Questions? Contact Nursing Supervisor
+📄 Full care plan document attached
 
 Care Management Team
-Generated: ${new Date().toLocaleDateString()}`;
+Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
 
                 const body = encodeURIComponent(emailBody);
                 const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
                 window.open(gmailUrl, '_blank');
             }
+            
+            // Hide dropdown
+            document.querySelector('.email-options').style.display = 'none';
+        });
+
+        // Email to Family functionality
+        document.getElementById('emailFamilyBtn').addEventListener('click', function() {
+            if (window.currentReport) {
+                const subject = encodeURIComponent(`Care Plan Update - ${window.currentReport.resident_name}`);
+                
+                // Extract key changes for family communication
+                const content = window.currentReport.content;
+                let familyUpdates = [];
+                
+                // Look for update sections marked with ✏️
+                const updateSections = content.match(/##\s*✏️[^#]*(?:#[^#][^#]*)*?(?=##|$)/g);
+                if (updateSections) {
+                    updateSections.forEach(section => {
+                        const lines = section.split('\n');
+                        const title = lines[0].replace(/##\s*✏️\s*/, '').trim();
+                        
+                        // Extract key reasons/background for family understanding
+                        const reasons = [];
+                        lines.forEach(line => {
+                            if (line.includes('**Contributing Factors:**')) {
+                                let i = lines.indexOf(line) + 1;
+                                while (i < lines.length && lines[i].startsWith('•')) {
+                                    reasons.push(lines[i].replace('•', '').trim());
+                                    i++;
+                                }
+                            }
+                        });
+                        
+                        if (reasons.length > 0) {
+                            familyUpdates.push({
+                                issue: title,
+                                background: reasons.slice(0, 2) // Top 2 reasons for context
+                            });
+                        }
+                    });
+                }
+                
+                // Generate Family email body
+                let emailBody = `Dear Family,
+
+We hope this message finds you well. We wanted to update you on ${window.currentReport.resident_name}'s care plan and seek your valuable input.
+
+🏥 CARE PLAN UPDATES:
+
+Our care team has been closely monitoring ${window.currentReport.resident_name} and has identified some areas where we can enhance their care experience:
+`;
+
+                if (familyUpdates.length > 0) {
+                    familyUpdates.forEach((update, index) => {
+                        emailBody += `\n${index + 1}. ${update.issue}\n`;
+                        emailBody += `   Background: We've noticed that `;
+                        update.background.forEach((reason, i) => {
+                            emailBody += `${reason.toLowerCase()}${i < update.background.length - 1 ? ', and ' : ''}`;
+                        });
+                        emailBody += `.\n`;
+                    });
+                } else {
+                    emailBody += `\nWe've made some adjustments to better support ${window.currentReport.resident_name}'s daily care routine.`;
+                }
+
+                emailBody += `\n💭 WE VALUE YOUR INPUT:
+Your insights about ${window.currentReport.resident_name} are invaluable to us. Please share:
+
+• Any concerns or questions about these updates
+• Your observations about ${window.currentReport.resident_name}'s preferences
+• Suggestions based on what works well at home
+• Any family history or context that might help us
+• How you would like us to communicate future updates
+
+🤝 WORKING TOGETHER:
+We believe the best care comes from working closely with families. Your input helps us provide personalized, compassionate care that respects ${window.currentReport.resident_name}'s individual needs and preferences.
+
+📞 NEXT STEPS:
+Please feel free to:
+• Reply to this email with your thoughts
+• Call us at [PHONE NUMBER] to discuss
+• Schedule a meeting with the care team
+• Visit and observe the new care approaches
+
+We're committed to keeping you informed and involved in ${window.currentReport.resident_name}'s care journey.
+
+With warm regards,
+The Care Management Team
+${new Date().toLocaleDateString()}
+
+P.S. The full care plan document is attached for your reference.`;
+
+                const body = encodeURIComponent(emailBody);
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
+                window.open(gmailUrl, '_blank');
+            }
+            
+            // Hide dropdown
+            document.querySelector('.email-options').style.display = 'none';
         });
 
         // Download functionality (PDF)
