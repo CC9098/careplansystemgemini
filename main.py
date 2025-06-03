@@ -216,14 +216,15 @@ Create a completely updated care plan that:
 2. 🔄 Updates existing sections based on identified problems
 3. ➕ Adds new care protocols where needed
 4. 💬 Incorporates manager's additional comments
-5. 📝 Maintains professional formatting suitable for care staff
-6. 🎯 Ensures all interventions are specific and actionable
+5. 📝 Ensures all interventions are specific and actionable
+6. 🎯 Mark all NEW additions with a pen emoji (✏️) at the beginning of the line
 
 **FORMAT REQUIREMENTS:**
-- Use clear headings with appropriate icons
+- Use clear headings with appropriate emojis
 - Structure as: Personal Care, Daily Routine, Health Monitoring, Safety Protocols, etc.
 - Make each instruction specific and measurable
 - Include frequency, timing, and responsible staff where applicable
+- Mark ALL new interventions and protocols with ✏️ symbol
 - Maintain professional tone suitable for healthcare documentation
 
 Generate ONLY the final updated care plan - do not include analysis or process notes."""
@@ -477,7 +478,7 @@ def generate_care_plan():
 
     try:
         data = request.get_json()
-        
+
         if not data:
             return jsonify({'error': 'No JSON data received'}), 400
 

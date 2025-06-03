@@ -755,11 +755,22 @@ footer::before {
 .suggestion-header {
     cursor: pointer;
     padding: 20px;
-    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
     color: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.suggestion-header.priority-high {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+}
+
+.suggestion-header.priority-medium {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+}
+
+.suggestion-header.priority-low {
+    background: linear-gradient(135deg, #28a745, #20c997);
 }
 
 .what-section h3 {
@@ -784,8 +795,19 @@ footer::before {
 
 .why-section {
     padding: 20px;
-    background: linear-gradient(135deg, #ffc107, #ffb300);
     color: #333;
+}
+
+.why-section.priority-high {
+    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+}
+
+.why-section.priority-medium {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+}
+
+.why-section.priority-low {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
 }
 
 .why-section h4 {
@@ -795,13 +817,24 @@ footer::before {
 
 .how-section {
     padding: 20px;
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
+    color: #333;
+}
+
+.how-section.priority-high {
+    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+}
+
+.how-section.priority-medium {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+}
+
+.how-section.priority-low {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
 }
 
 .how-section h4 {
     margin: 0 0 15px 0;
-    color: white;
+    color: #333;
 }
 
 .include-section {
@@ -828,16 +861,18 @@ footer::before {
 }
 
 .checkbox-group label:hover {
-    background: rgba(255,255,255,0.2);
+    background: rgba(0,0,0,0.05);
 }
 
-.why-section .checkbox-group label {
-    background: rgba(0,0,0,0.1);
+.why-section .checkbox-group label,
+.how-section .checkbox-group label {
+    background: rgba(0,0,0,0.05);
     color: #333;
 }
 
-.why-section .checkbox-group label:hover {
-    background: rgba(0,0,0,0.15);
+.why-section .checkbox-group label:hover,
+.how-section .checkbox-group label:hover {
+    background: rgba(0,0,0,0.1);
 }
 
 .checkbox-group input[type="checkbox"] {
@@ -1142,6 +1177,104 @@ footer::before {
     padding: 8px 12px;
     font-size: 0.8em;
   }
+}
+
+/* Modal styles */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 30px;
+    border: none;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 20px;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+}
+
+.modal-content h3 {
+    margin: 0 0 20px 0;
+    color: var(--text-color);
+}
+
+.modal-content .form-group {
+    margin-bottom: 20px;
+}
+
+.modal-content .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.modal-content .form-group input,
+.modal-content .form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: inherit;
+}
+
+.modal-content .form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.form-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.action-btn.primary {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+.action-btn.primary:hover {
+    background-color: var(--primary-dark);
+}
+
+/* New content indicator */
+.new-content {
+    position: relative;
+    padding-left: 25px;
+}
+
+.new-content::before {
+    content: "✏️";
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 16px;
 }
 
 /* Brand styles */
