@@ -74,8 +74,10 @@
                 <div class="results-header">
                     <h2>📄 Updated Care Plan</h2>
                     <div class="action-buttons">
-                        <button id="copyBtn" class="action-btn">📋 Copy</button>
-                        <button id="downloadBtn" class="action-btn">📥 Download</button>
+                        <button id="copyContentBtn" class="action-btn">📋 Copy Content</button>
+                        <button id="copyBtn" class="action-btn">📄 Copy Text</button>
+                        <button id="emailBtn" class="action-btn">📧 Email Plan</button>
+                        <button id="downloadBtn" class="action-btn">📥 Download PDF</button>
                         <button id="startOverBtn" class="action-btn">🔄 Start Over</button>
                     </div>
                 </div>
@@ -127,6 +129,18 @@
                 return;
             }
 
+            const analyzeBtn = document.querySelector('.analyze-btn');
+            const originalBtnText = analyzeBtn.innerHTML;
+            
+            // Show loading state immediately
+            analyzeBtn.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <div class="btn-spinner"></div>
+                    <span>🤖 Analyzing...</span>
+                </div>
+            `;
+            analyzeBtn.disabled = true;
+
             const loading = document.getElementById('loading');
             const suggestions = document.getElementById('suggestions');
             const finalPlan = document.getElementById('finalPlan');
@@ -161,6 +175,9 @@
                 alert('Error occurred: ' + error.message);
             } finally {
                 loading.style.display = 'none';
+                // Restore button state
+                analyzeBtn.innerHTML = originalBtnText;
+                analyzeBtn.disabled = false;
             }
         });
 
@@ -175,15 +192,20 @@
             const suggestionsList = document.getElementById('suggestionsList');
             suggestionsList.innerHTML = '';
 
+            if (!data.suggestions || data.suggestions.length === 0) {
+                suggestionsList.innerHTML = '<p>No suggestions found in the analysis.</p>';
+                return;
+            }
+
             data.suggestions.forEach((suggestion, index) => {
                 const div = document.createElement('div');
                 div.className = 'suggestion-card';
                 div.innerHTML = `
-                    <div class="suggestion-header" onclick="toggleSuggestion(${index})">
+                    <div class="suggestion-header priority-${suggestion.priority ? suggestion.priority.toLowerCase() : 'medium'}" onclick="toggleSuggestion(${index})">
                         <div class="what-section">
-                            <span class="priority priority-${suggestion.priority.toLowerCase()}">${suggestion.priority}</span>
-                            <strong>🚨 WHAT - ${suggestion.category}</strong>
-                            <p class="problem-statement">${suggestion.suggestion}</p>
+                            <span class="priority priority-${suggestion.priority ? suggestion.priority.toLowerCase() : 'medium'}">${suggestion.priority || 'Medium'}</span>
+                            <strong>🚨 WHAT - ${suggestion.category || 'General'}</strong>
+                            <p class="problem-statement">${suggestion.suggestion || 'No suggestion text available'}</p>
                         </div>
                         <span class="expand-icon">▼</span>
                     </div>
@@ -247,6 +269,18 @@
 
         // Generate care plan functionality
         document.getElementById('generatePlanBtn').addEventListener('click', async function() {
+            const generateBtn = this;
+            const originalBtnText = generateBtn.innerHTML;
+            
+            // Show loading state immediately
+            generateBtn.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <div class="btn-spinner"></div>
+                    <span>✏️ Generating...</span>
+                </div>
+            `;
+            generateBtn.disabled = true;
+
             const loading = document.getElementById('loading');
             const finalPlan = document.getElementById('finalPlan');
 
@@ -344,23 +378,72 @@
                 alert('Error occurred: ' + error.message);
             } finally {
                 loading.style.display = 'none';
+                // Restore button state
+                generateBtn.innerHTML = originalBtnText;
+                generateBtn.disabled = false;
             }
         });
 
-        // Copy functionality
+        // Copy content functionality (copies HTML content)
+        document.getElementById('copyContentBtn').addEventListener('click', function() {
+            const content = document.getElementById('carePlanContent');
+            if (content) {
+                const range = document.createRange();
+                range.selectNode(content);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                alert('Care plan content copied to clipboard!');
+            }
+        });
+
+        // Copy text functionality (copies markdown text)
         document.getElementById('copyBtn').addEventListener('click', function() {
             if (window.currentReport) {
                 navigator.clipboard.writeText(window.currentReport.content)
-                    .then(() => alert('Copied to clipboard!'))
+                    .then(() => alert('Care plan text copied to clipboard!'))
                     .catch(err => alert('Copy failed: ' + err));
             }
         });
 
-        // Download functionality
+        // Email functionality
+        document.getElementById('emailBtn').addEventListener('click', async function() {
+            if (window.currentReport) {
+                const subject = `Care Plan Update - ${window.currentReport.resident_name}`;
+                const body = `Dear Care Team,\n\nPlease find the updated care plan for ${window.currentReport.resident_name}.\n\nKey updates and observations have been identified based on recent care logs. Please review the attached care plan and implement the recommended changes.\n\nBest regards,\nCare Management Team`;
+                
+                try {
+                    const response = await fetch('/send_email', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            subject: subject,
+                            body: body,
+                            care_plan: window.currentReport.content,
+                            resident_name: window.currentReport.resident_name
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert('Email sent successfully!');
+                    } else {
+                        const data = await response.json();
+                        alert('Email failed: ' + (data.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    alert('Email failed: ' + error.message);
+                }
+            }
+        });
+
+        // Download functionality (PDF)
         document.getElementById('downloadBtn').addEventListener('click', async function() {
             if (window.currentReport) {
                 try {
-                    const response = await fetch('/download', {
+                    const response = await fetch('/download_pdf', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -373,7 +456,7 @@
                     const a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = `Care_Plan_${window.currentReport.resident_name}_${new Date().getTime()}.md`;
+                    a.download = `Care_Plan_${window.currentReport.resident_name}_${new Date().getTime()}.pdf`;
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);

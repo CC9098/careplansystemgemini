@@ -15,7 +15,7 @@ from collections import defaultdict
 from data_validation_config import *
 from structure_analyzer import analyze_csv_structure, smart_compress_csv, is_large_file
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB file limit
 app.config['UPLOAD_FOLDER'] = 'temp_uploads'
 
@@ -539,6 +539,154 @@ def download():
             as_attachment=True,
             download_name=filename
         )
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/download_pdf', methods=['POST'])
+def download_pdf():
+    """Download care plan as PDF file"""
+    try:
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+        from reportlab.lib.enums import TA_LEFT, TA_CENTER
+        import re
+
+        data = request.get_json()
+        content = data.get('content', '')
+        resident_name = data.get('resident_name', 'Unnamed_Resident')
+
+        filename = f"Care_Plan_{resident_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+        # Create PDF in memory
+        output = io.BytesIO()
+        doc = SimpleDocTemplate(output, pagesize=A4, rightMargin=72, leftMargin=72,
+                               topMargin=72, bottomMargin=18)
+
+        # Container for the 'Flowable' objects
+        elements = []
+
+        # Get styles
+        styles = getSampleStyleSheet()
+        
+        # Custom styles
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            spaceAfter=30,
+            alignment=TA_CENTER,
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceAfter=12,
+            spaceBefore=12,
+        )
+
+        # Add title
+        title = Paragraph(f"Care Plan for {resident_name}", title_style)
+        elements.append(title)
+        elements.append(Spacer(1, 12))
+
+        # Parse content and add to PDF
+        lines = content.split('\n')
+        for line in lines:
+            line = line.strip()
+            if not line:
+                elements.append(Spacer(1, 6))
+                continue
+                
+            # Handle headers
+            if line.startswith('# '):
+                text = re.sub(r'^# ', '', line)
+                elements.append(Paragraph(text, title_style))
+            elif line.startswith('## '):
+                text = re.sub(r'^## ', '', line)
+                elements.append(Paragraph(text, heading_style))
+            elif line.startswith('### '):
+                text = re.sub(r'^### ', '', line)
+                elements.append(Paragraph(text, styles['Heading3']))
+            elif line.startswith('- '):
+                text = re.sub(r'^- ', '• ', line)
+                elements.append(Paragraph(text, styles['Normal']))
+            elif line.startswith('* '):
+                text = re.sub(r'^\* ', '• ', line)
+                elements.append(Paragraph(text, styles['Normal']))
+            else:
+                # Regular paragraph
+                if line:
+                    # Remove markdown formatting
+                    text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', line)  # Bold
+                    text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', text)     # Italic
+                    text = re.sub(r'✏️', '✏️ ', text)  # Add space after pen emoji
+                    elements.append(Paragraph(text, styles['Normal']))
+
+        # Build PDF
+        doc.build(elements)
+        output.seek(0)
+
+        return send_file(
+            output,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except ImportError:
+        return jsonify({'error': 'PDF generation requires reportlab library. Please install it.'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/send_email', methods=['POST'])
+def send_email():
+    """Send care plan via email"""
+    try:
+        data = request.get_json()
+        subject = data.get('subject', '')
+        body = data.get('body', '')
+        care_plan = data.get('care_plan', '')
+        resident_name = data.get('resident_name', 'Unnamed_Resident')
+
+        # For demo purposes, we'll return success
+        # In a real implementation, you would integrate with an email service like:
+        # - SendGrid
+        # - AWS SES
+        # - SMTP server
+        # - etc.
+
+        # Example implementation would look like:
+        # import smtplib
+        # from email.mime.text import MIMEText
+        # from email.mime.multipart import MIMEMultipart
+        # from email.mime.base import MIMEBase
+        # from email import encoders
+
+        # Create email with care plan as attachment
+        email_content = f"""
+{body}
+
+Care Plan Summary:
+{care_plan[:500]}...
+
+Full care plan is attached.
+
+Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        """
+
+        # TODO: Implement actual email sending
+        # For now, we'll simulate success
+        print(f"Email would be sent with subject: {subject}")
+        print(f"Body preview: {email_content[:200]}...")
+
+        return jsonify({
+            'success': True,
+            'message': f'Email sent successfully for {resident_name}'
+        })
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

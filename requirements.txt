@@ -5,3 +5,5 @@ markdown
 werkzeug
 PyPDF2
 PyPDF2
+reportlab
+reportlab
