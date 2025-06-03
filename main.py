@@ -180,21 +180,21 @@ Guidelines:
 def generate_final_care_plan(original_care_plan, selected_suggestions, manager_comments, resident_name):
     """Step 3: Generate final care plan based on selected suggestions with WHAT-WHY-HOW structure"""
 
-    # Format selected suggestions with detailed WHAT-WHY-HOW structure
+    # Format selected suggestions with clear structure
     selected_text = ""
     for i, suggestion in enumerate(selected_suggestions, 1):
         selected_text += f"\n## Update {i}: {suggestion['category']}\n"
-        selected_text += f"**🚨 WHAT (Problem):** {suggestion['suggestion']}\n"
-        selected_text += f"**Original Reason:** {suggestion['reason']}\n\n"
+        selected_text += f"**Issue Identified:** {suggestion['suggestion']}\n"
+        selected_text += f"**Background:** {suggestion['reason']}\n\n"
 
         if suggestion.get('reasons'):
-            selected_text += f"**🤔 WHY (Manager's Selected Reasons):**\n"
+            selected_text += f"**Contributing Factors:**\n"
             for reason in suggestion['reasons']:
                 selected_text += f"• {reason}\n"
             selected_text += "\n"
 
         if suggestion.get('interventions'):
-            selected_text += f"**✅ HOW (Selected Interventions):**\n"
+            selected_text += f"**Recommended Actions:**\n"
             for intervention in suggestion['interventions']:
                 selected_text += f"• {intervention}\n"
             selected_text += "\n"
@@ -212,20 +212,21 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
 
 **INSTRUCTIONS:**
 Create a completely updated care plan that:
-1. ✅ Integrates all selected interventions from the WHAT-WHY-HOW analysis
+1. ✅ Integrates all selected interventions from the analysis
 2. 🔄 Updates existing sections based on identified problems
 3. ➕ Adds new care protocols where needed
 4. 💬 Incorporates manager's additional comments
 5. 📝 Ensures all interventions are specific and actionable
-6. 🎯 Mark all NEW additions with a pen emoji (✏️) at the beginning of the line
+6. 🎯 Mark ONLY the most important NEW additions with a single pen emoji (✏️) - use sparingly
 
 **FORMAT REQUIREMENTS:**
-- Use clear headings with appropriate emojis
+- Use clear headings with minimal emojis
 - Structure as: Personal Care, Daily Routine, Health Monitoring, Safety Protocols, etc.
 - Make each instruction specific and measurable
 - Include frequency, timing, and responsible staff where applicable
-- Mark ALL new interventions and protocols with ✏️ symbol
+- Use ✏️ symbol only for truly significant new interventions (maximum 3-5 items)
 - Maintain professional tone suitable for healthcare documentation
+- Focus on practical, actionable care instructions
 
 Generate ONLY the final updated care plan - do not include analysis or process notes."""
 

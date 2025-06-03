@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🏥 Care Plan AI Analysis Platform</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -75,7 +76,7 @@
                     <h2>📄 Updated Care Plan</h2>
                     <div class="action-buttons">
                         <button id="copyContentBtn" class="action-btn">📋 Copy Content</button>
-                        <button id="copyBtn" class="action-btn">📄 Copy Text</button>
+                        <button id="editBtn" class="action-btn">✏️ Edit Plan</button>
                         <button id="emailBtn" class="action-btn">📧 Email Plan</button>
                         <button id="downloadBtn" class="action-btn">📥 Download PDF</button>
                         <button id="startOverBtn" class="action-btn">🔄 Start Over</button>
@@ -204,7 +205,7 @@
                     <div class="suggestion-header priority-${suggestion.priority ? suggestion.priority.toLowerCase() : 'medium'}" onclick="toggleSuggestion(${index})">
                         <div class="what-section">
                             <span class="priority priority-${suggestion.priority ? suggestion.priority.toLowerCase() : 'medium'}">${suggestion.priority || 'Medium'}</span>
-                            <strong>🚨 WHAT - ${suggestion.category || 'General'}</strong>
+                            <strong>📋 ${suggestion.category || 'General'}</strong>
                             <p class="problem-statement">${suggestion.suggestion || 'No suggestion text available'}</p>
                         </div>
                         <span class="expand-icon">▼</span>
@@ -212,7 +213,7 @@
 
                     <div id="suggestion-details-${index}" class="suggestion-details" style="display: none;">
                         <div class="why-section">
-                            <h4>🤔 WHY - Possible Reasons (select all that apply):</h4>
+                            <h4>🤔 Possible Reasons (select all that apply):</h4>
                             <div class="checkbox-group">
                                 <label><input type="checkbox" name="reason-${index}" value="0"> Medical condition changes</label>
                                 <label><input type="checkbox" name="reason-${index}" value="1"> Environmental factors</label>
@@ -227,7 +228,7 @@
                         </div>
 
                         <div class="how-section">
-                            <h4>✅ HOW - Suggested Interventions (select all that apply):</h4>
+                            <h4>✅ Suggested Interventions (select all that apply):</h4>
                             <div class="checkbox-group">
                                 <label><input type="checkbox" name="intervention-${index}" value="0"> Increase monitoring frequency</label>
                                 <label><input type="checkbox" name="intervention-${index}" value="1"> Adjust care schedule</label>
@@ -398,44 +399,62 @@
             }
         });
 
-        // Copy text functionality (copies markdown text)
-        document.getElementById('copyBtn').addEventListener('click', function() {
+        // Edit functionality
+        document.getElementById('editBtn').addEventListener('click', function() {
             if (window.currentReport) {
-                navigator.clipboard.writeText(window.currentReport.content)
-                    .then(() => alert('Care plan text copied to clipboard!'))
-                    .catch(err => alert('Copy failed: ' + err));
+                const content = document.getElementById('carePlanContent');
+                const currentHtml = content.innerHTML;
+                
+                // Convert to editable
+                content.innerHTML = `
+                    <div class="edit-container">
+                        <textarea id="editableContent" style="width: 100%; min-height: 400px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 14px; line-height: 1.6;">${window.currentReport.content}</textarea>
+                        <div style="margin-top: 15px; text-align: right;">
+                            <button id="cancelEdit" class="action-btn" style="margin-right: 10px;">Cancel</button>
+                            <button id="saveEdit" class="action-btn primary">Save Changes</button>
+                        </div>
+                    </div>
+                `;
+                
+                // Cancel edit
+                document.getElementById('cancelEdit').addEventListener('click', function() {
+                    content.innerHTML = currentHtml;
+                });
+                
+                // Save edit
+                document.getElementById('saveEdit').addEventListener('click', function() {
+                    const newContent = document.getElementById('editableContent').value;
+                    window.currentReport.content = newContent;
+                    
+                    // Convert back to HTML display
+                    const converter = new showdown.Converter();
+                    content.innerHTML = converter.makeHtml(newContent);
+                    
+                    alert('Changes saved successfully!');
+                });
             }
         });
 
-        // Email functionality
-        document.getElementById('emailBtn').addEventListener('click', async function() {
+        // Email functionality - Open Gmail with pre-filled content
+        document.getElementById('emailBtn').addEventListener('click', function() {
             if (window.currentReport) {
-                const subject = `Care Plan Update - ${window.currentReport.resident_name}`;
-                const body = `Dear Care Team,\n\nPlease find the updated care plan for ${window.currentReport.resident_name}.\n\nKey updates and observations have been identified based on recent care logs. Please review the attached care plan and implement the recommended changes.\n\nBest regards,\nCare Management Team`;
-                
-                try {
-                    const response = await fetch('/send_email', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            subject: subject,
-                            body: body,
-                            care_plan: window.currentReport.content,
-                            resident_name: window.currentReport.resident_name
-                        })
-                    });
+                const subject = encodeURIComponent(`Care Plan Update - ${window.currentReport.resident_name}`);
+                const body = encodeURIComponent(`Dear Care Team,
 
-                    if (response.ok) {
-                        alert('Email sent successfully!');
-                    } else {
-                        const data = await response.json();
-                        alert('Email failed: ' + (data.error || 'Unknown error'));
-                    }
-                } catch (error) {
-                    alert('Email failed: ' + error.message);
-                }
+Please find the updated care plan for ${window.currentReport.resident_name}.
+
+Key updates and observations have been identified based on recent care logs. Please review the attached care plan and implement the recommended changes.
+
+Care Plan Summary:
+${window.currentReport.content.substring(0, 500)}...
+
+Best regards,
+Care Management Team
+
+Note: The full care plan document should be attached separately.`);
+                
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
+                window.open(gmailUrl, '_blank');
             }
         });
 
