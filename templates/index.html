@@ -124,6 +124,21 @@
                     </div>
                 </div>
                 <div id="carePlanContent" class="content"></div>
+                
+                <!-- Bottom Action Buttons -->
+                <div class="action-buttons bottom-actions" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee;">
+                    <button id="copyContentBtnBottom" class="action-btn">📋 Copy Content</button>
+                    <button id="editBtnBottom" class="action-btn">✏️ Edit Plan</button>
+                    <div class="email-dropdown">
+                        <button id="emailBtnBottom" class="action-btn dropdown-toggle">📧 Email Plan ▼</button>
+                        <div class="email-options">
+                            <button id="emailCareTeamBtnBottom" class="email-option">👥 Email Care Team</button>
+                            <button id="emailFamilyBtnBottom" class="email-option">👨‍👩‍👧‍👦 Email Family</button>
+                        </div>
+                    </div>
+                    <button id="downloadBtnBottom" class="action-btn">📥 Download PDF</button>
+                    <button id="startOverBtnBottom" class="action-btn">🔄 Start Over</button>
+                </div>
             </div>
 
 
@@ -471,6 +486,405 @@
 
         // Copy content functionality (copies HTML content)
         document.getElementById('copyContentBtn').addEventListener('click', function() {
+            copyContent();
+        });
+
+        // Edit functionality
+        document.getElementById('editBtn').addEventListener('click', function() {
+            editContent();
+        });
+
+        // Email dropdown toggle
+        document.getElementById('emailBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const dropdown = this.parentElement;
+            const options = dropdown.querySelector('.email-options');
+            const isVisible = options.style.display === 'block';
+            
+            // Hide all other dropdowns first
+            document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+            
+            options.style.display = isVisible ? 'none' : 'block';
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.email-dropdown')) {
+                document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+            }
+        });
+
+        // Email to Care Team functionality
+        document.getElementById('emailCareTeamBtn').addEventListener('click', function() {
+            sendCareTeamEmail();
+            document.querySelector('.email-options').style.display = 'none';
+        });
+
+        // Email to Family functionality
+        document.getElementById('emailFamilyBtn').addEventListener('click', function() {
+            sendFamilyEmail();
+            document.querySelector('.email-options').style.display = 'none';
+        });
+
+        // Add event listeners for bottom buttons
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'emailCareTeamBtnBottom') {
+                sendCareTeamEmail();
+                e.target.closest('.email-options').style.display = 'none';
+            }
+            if (e.target && e.target.id === 'emailFamilyBtnBottom') {
+                sendFamilyEmail();
+                e.target.closest('.email-options').style.display = 'none';
+            }
+            if (e.target && e.target.id === 'emailBtnBottom') {
+                e.preventDefault();
+                const dropdown = e.target.parentElement;
+                const options = dropdown.querySelector('.email-options');
+                const isVisible = options.style.display === 'block';
+                
+                // Hide all other dropdowns first
+                document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+                
+                options.style.display = isVisible ? 'none' : 'block';
+            }
+        });
+
+        function sendCareTeamEmail() {
+            if (window.currentReport) {
+                const subject = encodeURIComponent(`URGENT: Care Plan Update - ${window.currentReport.resident_name}`);
+                
+                // Extract sections dynamically from care plan
+                const content = window.currentReport.content;
+                let criticalUpdates = [];
+                let medicationChanges = [];
+                let behaviorConcerns = [];
+                let mobilityUpdates = [];
+                let priorityFlags = [];
+                
+                // Parse care plan sections
+                const sections = content.split(/^## /m);
+                
+                sections.forEach(section => {
+                    const lines = section.split('\n');
+                    const title = lines[0];
+                    
+                    // Look for priority flagged items
+                    if (title.includes('🚩 Priority Observation Areas') || title.includes('Priority') || title.includes('Flagged')) {
+                        lines.forEach(line => {
+                            if (line.includes('🚩') || line.includes('Priority:') || line.includes('Alert:')) {
+                                priorityFlags.push(line.replace(/🚩\s*/, '').trim());
+                            }
+                        });
+                    }
+                    
+                    // Extract medication updates
+                    if (title.toLowerCase().includes('medication') || title.toLowerCase().includes('health')) {
+                        const updates = extractUpdatedItems(lines);
+                        medicationChanges.push(...updates);
+                    }
+                    
+                    // Extract behavior updates
+                    if (title.toLowerCase().includes('behavior') || title.toLowerCase().includes('communication')) {
+                        const updates = extractUpdatedItems(lines);
+                        behaviorConcerns.push(...updates);
+                    }
+                    
+                    // Extract mobility updates
+                    if (title.toLowerCase().includes('mobility') || title.toLowerCase().includes('safety')) {
+                        const updates = extractUpdatedItems(lines);
+                        mobilityUpdates.push(...updates);
+                    }
+                    
+                    // Look for any items marked with ✏️ (recent updates)
+                    lines.forEach(line => {
+                        if (line.includes('✏️')) {
+                            criticalUpdates.push(line.replace('✏️', '').trim());
+                        }
+                    });
+                });
+                
+                // Generate Care Team email body
+                let emailBody = `Dear Care Team,
+
+URGENT: Updated care plan for ${window.currentReport.resident_name} requires IMMEDIATE implementation.
+
+📋 RESIDENT: ${window.currentReport.resident_name}
+📅 Updated: ${new Date().toLocaleDateString()}
+⏰ IMPLEMENTATION DEADLINE: Next shift
+`;
+
+                // Add priority flags first
+                if (priorityFlags.length > 0) {
+                    emailBody += `\n🚩 CRITICAL PRIORITY ALERTS:
+`;
+                    priorityFlags.forEach((flag, index) => {
+                        emailBody += `${index + 1}. ${flag}\n`;
+                    });
+                }
+
+                // Add critical updates
+                if (criticalUpdates.length > 0) {
+                    emailBody += `\n🚨 KEY CHANGES REQUIRED:
+`;
+                    criticalUpdates.slice(0, 5).forEach((update, index) => {
+                        emailBody += `${index + 1}. ${update}\n`;
+                    });
+                }
+
+                // Add medication changes
+                if (medicationChanges.length > 0) {
+                    emailBody += `\n💊 MEDICATION/HEALTH UPDATES:
+`;
+                    medicationChanges.slice(0, 3).forEach((change, index) => {
+                        emailBody += `• ${change}\n`;
+                    });
+                }
+
+                // Add behavior concerns
+                if (behaviorConcerns.length > 0) {
+                    emailBody += `\n🗣️ BEHAVIOR/COMMUNICATION UPDATES:
+`;
+                    behaviorConcerns.slice(0, 3).forEach((concern, index) => {
+                        emailBody += `• ${concern}\n`;
+                    });
+                }
+
+                // Add mobility updates
+                if (mobilityUpdates.length > 0) {
+                    emailBody += `\n🚶 MOBILITY/SAFETY UPDATES:
+`;
+                    mobilityUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                emailBody += `\n📋 IMMEDIATE ACTIONS REQUIRED:
+• Review ALL changes before next shift handover
+• Brief entire care team on new protocols
+• Implement changes during resident's next care session
+• Monitor resident response and document observations
+• Escalate any concerns to nursing supervisor immediately
+• Update family contact if necessary
+
+⚠️ COMPLIANCE REQUIREMENTS:
+• All staff must acknowledge receipt of this update
+• Changes must be implemented within 24 hours
+• Document all interventions in resident care log
+• Report any adverse reactions immediately
+
+📞 URGENT QUESTIONS: Contact Nursing Supervisor
+📋 DOCUMENTATION: Update resident care records
+📄 FULL PLAN: Complete care plan document attached
+
+Care Management Team
+Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
+
+--- CONFIDENTIAL CARE INFORMATION ---`;
+
+                const body = encodeURIComponent(emailBody);
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
+                window.open(gmailUrl, '_blank');
+            }
+        }
+
+        function sendFamilyEmail() {
+            if (window.currentReport) {
+                const subject = encodeURIComponent(`Care Plan Update - ${window.currentReport.resident_name}`);
+                
+                // Extract family-relevant information from care plan
+                const content = window.currentReport.content;
+                let personalCareUpdates = [];
+                let wellnessUpdates = [];
+                let socialUpdates = [];
+                let comfortUpdates = [];
+                
+                // Parse care plan sections for family-friendly content
+                const sections = content.split(/^## /m);
+                
+                sections.forEach(section => {
+                    const lines = section.split('\n');
+                    const title = lines[0];
+                    
+                    // Extract personal care updates
+                    if (title.toLowerCase().includes('personal care') || title.toLowerCase().includes('daily routine')) {
+                        const updates = extractFamilyFriendlyUpdates(lines);
+                        personalCareUpdates.push(...updates);
+                    }
+                    
+                    // Extract health and wellness updates
+                    if (title.toLowerCase().includes('health') || title.toLowerCase().includes('nutrition') || title.toLowerCase().includes('medication')) {
+                        const updates = extractFamilyFriendlyUpdates(lines);
+                        wellnessUpdates.push(...updates);
+                    }
+                    
+                    // Extract social and communication updates
+                    if (title.toLowerCase().includes('social') || title.toLowerCase().includes('communication') || title.toLowerCase().includes('behavior')) {
+                        const updates = extractFamilyFriendlyUpdates(lines);
+                        socialUpdates.push(...updates);
+                    }
+                    
+                    // Extract comfort and preference updates
+                    if (title.toLowerCase().includes('comfort') || title.toLowerCase().includes('preference') || title.toLowerCase().includes('environment')) {
+                        const updates = extractFamilyFriendlyUpdates(lines);
+                        comfortUpdates.push(...updates);
+                    }
+                });
+                
+                // Generate Family email body
+                let emailBody = `Dear ${window.currentReport.resident_name}'s Family,
+
+We hope this message finds you well. We wanted to share some positive updates about ${window.currentReport.resident_name}'s care plan and how we're working to enhance their daily experience with us.
+
+👥 ABOUT ${window.currentReport.resident_name.toUpperCase()}:
+We've been closely observing ${window.currentReport.resident_name} and have identified some wonderful opportunities to better support their individual needs and preferences.
+`;
+
+                // Add personal care updates
+                if (personalCareUpdates.length > 0) {
+                    emailBody += `\n🛁 DAILY CARE ENHANCEMENTS:
+Our team has noticed some preferences that help ${window.currentReport.resident_name} feel more comfortable:
+`;
+                    personalCareUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                // Add wellness updates
+                if (wellnessUpdates.length > 0) {
+                    emailBody += `\n💗 HEALTH & WELLNESS FOCUS:
+We're taking extra care to support ${window.currentReport.resident_name}'s wellbeing through:
+`;
+                    wellnessUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                // Add social updates
+                if (socialUpdates.length > 0) {
+                    emailBody += `\n🗣️ COMMUNICATION & SOCIAL ENGAGEMENT:
+We've learned more about how ${window.currentReport.resident_name} likes to connect with others:
+`;
+                    socialUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                // Add comfort updates
+                if (comfortUpdates.length > 0) {
+                    emailBody += `\n🏠 COMFORT & ENVIRONMENT:
+We're making these adjustments to help ${window.currentReport.resident_name} feel more at home:
+`;
+                    comfortUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                emailBody += `\n💭 YOUR INSIGHTS MATTER:
+As ${window.currentReport.resident_name}'s family, your knowledge about their preferences, habits, and personality helps us provide the most personalized care possible. We would love to hear from you about:
+
+• Any observations about what makes ${window.currentReport.resident_name} most comfortable
+• Special preferences or routines from home that we should know about
+• How ${window.currentReport.resident_name} typically responds to changes
+• Family traditions or activities they particularly enjoy
+• Any concerns or questions you have about these updates
+
+🤝 PARTNERSHIP IN CARE:
+We believe the best care happens when families and care teams work together. Your input helps us create an environment where ${window.currentReport.resident_name} can thrive and feel truly at home.
+
+🌟 WHAT'S NEXT:
+• We'll continue monitoring ${window.currentReport.resident_name}'s response to these changes
+• Our team will document their preferences and reactions
+• We'll keep you updated on their progress and any new insights
+• Please feel free to visit and see how ${window.currentReport.resident_name} is doing
+
+📞 WE'RE HERE FOR YOU:
+• Call us anytime to discuss ${window.currentReport.resident_name}'s care: [PHONE NUMBER]
+• Email us your thoughts and suggestions
+• Schedule a meeting with our care team
+• Visit during care activities to see the updates in action
+
+Thank you for trusting us with ${window.currentReport.resident_name}'s care. We're honored to be part of their journey and yours.
+
+With warm regards and appreciation,
+The Care Team at [FACILITY NAME]
+${new Date().toLocaleDateString()}
+
+P.S. We've attached the complete care plan for your records. Please don't hesitate to reach out with any questions!
+
+--- This communication contains confidential care information ---`;
+
+                const body = encodeURIComponent(emailBody);
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
+                window.open(gmailUrl, '_blank');
+            }
+        }
+
+        function extractUpdatedItems(lines) {
+            const updates = [];
+            lines.forEach(line => {
+                if (line.includes('✏️') || line.includes('Updated:') || line.includes('New:') || line.includes('Changed:')) {
+                    // Clean up the line and extract the meaningful content
+                    let cleaned = line.replace(/✏️/g, '').replace(/\*\*/g, '').trim();
+                    if (cleaned && cleaned.length > 10) {
+                        updates.push(cleaned);
+                    }
+                }
+            });
+            return updates;
+        }
+
+        function extractFamilyFriendlyUpdates(lines) {
+            const updates = [];
+            lines.forEach(line => {
+                if (line.includes('✏️') || line.includes('Updated:') || line.includes('New:') || line.includes('Enhanced:')) {
+                    // Convert clinical language to family-friendly language
+                    let cleaned = line.replace(/✏️/g, '').replace(/\*\*/g, '').trim();
+                    
+                    // Make language more family-friendly
+                    cleaned = cleaned.replace(/intervention/gi, 'support approach');
+                    cleaned = cleaned.replace(/protocol/gi, 'routine');
+                    cleaned = cleaned.replace(/assessment/gi, 'observation');
+                    cleaned = cleaned.replace(/monitor/gi, 'keep an eye on');
+                    cleaned = cleaned.replace(/implement/gi, 'try');
+                    cleaned = cleaned.replace(/compliance/gi, 'following along with');
+                    
+                    if (cleaned && cleaned.length > 10) {
+                        updates.push(cleaned);
+                    }
+                }
+            });
+            return updates;
+        }
+
+        // Download functionality (PDF)
+        document.getElementById('downloadBtn').addEventListener('click', async function() {
+            await downloadPDF();
+        });
+
+        // Start over functionality
+        document.getElementById('startOverBtn').addEventListener('click', function() {
+            startOver();
+        });
+
+        // Bottom action buttons event listeners
+        document.getElementById('copyContentBtnBottom').addEventListener('click', function() {
+            copyContent();
+        });
+
+        document.getElementById('editBtnBottom').addEventListener('click', function() {
+            editContent();
+        });
+
+        document.getElementById('downloadBtnBottom').addEventListener('click', function() {
+            downloadPDF();
+        });
+
+        document.getElementById('startOverBtnBottom').addEventListener('click', function() {
+            startOver();
+        });
+
+        // Extracted functions for reuse
+        function copyContent() {
             const content = document.getElementById('carePlanContent');
             if (content) {
                 const range = document.createRange();
@@ -481,10 +895,9 @@
                 window.getSelection().removeAllRanges();
                 alert('Care plan content copied to clipboard!');
             }
-        });
+        }
 
-        // Edit functionality
-        document.getElementById('editBtn').addEventListener('click', function() {
+        function editContent() {
             if (window.currentReport) {
                 const content = document.getElementById('carePlanContent');
                 const currentHtml = content.innerHTML;
@@ -517,205 +930,9 @@
                     alert('Changes saved successfully!');
                 });
             }
-        });
+        }
 
-        // Email dropdown toggle
-        document.getElementById('emailBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            const dropdown = this.parentElement;
-            const options = dropdown.querySelector('.email-options');
-            const isVisible = options.style.display === 'block';
-            
-            // Hide all other dropdowns first
-            document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
-            
-            options.style.display = isVisible ? 'none' : 'block';
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.email-dropdown')) {
-                document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
-            }
-        });
-
-        // Email to Care Team functionality
-        document.getElementById('emailCareTeamBtn').addEventListener('click', function() {
-            if (window.currentReport) {
-                const subject = encodeURIComponent(`URGENT: Care Plan Update - ${window.currentReport.resident_name}`);
-                
-                // Extract key changes from the care plan
-                const content = window.currentReport.content;
-                let keyChanges = [];
-                
-                // Look for update sections marked with ✏️
-                const updateSections = content.match(/##\s*✏️[^#]*(?:#[^#][^#]*)*?(?=##|$)/g);
-                if (updateSections) {
-                    updateSections.forEach(section => {
-                        const lines = section.split('\n');
-                        const title = lines[0].replace(/##\s*✏️\s*/, '').trim();
-                        
-                        // Extract key interventions
-                        const interventions = [];
-                        lines.forEach(line => {
-                            if (line.includes('**Actions to Take:**')) {
-                                let i = lines.indexOf(line) + 1;
-                                while (i < lines.length && lines[i].startsWith('•')) {
-                                    interventions.push(lines[i].replace('•', '').trim());
-                                    i++;
-                                }
-                            }
-                        });
-                        
-                        if (interventions.length > 0) {
-                            keyChanges.push({
-                                issue: title,
-                                actions: interventions.slice(0, 3) // Top 3 actions
-                            });
-                        }
-                    });
-                }
-                
-                // Generate Care Team email body
-                let emailBody = `Dear Care Team,
-
-Updated care plan for ${window.currentReport.resident_name} is ready for IMMEDIATE implementation.
-
-🚨 KEY CHANGES REQUIRED:
-`;
-
-                if (keyChanges.length > 0) {
-                    keyChanges.forEach((change, index) => {
-                        emailBody += `\n${index + 1}. ${change.issue}\n`;
-                        change.actions.forEach(action => {
-                            emailBody += `   • ${action}\n`;
-                        });
-                    });
-                } else {
-                    emailBody += `\nPlease review the attached updated care plan for detailed changes and recommendations.`;
-                }
-
-                emailBody += `\n📋 ACTION REQUIRED:
-• Review and implement changes during next shift
-• Brief all care staff on new procedures
-• Monitor resident response closely
-• Document any observations or concerns
-• Report issues to nursing supervisor immediately
-
-⏰ IMPLEMENTATION DEADLINE: Next shift
-📞 Questions? Contact Nursing Supervisor
-📄 Full care plan document attached
-
-Care Management Team
-Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
-
-                const body = encodeURIComponent(emailBody);
-                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
-                window.open(gmailUrl, '_blank');
-            }
-            
-            // Hide dropdown
-            document.querySelector('.email-options').style.display = 'none';
-        });
-
-        // Email to Family functionality
-        document.getElementById('emailFamilyBtn').addEventListener('click', function() {
-            if (window.currentReport) {
-                const subject = encodeURIComponent(`Care Plan Update - ${window.currentReport.resident_name}`);
-                
-                // Extract key changes for family communication
-                const content = window.currentReport.content;
-                let familyUpdates = [];
-                
-                // Look for update sections marked with ✏️
-                const updateSections = content.match(/##\s*✏️[^#]*(?:#[^#][^#]*)*?(?=##|$)/g);
-                if (updateSections) {
-                    updateSections.forEach(section => {
-                        const lines = section.split('\n');
-                        const title = lines[0].replace(/##\s*✏️\s*/, '').trim();
-                        
-                        // Extract key reasons/background for family understanding
-                        const reasons = [];
-                        lines.forEach(line => {
-                            if (line.includes('**Contributing Factors:**')) {
-                                let i = lines.indexOf(line) + 1;
-                                while (i < lines.length && lines[i].startsWith('•')) {
-                                    reasons.push(lines[i].replace('•', '').trim());
-                                    i++;
-                                }
-                            }
-                        });
-                        
-                        if (reasons.length > 0) {
-                            familyUpdates.push({
-                                issue: title,
-                                background: reasons.slice(0, 2) // Top 2 reasons for context
-                            });
-                        }
-                    });
-                }
-                
-                // Generate Family email body
-                let emailBody = `Dear Family,
-
-We hope this message finds you well. We wanted to update you on ${window.currentReport.resident_name}'s care plan and seek your valuable input.
-
-🏥 CARE PLAN UPDATES:
-
-Our care team has been closely monitoring ${window.currentReport.resident_name} and has identified some areas where we can enhance their care experience:
-`;
-
-                if (familyUpdates.length > 0) {
-                    familyUpdates.forEach((update, index) => {
-                        emailBody += `\n${index + 1}. ${update.issue}\n`;
-                        emailBody += `   Background: We've noticed that `;
-                        update.background.forEach((reason, i) => {
-                            emailBody += `${reason.toLowerCase()}${i < update.background.length - 1 ? ', and ' : ''}`;
-                        });
-                        emailBody += `.\n`;
-                    });
-                } else {
-                    emailBody += `\nWe've made some adjustments to better support ${window.currentReport.resident_name}'s daily care routine.`;
-                }
-
-                emailBody += `\n💭 WE VALUE YOUR INPUT:
-Your insights about ${window.currentReport.resident_name} are invaluable to us. Please share:
-
-• Any concerns or questions about these updates
-• Your observations about ${window.currentReport.resident_name}'s preferences
-• Suggestions based on what works well at home
-• Any family history or context that might help us
-• How you would like us to communicate future updates
-
-🤝 WORKING TOGETHER:
-We believe the best care comes from working closely with families. Your input helps us provide personalized, compassionate care that respects ${window.currentReport.resident_name}'s individual needs and preferences.
-
-📞 NEXT STEPS:
-Please feel free to:
-• Reply to this email with your thoughts
-• Call us at [PHONE NUMBER] to discuss
-• Schedule a meeting with the care team
-• Visit and observe the new care approaches
-
-We're committed to keeping you informed and involved in ${window.currentReport.resident_name}'s care journey.
-
-With warm regards,
-The Care Management Team
-${new Date().toLocaleDateString()}
-
-P.S. The full care plan document is attached for your reference.`;
-
-                const body = encodeURIComponent(emailBody);
-                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
-                window.open(gmailUrl, '_blank');
-            }
-            
-            // Hide dropdown
-            document.querySelector('.email-options').style.display = 'none';
-        });
-
-        // Download functionality (PDF)
-        document.getElementById('downloadBtn').addEventListener('click', async function() {
+        async function downloadPDF() {
             if (window.currentReport) {
                 try {
                     const response = await fetch('/download_pdf', {
@@ -739,10 +956,9 @@ P.S. The full care plan document is attached for your reference.`;
                     alert('Download failed: ' + error.message);
                 }
             }
-        });
+        }
 
-        // Start over functionality
-        document.getElementById('startOverBtn').addEventListener('click', function() {
+        function startOver() {
             document.getElementById('suggestions').style.display = 'none';
             document.getElementById('finalPlan').style.display = 'none';
             document.getElementById('charts').style.display = 'none';
@@ -751,7 +967,7 @@ P.S. The full care plan document is attached for your reference.`;
             updateFileLabel(document.getElementById('care_plan'), 'Click to select care plan');
             window.currentReport = null;
             currentData = {};
-        });
+        }
 
 
     </script>
