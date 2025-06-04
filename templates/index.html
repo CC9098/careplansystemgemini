@@ -225,10 +225,32 @@
 
         function displaySuggestions(data) {
             // Display analysis summary with icon
-            document.getElementById('analysisSummary').innerHTML = `
+            let summaryHtml = `
                 <h4>🔍 Analysis Summary:</h4>
                 <p>${data.analysis_summary}</p>
             `;
+
+            // Add care plan gaps alert if present
+            if (data.care_plan_gaps && data.care_plan_gaps.description) {
+                const alertClass = data.care_plan_gaps.alert_level === 'High' ? 'gap-alert-high' : 
+                                 data.care_plan_gaps.alert_level === 'Medium' ? 'gap-alert-medium' : 'gap-alert-low';
+                
+                summaryHtml += `
+                    <div class="care-plan-gap-alert ${alertClass}">
+                        <h4>⚠️ Care Plan Gap Alert - ${data.care_plan_gaps.alert_level} Priority</h4>
+                        <p><strong>Gap Description:</strong> ${data.care_plan_gaps.description}</p>
+                        <div class="missing-areas">
+                            <strong>Missing Areas:</strong>
+                            <ul>
+                                ${data.care_plan_gaps.missing_areas.map(area => `<li>${area}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <p class="gap-action"><strong>Action Required:</strong> Manager must review and update care plan to address these gaps immediately.</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('analysisSummary').innerHTML = summaryHtml;
 
             // Display suggestions with specific issues and dynamic options
             const suggestionsList = document.getElementById('suggestionsList');
@@ -280,10 +302,16 @@
                         </div>
 
                         <div class="include-section">
-                            <label class="include-suggestion">
-                                <input type="checkbox" name="include-suggestion" value="${index}">
-                                <strong>Include this issue in final care plan</strong>
-                            </label>
+                            <div class="flag-and-include">
+                                <label class="flag-suggestion">
+                                    <input type="checkbox" name="flag-suggestion" value="${index}">
+                                    <span class="flag-icon">🚩</span> <strong>Flag for Priority Follow-up</strong>
+                                </label>
+                                <label class="include-suggestion">
+                                    <input type="checkbox" name="include-suggestion" value="${index}">
+                                    <strong>Include this issue in final care plan</strong>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -336,7 +364,7 @@
             loading.style.display = 'block';
 
             try {
-                // Collect selected suggestions with WHAT-WHY-HOW data
+                // Collect selected suggestions with WHAT-WHY-HOW data and flag status
                 const selectedSuggestions = [];
 
                 document.querySelectorAll('input[name="include-suggestion"]:checked').forEach(checkbox => {
@@ -344,6 +372,9 @@
                     const suggestion = currentData.suggestions[index];
 
                     if (!suggestion) return;
+
+                    // Check if this item is flagged
+                    const isFlagged = document.querySelector(`input[name="flag-suggestion"][value="${index}"]`).checked;
 
                     // Collect WHY data (reasons)
                     const reasons = [];
@@ -378,7 +409,8 @@
                     selectedSuggestions.push({
                         ...suggestion,
                         reasons: reasons,
-                        interventions: interventions
+                        interventions: interventions,
+                        flagged: isFlagged
                     });
                 });
 

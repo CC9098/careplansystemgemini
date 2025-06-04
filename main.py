@@ -116,7 +116,7 @@ def extract_daily_data(daily_log_content):
     return data
 
 def analyze_and_suggest_changes(daily_log, current_care_plan, resident_name):
-    """Step 1: Analyze and suggest changes"""
+    """Step 1: Analyze and suggest changes with gap detection"""
 
     prompt = f"""You are a care home management assistant. Your task is to analyze the resident's care log and current care plan, then identify specific behavioral or care issues that need attention.
 
@@ -128,11 +128,20 @@ CARE LOG (this month):
 CURRENT CARE PLAN:
 {current_care_plan}
 
-Please analyze the care log and identify specific, concrete issues that need to be addressed. For each issue, provide customized possible reasons and suggested interventions based on the specific situation.
+Please analyze the care log and identify specific, concrete issues that need to be addressed. Also identify gaps between the care log and current care plan.
 
 Format your response as a JSON object with this structure:
 {{
     "analysis_summary": "Brief summary of key findings from the care log",
+    "care_plan_gaps": {{
+        "description": "Description of significant events/patterns in logs that are NOT addressed in the current care plan",
+        "missing_areas": [
+            "Specific area 1 missing from care plan but evident in logs",
+            "Specific area 2 missing from care plan but evident in logs",
+            "Specific area 3 missing from care plan but evident in logs"
+        ],
+        "alert_level": "High|Medium|Low"
+    }},
     "suggestions": [
         {{
             "id": 1,
@@ -141,6 +150,7 @@ Format your response as a JSON object with this structure:
             "description": "Detailed description of the issue based on log evidence",
             "priority": "High|Medium|Low",
             "icon": "😡|😰|😴|🚶|💊|🍽️|🚿|🗣️|⚠️|📋",
+            "flagged": false,
             "possible_reasons": [
                 "Specific reason 1 related to this issue",
                 "Specific reason 2 related to this issue",
@@ -166,7 +176,8 @@ Guidelines:
 - Generate 5 specific interventions for each issue
 - Choose appropriate icons that match the issue type
 - Base all suggestions on evidence found in the care log
-- Make issues specific enough that care staff can understand exactly what to address"""
+- Make issues specific enough that care staff can understand exactly what to address
+- For care_plan_gaps, identify significant patterns/events in logs that are completely missing from the current care plan"""
 
     try:
         message = client.messages.create(
@@ -195,40 +206,57 @@ Guidelines:
         }
 
 def generate_final_care_plan(original_care_plan, selected_suggestions, manager_comments, resident_name):
-    """Step 3: Generate final care plan by integrating selected content without creating new content"""
+    """Step 3: Generate final care plan with better integration and priority observation section"""
     
     # Get current date
     from datetime import datetime
     today = datetime.now().strftime('%Y-%m-%d')
     
-    # Format selected suggestions exactly as manager selected them
-    selected_updates = ""
-    if selected_suggestions:
-        selected_updates += "\n## ✏️ Recent Updates\n\n"
-        
-        for i, suggestion in enumerate(selected_suggestions, 1):
-            selected_updates += f"### ✏️ {suggestion.get('specific_issue', suggestion.get('suggestion', 'Update'))}\n"
-            selected_updates += f"**Issue:** {suggestion.get('description', suggestion.get('suggestion', ''))}\n\n"
-            
-            if suggestion.get('reasons'):
-                selected_updates += f"**Contributing Factors:**\n"
-                for reason in suggestion['reasons']:
-                    selected_updates += f"• {reason}\n"
-                selected_updates += "\n"
-            
-            if suggestion.get('interventions'):
-                selected_updates += f"**Actions to Take:**\n"
-                for intervention in suggestion['interventions']:
-                    selected_updates += f"• {intervention}\n"
-                selected_updates += "\n"
+    # Separate flagged items for priority observation section
+    flagged_items = [s for s in selected_suggestions if s.get('flagged', False)]
+    regular_updates = [s for s in selected_suggestions if not s.get('flagged', False)]
+    
+    # Format selected suggestions by category for better integration
+    updates_by_category = {}
+    for suggestion in regular_updates:
+        category = suggestion.get('category', 'Other')
+        if category not in updates_by_category:
+            updates_by_category[category] = []
+        updates_by_category[category].append(suggestion)
+    
+    # Format updates for integration
+    categorized_updates = ""
+    if updates_by_category:
+        categorized_updates += "\n**UPDATES TO INTEGRATE BY CATEGORY:**\n\n"
+        for category, suggestions in updates_by_category.items():
+            categorized_updates += f"**{category} Updates:**\n"
+            for suggestion in suggestions:
+                categorized_updates += f"• {suggestion.get('specific_issue', 'Update')}: {suggestion.get('description', '')}\n"
+                if suggestion.get('interventions'):
+                    categorized_updates += f"  Actions: {', '.join(suggestion['interventions'][:3])}\n"
+            categorized_updates += "\n"
+    
+    # Format flagged items for priority section
+    priority_observations = ""
+    if flagged_items:
+        priority_observations += "\n**PRIORITY FLAGGED ITEMS FOR OBSERVATION SECTION:**\n\n"
+        for item in flagged_items:
+            priority_observations += f"🚩 {item.get('specific_issue', 'Priority Item')}\n"
+            priority_observations += f"   Description: {item.get('description', '')}\n"
+            if item.get('interventions'):
+                priority_observations += f"   Key Actions: {', '.join(item['interventions'][:2])}\n"
+            priority_observations += "\n"
 
-    prompt = f"""You are a professional care home management assistant. Your task is to rewrite and organize the existing care plan, incorporating the manager's selected updates exactly as provided.
+    prompt = f"""You are a professional care home management assistant. Your task is to rewrite and organize the existing care plan, seamlessly integrating updates into appropriate sections and adding a priority observation section.
 
 **ORIGINAL CARE PLAN:**
 {original_care_plan}
 
-**MANAGER'S SELECTED UPDATES TO INTEGRATE:**
-{selected_updates}
+**UPDATES TO INTEGRATE BY CATEGORY:**
+{categorized_updates}
+
+**PRIORITY FLAGGED ITEMS:**
+{priority_observations}
 
 **MANAGER'S ADDITIONAL COMMENTS:**
 {manager_comments}
@@ -236,27 +264,33 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
 **TODAY'S DATE:** {today}
 
 **INSTRUCTIONS:**
-1. 📋 **Rewrite the original care plan** - keep all existing content but organize it clearly and concisely
-2. 🔄 **Integrate the selected updates exactly as provided** - do not modify or create new content for the updates
-3. 💬 **Add manager's comments** if provided
-4. 📅 **Add update tracking information**
+1. 📋 **Rewrite the original care plan** - organize it with clear section headers
+2. 🔄 **Integrate updates naturally** - merge each update into its appropriate care plan section (Personal Care, Daily Routine, Health Monitoring, etc.)
+3. 🚩 **Add Priority Observation Section** at the bottom for flagged items
+4. 💬 **Add manager's comments** if provided
+5. 📅 **Add update tracking information**
 
-**IMPORTANT RULES:**
-- Do NOT create or modify the content of the selected updates
-- Do NOT add new interventions beyond what the manager selected
-- Only reformat and organize existing content clearly
-- Keep the ✏️ symbols only where they already appear in the selected updates
-- Maintain all original care plan content unless it directly conflicts with selected updates
+**INTEGRATION RULES:**
+- Seamlessly merge updates into existing care plan sections based on category
+- Mark integrated updates with ✏️ symbol to show they are new
+- Do NOT create separate "Recent Updates" section - integrate everything naturally
+- For flagged items, create a dedicated "🚩 Priority Observation Areas" section at the end
+- Maintain professional healthcare documentation style
 - Include "Last Updated: {today}" at the top
-- If there was a previous update date in the original plan, preserve it as "Previous Update: [date]"
 
-**FORMAT REQUIREMENTS:**
-- Start with update tracking dates
-- Clear section headers (Personal Care, Daily Routine, Health Monitoring, etc.)
-- Professional healthcare documentation style
-- Organize content logically and concisely
+**SECTION STRUCTURE:**
+- Update tracking dates at top
+- Personal Care
+- Daily Routine  
+- Health & Medication
+- Mobility & Safety
+- Nutrition & Hydration
+- Behavioral Support
+- Social & Communication
+- Other relevant sections
+- 🚩 Priority Observation Areas (for flagged items)
 
-Generate the complete updated care plan following these exact requirements."""
+Generate the complete updated care plan with natural integration."""
 
     try:
         message = client.messages.create(
