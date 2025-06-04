@@ -3,12 +3,12 @@ import csv
 import json
 import re
 from collections import defaultdict
-import anthropic
+import openai
 import os
 
-# Initialize Claude client for structure analysis
-api_key = os.environ.get('CLAUDE')
-structure_client = anthropic.Anthropic(api_key=api_key) if api_key else None
+# Initialize OpenAI client for structure analysis
+api_key = os.environ.get('OPENAI_API_KEY')
+structure_client = openai.OpenAI(api_key=api_key) if api_key else None
 
 def analyze_csv_structure(csv_content, max_rows=10):
     """
