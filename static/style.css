@@ -570,6 +570,18 @@ header h1, header p {
   color: var(--white);
 }
 
+#addToCalendarBtn {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+  background: var(--white);
+}
+
+#addToCalendarBtn:hover {
+  background: var(--accent-green);
+  color: var(--white);
+  transform: translateY(-2px);
+}
+
 .report-content {
   line-height: 1.8;
   position: relative;
