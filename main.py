@@ -449,10 +449,10 @@ def test():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     print("=== ANALYZE ROUTE CALLED ===")
-    
+
     if not client:
         print("ERROR: Gemini client not available")
-        return jsonify({'error': 'Gemini API not available. Please check your GEMINI_API_KEY environment variable.'}), 500
+        return jsonify({'error': 'OpenAI API not available. Please check your OPENAI_API_KEY environment variable.'}), 500
 
     try:
         print("Starting analysis...")  # Debug log
@@ -537,11 +537,11 @@ def analyze():
         <div class="analysis-results">
             <h3>Analysis Summary</h3>
             <p>{analysis_result.get('analysis_summary', '')}</p>
-            
+
             <h3>Suggestions ({len(analysis_result.get('suggestions', []))} items)</h3>
             <div class="suggestions-list">
         """
-        
+
         for i, suggestion in enumerate(analysis_result.get('suggestions', [])):
             html_content += f"""
                 <div class="suggestion-item">
@@ -551,7 +551,7 @@ def analyze():
                     <p>{suggestion.get('description', '')}</p>
                 </div>
             """
-        
+
         html_content += "</div></div>"
 
         return jsonify({
@@ -574,7 +574,7 @@ def analyze():
 def generate_care_plan():
     """Step 3: Generate final care plan based on manager's selections"""
     if not client:
-        return jsonify({'error': 'Gemini API not available. Please check your GEMINI_API_KEY environment variable.'}), 500
+        return jsonify({'error': 'OpenAI API not available. Please check your OPENAI_API_KEY environment variable.'}), 500
 
     try:
         data = request.get_json()
