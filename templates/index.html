@@ -112,7 +112,6 @@
                     <div class="action-buttons">
                         <button id="copyContentBtn" class="action-btn">📋 Copy Content</button>
                         <button id="editBtn" class="action-btn">✏️ Edit Plan</button>
-                        <button id="addToCalendarBtn" class="action-btn">📅 Add Review to Calendar</button>
                         <div class="email-dropdown">
                             <button id="emailBtn" class="action-btn dropdown-toggle">📧 Email Plan ▼</button>
                             <div class="email-options">
@@ -540,76 +539,76 @@
             }
         });
 
-        // Google Calendar functionality
-        document.getElementById('addToCalendarBtn').addEventListener('click', function() {
-            if (window.currentReport) {
-                // Calculate next review date (30 days from today)
-                const today = new Date();
-                const reviewDate = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
-                
-                // Format dates for Google Calendar
-                const startDate = reviewDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-                const endDate = new Date(reviewDate.getTime() + (60 * 60 * 1000)).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'; // 1 hour duration
-                
-                // Extract priority items from care plan for event description
-                const content = window.currentReport.content;
-                let priorityItems = [];
-                
-                // Look for flagged items or high priority sections
-                if (content.includes('🚩 Priority Observation Areas') || content.includes('Priority Flagged Items')) {
-                    const prioritySection = content.match(/🚩\s*Priority[^#]*?(?=##|$)/g);
-                    if (prioritySection) {
-                        prioritySection.forEach(section => {
-                            const lines = section.split('\n');
-                            lines.forEach(line => {
-                                if (line.includes('🚩') && line.trim().length > 5) {
-                                    priorityItems.push(line.replace(/🚩/g, '').trim());
-                                }
-                            });
-                        });
-                    }
-                }
-                
-                // Build event description
-                let eventDescription = `Care Plan Review for ${window.currentReport.resident_name}\\n\\n`;
-                eventDescription += `📋 REVIEW CHECKLIST:\\n`;
-                eventDescription += `• Assess progress on current care interventions\\n`;
-                eventDescription += `• Review resident's response to care plan changes\\n`;
-                eventDescription += `• Update care strategies based on observations\\n`;
-                eventDescription += `• Document any new concerns or improvements\\n\\n`;
-                
-                if (priorityItems.length > 0) {
-                    eventDescription += `🚩 PRIORITY AREAS TO REVIEW:\\n`;
-                    priorityItems.slice(0, 5).forEach(item => {
-                        eventDescription += `• ${item}\\n`;
-                    });
-                    eventDescription += `\\n`;
-                }
-                
-                eventDescription += `📞 Attendees: Care Manager, Nursing Supervisor, Primary Care Staff\\n`;
-                eventDescription += `📄 Bring: Updated care plan document\\n`;
-                eventDescription += `⏰ Duration: 60 minutes`;
-                
-                // Google Calendar URL
-                const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Care Plan Review - ${window.currentReport.resident_name}`)}&dates=${startDate}/${endDate}&details=${encodeURIComponent(eventDescription)}&location=${encodeURIComponent('Care Facility - Conference Room')}&ctz=Asia/Hong_Kong`;
-                
-                window.open(calendarUrl, '_blank');
-            }
-        });
-
-        // Enhanced Email to Care Team functionality with dynamic content
+        // Email to Care Team functionality
         document.getElementById('emailCareTeamBtn').addEventListener('click', function() {
             if (window.currentReport) {
+                const subject = encodeURIComponent(`URGENT: Care Plan Update - ${window.currentReport.resident_name}`);
+                
+                // Extract key changes from the care plan
                 const content = window.currentReport.content;
+                let keyChanges = [];
                 
-                // Extract different types of updates dynamically
-                const updates = extractCareplanUpdates(content);
+                // Look for update sections marked with ✏️
+                const updateSections = content.match(/##\s*✏️[^#]*(?:#[^#][^#]*)*?(?=##|$)/g);
+                if (updateSections) {
+                    updateSections.forEach(section => {
+                        const lines = section.split('\n');
+                        const title = lines[0].replace(/##\s*✏️\s*/, '').trim();
+                        
+                        // Extract key interventions
+                        const interventions = [];
+                        lines.forEach(line => {
+                            if (line.includes('**Actions to Take:**')) {
+                                let i = lines.indexOf(line) + 1;
+                                while (i < lines.length && lines[i].startsWith('•')) {
+                                    interventions.push(lines[i].replace('•', '').trim());
+                                    i++;
+                                }
+                            }
+                        });
+                        
+                        if (interventions.length > 0) {
+                            keyChanges.push({
+                                issue: title,
+                                actions: interventions.slice(0, 3) // Top 3 actions
+                            });
+                        }
+                    });
+                }
                 
-                const subject = encodeURIComponent(`URGENT: Care Plan Update - ${window.currentReport.resident_name} (${updates.highPriorityCount} Priority Items)`);
-                
-                // Generate dynamic email body based on care plan content
-                let emailBody = generateCareTeamEmail(window.currentReport.resident_name, updates);
-                
+                // Generate Care Team email body
+                let emailBody = `Dear Care Team,
+
+Updated care plan for ${window.currentReport.resident_name} is ready for IMMEDIATE implementation.
+
+🚨 KEY CHANGES REQUIRED:
+`;
+
+                if (keyChanges.length > 0) {
+                    keyChanges.forEach((change, index) => {
+                        emailBody += `\n${index + 1}. ${change.issue}\n`;
+                        change.actions.forEach(action => {
+                            emailBody += `   • ${action}\n`;
+                        });
+                    });
+                } else {
+                    emailBody += `\nPlease review the attached updated care plan for detailed changes and recommendations.`;
+                }
+
+                emailBody += `\n📋 ACTION REQUIRED:
+• Review and implement changes during next shift
+• Brief all care staff on new procedures
+• Monitor resident response closely
+• Document any observations or concerns
+• Report issues to nursing supervisor immediately
+
+⏰ IMPLEMENTATION DEADLINE: Next shift
+📞 Questions? Contact Nursing Supervisor
+📄 Full care plan document attached
+
+Care Management Team
+Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
+
                 const body = encodeURIComponent(emailBody);
                 const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
                 window.open(gmailUrl, '_blank');
@@ -619,194 +618,93 @@
             document.querySelector('.email-options').style.display = 'none';
         });
 
-        // Function to extract care plan updates dynamically
-        function extractCareplanUpdates(content) {
-            const updates = {
-                personalCare: [],
-                health: [],
-                behavioral: [],
-                nutrition: [],
-                mobility: [],
-                communication: [],
-                flaggedItems: [],
-                newInterventions: [],
-                monitoringRequirements: [],
-                highPriorityCount: 0,
-                mediumPriorityCount: 0
-            };
-            
-            const lines = content.split('\n');
-            let currentSection = '';
-            let currentUpdate = null;
-            
-            lines.forEach(line => {
-                line = line.trim();
-                
-                // Identify sections
-                if (line.includes('Personal Care') || line.includes('個人護理')) {
-                    currentSection = 'personalCare';
-                } else if (line.includes('Health') || line.includes('Medication') || line.includes('健康')) {
-                    currentSection = 'health';
-                } else if (line.includes('Behavior') || line.includes('行為')) {
-                    currentSection = 'behavioral';
-                } else if (line.includes('Nutrition') || line.includes('Eating') || line.includes('營養')) {
-                    currentSection = 'nutrition';
-                } else if (line.includes('Mobility') || line.includes('活動')) {
-                    currentSection = 'mobility';
-                } else if (line.includes('Communication') || line.includes('溝通')) {
-                    currentSection = 'communication';
-                }
-                
-                // Look for flagged items
-                if (line.includes('🚩')) {
-                    updates.flaggedItems.push(line.replace(/🚩/g, '').trim());
-                    updates.highPriorityCount++;
-                }
-                
-                // Look for new content markers
-                if (line.includes('✏️')) {
-                    const updateText = line.replace(/✏️/g, '').replace(/[#*]/g, '').trim();
-                    if (updateText && currentSection) {
-                        updates[currentSection].push(updateText);
-                    }
-                    if (line.toLowerCase().includes('high') || line.includes('urgent')) {
-                        updates.highPriorityCount++;
-                    } else {
-                        updates.mediumPriorityCount++;
-                    }
-                }
-                
-                // Look for action items
-                if (line.startsWith('•') && (line.includes('monitor') || line.includes('observe') || line.includes('track'))) {
-                    updates.monitoringRequirements.push(line.replace('•', '').trim());
-                }
-                
-                // Look for new interventions
-                if (line.startsWith('•') && (line.includes('implement') || line.includes('provide') || line.includes('ensure'))) {
-                    updates.newInterventions.push(line.replace('•', '').trim());
-                }
-            });
-            
-            return updates;
-        }
-
-        // Function to generate dynamic care team email
-        function generateCareTeamEmail(residentName, updates) {
-            const urgencyLevel = updates.highPriorityCount > 2 ? 'CRITICAL' : updates.highPriorityCount > 0 ? 'HIGH' : 'MODERATE';
-            const reviewDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString();
-            
-            let emailBody = `🚨 ${urgencyLevel} PRIORITY: Care Plan Update Required
-
-Dear Care Team,
-
-The care plan for ${residentName} has been updated and requires IMMEDIATE attention and implementation.
-
-📊 UPDATE SUMMARY:
-• ${updates.highPriorityCount} High Priority Changes
-• ${updates.mediumPriorityCount} Standard Updates
-• ${updates.flaggedItems.length} Items Flagged for Special Monitoring
-• Next Review Date: ${reviewDate}
-
-`;
-
-            // Add flagged items section
-            if (updates.flaggedItems.length > 0) {
-                emailBody += `🚩 CRITICAL MONITORING REQUIRED:\n`;
-                updates.flaggedItems.slice(0, 5).forEach((item, index) => {
-                    emailBody += `${index + 1}. ${item}\n`;
-                });
-                emailBody += `\n`;
-            }
-
-            // Add category-specific updates
-            const categories = [
-                { key: 'personalCare', name: '個人護理 Personal Care', icon: '🚿' },
-                { key: 'health', name: '健康醫療 Health & Medication', icon: '💊' },
-                { key: 'behavioral', name: '行為支援 Behavioral Support', icon: '🧠' },
-                { key: 'nutrition', name: '營養飲食 Nutrition & Hydration', icon: '🍽️' },
-                { key: 'mobility', name: '活動能力 Mobility & Safety', icon: '🚶' },
-                { key: 'communication', name: '溝通交流 Communication', icon: '🗣️' }
-            ];
-
-            let hasUpdates = false;
-            categories.forEach(category => {
-                if (updates[category.key] && updates[category.key].length > 0) {
-                    if (!hasUpdates) {
-                        emailBody += `📋 SPECIFIC CARE AREA UPDATES:\n\n`;
-                        hasUpdates = true;
-                    }
-                    emailBody += `${category.icon} ${category.name}:\n`;
-                    updates[category.key].slice(0, 3).forEach(update => {
-                        emailBody += `   • ${update}\n`;
-                    });
-                    emailBody += `\n`;
-                }
-            });
-
-            // Add new interventions
-            if (updates.newInterventions.length > 0) {
-                emailBody += `🎯 NEW INTERVENTIONS TO IMPLEMENT:\n`;
-                updates.newInterventions.slice(0, 5).forEach((intervention, index) => {
-                    emailBody += `${index + 1}. ${intervention}\n`;
-                });
-                emailBody += `\n`;
-            }
-
-            // Add monitoring requirements
-            if (updates.monitoringRequirements.length > 0) {
-                emailBody += `👁️ ENHANCED MONITORING REQUIREMENTS:\n`;
-                updates.monitoringRequirements.slice(0, 5).forEach((requirement, index) => {
-                    emailBody += `${index + 1}. ${requirement}\n`;
-                });
-                emailBody += `\n`;
-            }
-
-            emailBody += `📋 IMMEDIATE ACTION REQUIRED:
-✅ Review complete updated care plan (attached)
-✅ Brief ALL care staff on new procedures before next shift
-✅ Update care documentation systems
-✅ Implement new interventions immediately
-✅ Begin enhanced monitoring protocols
-✅ Schedule team meeting if high priority items exist
-
-⏰ IMPLEMENTATION TIMELINE:
-• Review: Within 2 hours of receiving this email
-• Staff briefing: Before next shift handover
-• Implementation: Start immediately
-• Documentation: Update within 24 hours
-• Follow-up review: ${reviewDate}
-
-📞 ESCALATION PROTOCOL:
-• Questions: Contact Nursing Supervisor immediately
-• Concerns: Notify Care Manager
-• Emergencies: Follow standard emergency procedures
-
-🎯 SUCCESS METRICS:
-• All staff briefed and signed off on changes
-• New interventions documented in care logs
-• Resident response monitored and recorded
-• Any issues or improvements noted for next review
-
-Generated by CarePlanSync AI System
-Timestamp: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
-Urgency Level: ${urgencyLevel}
-
-📄 Complete care plan document attached for detailed reference.`;
-
-            return emailBody;
-        }
-
-        // Enhanced Email to Family functionality with dynamic content
+        // Email to Family functionality
         document.getElementById('emailFamilyBtn').addEventListener('click', function() {
             if (window.currentReport) {
+                const subject = encodeURIComponent(`Care Plan Update - ${window.currentReport.resident_name}`);
+                
+                // Extract key changes for family communication
                 const content = window.currentReport.content;
-                const updates = extractCareplanUpdates(content);
+                let familyUpdates = [];
                 
-                const subject = encodeURIComponent(`${window.currentReport.resident_name}的護理計劃更新 Care Plan Update`);
+                // Look for update sections marked with ✏️
+                const updateSections = content.match(/##\s*✏️[^#]*(?:#[^#][^#]*)*?(?=##|$)/g);
+                if (updateSections) {
+                    updateSections.forEach(section => {
+                        const lines = section.split('\n');
+                        const title = lines[0].replace(/##\s*✏️\s*/, '').trim();
+                        
+                        // Extract key reasons/background for family understanding
+                        const reasons = [];
+                        lines.forEach(line => {
+                            if (line.includes('**Contributing Factors:**')) {
+                                let i = lines.indexOf(line) + 1;
+                                while (i < lines.length && lines[i].startsWith('•')) {
+                                    reasons.push(lines[i].replace('•', '').trim());
+                                    i++;
+                                }
+                            }
+                        });
+                        
+                        if (reasons.length > 0) {
+                            familyUpdates.push({
+                                issue: title,
+                                background: reasons.slice(0, 2) // Top 2 reasons for context
+                            });
+                        }
+                    });
+                }
                 
-                // Generate dynamic family email
-                let emailBody = generateFamilyEmail(window.currentReport.resident_name, updates, content);
-                
+                // Generate Family email body
+                let emailBody = `Dear Family,
+
+We hope this message finds you well. We wanted to update you on ${window.currentReport.resident_name}'s care plan and seek your valuable input.
+
+🏥 CARE PLAN UPDATES:
+
+Our care team has been closely monitoring ${window.currentReport.resident_name} and has identified some areas where we can enhance their care experience:
+`;
+
+                if (familyUpdates.length > 0) {
+                    familyUpdates.forEach((update, index) => {
+                        emailBody += `\n${index + 1}. ${update.issue}\n`;
+                        emailBody += `   Background: We've noticed that `;
+                        update.background.forEach((reason, i) => {
+                            emailBody += `${reason.toLowerCase()}${i < update.background.length - 1 ? ', and ' : ''}`;
+                        });
+                        emailBody += `.\n`;
+                    });
+                } else {
+                    emailBody += `\nWe've made some adjustments to better support ${window.currentReport.resident_name}'s daily care routine.`;
+                }
+
+                emailBody += `\n💭 WE VALUE YOUR INPUT:
+Your insights about ${window.currentReport.resident_name} are invaluable to us. Please share:
+
+• Any concerns or questions about these updates
+• Your observations about ${window.currentReport.resident_name}'s preferences
+• Suggestions based on what works well at home
+• Any family history or context that might help us
+• How you would like us to communicate future updates
+
+🤝 WORKING TOGETHER:
+We believe the best care comes from working closely with families. Your input helps us provide personalized, compassionate care that respects ${window.currentReport.resident_name}'s individual needs and preferences.
+
+📞 NEXT STEPS:
+Please feel free to:
+• Reply to this email with your thoughts
+• Call us at [PHONE NUMBER] to discuss
+• Schedule a meeting with the care team
+• Visit and observe the new care approaches
+
+We're committed to keeping you informed and involved in ${window.currentReport.resident_name}'s care journey.
+
+With warm regards,
+The Care Management Team
+${new Date().toLocaleDateString()}
+
+P.S. The full care plan document is attached for your reference.`;
+
                 const body = encodeURIComponent(emailBody);
                 const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
                 window.open(gmailUrl, '_blank');
@@ -815,134 +713,6 @@ Urgency Level: ${urgencyLevel}
             // Hide dropdown
             document.querySelector('.email-options').style.display = 'none';
         });
-
-        // Function to generate dynamic family email
-        function generateFamilyEmail(residentName, updates, content) {
-            const reviewDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString();
-            
-            let emailBody = `親愛的家人 Dear Family,
-
-我們希望您一切安好。我們想向您匯報${residentName}的護理計劃更新情況，並誠摯地希望聽取您寶貴的意見。
-
-We hope this message finds you well. We wanted to update you on ${residentName}'s care plan and seek your valuable input.
-
-🏥 護理計劃更新 CARE PLAN UPDATES:
-
-我們的護理團隊一直密切關注${residentName}的情況，並識別出一些可以提升護理質量的範疇：
-Our care team has been closely monitoring ${residentName} and has identified areas where we can enhance their care experience:
-
-`;
-
-            // Add positive progress if any
-            if (content.includes('improvement') || content.includes('progress') || content.includes('better')) {
-                emailBody += `🌟 好消息 POSITIVE DEVELOPMENTS:\n`;
-                emailBody += `我們很高興地報告${residentName}在一些方面有所進展。\n`;
-                emailBody += `We're pleased to report that ${residentName} has shown progress in several areas.\n\n`;
-            }
-
-            // Add care area updates in family-friendly language
-            const familyFriendlyCategories = [
-                { 
-                    key: 'personalCare', 
-                    name: '個人護理 Personal Care', 
-                    description: '我們正在調整日常護理程序以更好地滿足${residentName}的需要'
-                },
-                { 
-                    key: 'health', 
-                    name: '健康管理 Health Management', 
-                    description: '我們正在優化健康監護和醫療護理安排'
-                },
-                { 
-                    key: 'behavioral', 
-                    name: '情緒支援 Emotional Support', 
-                    description: '我們正在加強情緒和行為支援策略'
-                },
-                { 
-                    key: 'nutrition', 
-                    name: '營養飲食 Nutrition & Meals', 
-                    description: '我們正在改善用餐體驗和營養攝取'
-                },
-                { 
-                    key: 'mobility', 
-                    name: '活動安全 Mobility & Safety', 
-                    description: '我們正在優化活動安排和安全措施'
-                },
-                { 
-                    key: 'communication', 
-                    name: '溝通交流 Communication', 
-                    description: '我們正在改善溝通方式和社交互動'
-                }
-            ];
-
-            let hasSpecificUpdates = false;
-            familyFriendlyCategories.forEach((category, index) => {
-                if (updates[category.key] && updates[category.key].length > 0) {
-                    if (!hasSpecificUpdates) {
-                        emailBody += `📋 具體更新範疇 SPECIFIC UPDATE AREAS:\n\n`;
-                        hasSpecificUpdates = true;
-                    }
-                    emailBody += `${index + 1}. ${category.name}\n`;
-                    emailBody += `   ${category.description.replace('${residentName}', residentName)}\n`;
-                    
-                    // Add 1-2 specific items in gentle language
-                    const gentleUpdates = updates[category.key].slice(0, 2).map(update => {
-                        return update.replace(/urgent|immediate|critical/gi, 'enhanced')
-                                    .replace(/monitor closely/gi, 'pay special attention to')
-                                    .replace(/implement/gi, 'introduce');
-                    });
-                    
-                    gentleUpdates.forEach(update => {
-                        emailBody += `   • ${update}\n`;
-                    });
-                    emailBody += `\n`;
-                }
-            });
-
-            // Add comfort and reassurance section
-            emailBody += `🤗 請放心 PLEASE BE ASSURED:
-
-• 所有變更都是為了提升${residentName}的舒適度和生活品質
-• All changes are designed to enhance ${residentName}'s comfort and quality of life
-• 我們的專業團隊會密切監察護理效果
-• Our professional team will closely monitor the effectiveness of care
-• ${residentName}的安全和福祉始終是我們的首要考慮
-• ${residentName}'s safety and wellbeing remain our top priority
-
-💭 我們重視您的意見 WE VALUE YOUR INPUT:
-
-您對${residentName}的瞭解對我們來說非常寶貴。請分享：
-Your insights about ${residentName} are invaluable to us. Please share:
-
-• 對這些更新的任何疑問或關注 Any concerns or questions about these updates
-• 您對${residentName}喜好的觀察 Your observations about ${residentName}'s preferences  
-• 基於家庭經驗的建議 Suggestions based on family experience
-• 任何可能幫助我們的背景資訊 Any background information that might help us
-• 您希望我們如何與您溝通未來的更新 How you'd like us to communicate future updates
-
-📞 下一步 NEXT STEPS:
-
-下次回顧日期：${reviewDate}
-Next review date: ${reviewDate}
-
-請隨時：
-Please feel free to:
-• 回覆此電郵分享您的想法 Reply to this email with your thoughts
-• 致電 [電話號碼] 討論 Call us at [PHONE NUMBER] to discuss  
-• 安排與護理團隊會面 Schedule a meeting with the care team
-• 探訪並觀察新的護理方式 Visit and observe the new care approaches
-
-我們致力於讓您了解並參與${residentName}的護理過程。
-We're committed to keeping you informed and involved in ${residentName}'s care journey.
-
-此致敬禮 With warm regards,
-護理管理團隊 The Care Management Team
-${new Date().toLocaleDateString()}
-
-附註：完整的護理計劃文件已附上供您參考。
-P.S. The complete care plan document is attached for your reference.`;
-
-            return emailBody;
-        }
 
         // Download functionality (PDF)
         document.getElementById('downloadBtn').addEventListener('click', async function() {
