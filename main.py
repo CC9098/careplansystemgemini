@@ -7,7 +7,7 @@ import io
 import json
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, send_file
-import google.generativeai as genai
+import anthropic
 from werkzeug.utils import secure_filename
 import markdown
 import re
@@ -22,18 +22,17 @@ app.config['UPLOAD_FOLDER'] = 'temp_uploads'
 # Create temp folder
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Initialize Gemini API
-api_key = os.environ.get('GEMINI_API_KEY')
+# Initialize Claude API
+api_key = os.environ.get('CLAUDE')
 if not api_key:
-    print("Warning: GEMINI_API_KEY not found in environment variables")
+    print("Warning: CLAUDE API key not found in environment variables")
     client = None
 else:
     try:
-        genai.configure(api_key=api_key)
-        client = genai.GenerativeModel('gemini-2.0-flash-exp')
-        print("Gemini API client initialized successfully")
+        client = anthropic.Anthropic(api_key=api_key)
+        print("Claude API client initialized successfully")
     except Exception as e:
-        print(f"Gemini initialization error: {e}")
+        print(f"Anthropic initialization error: {e}")
         client = None
 
 import PyPDF2
@@ -181,15 +180,14 @@ Guidelines:
 - For care_plan_gaps, identify significant patterns/events in logs that are completely missing from the current care plan"""
 
     try:
-        response = client.generate_content(
-            prompt,
-            generation_config={
-                "max_output_tokens": 3000,
-                "temperature": 0.7,
-            }
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=3000,
+            temperature=0.7,
+            messages=[{"role": "user", "content": prompt}]
         )
 
-        response_text = response.text
+        response_text = message.content[0].text
         # Try to extract JSON from the response
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
         if json_match:
@@ -209,15 +207,15 @@ Guidelines:
 
 def generate_final_care_plan(original_care_plan, selected_suggestions, manager_comments, resident_name):
     """Step 3: Generate final care plan with better integration and priority observation section"""
-
+    
     # Get current date
     from datetime import datetime
     today = datetime.now().strftime('%Y-%m-%d')
-
+    
     # Separate flagged items for priority observation section
     flagged_items = [s for s in selected_suggestions if s.get('flagged', False)]
     regular_updates = [s for s in selected_suggestions if not s.get('flagged', False)]
-
+    
     # Format selected suggestions by category for better integration
     updates_by_category = {}
     for suggestion in regular_updates:
@@ -225,7 +223,7 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
         if category not in updates_by_category:
             updates_by_category[category] = []
         updates_by_category[category].append(suggestion)
-
+    
     # Format updates for integration
     categorized_updates = ""
     if updates_by_category:
@@ -237,7 +235,7 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
                 if suggestion.get('interventions'):
                     categorized_updates += f"  Actions: {', '.join(suggestion['interventions'][:3])}\n"
             categorized_updates += "\n"
-
+    
     # Format flagged items for priority section
     priority_observations = ""
     if flagged_items:
@@ -295,14 +293,13 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
 Generate the complete updated care plan with natural integration."""
 
     try:
-        response = client.generate_content(
-            prompt,
-            generation_config={
-                "max_output_tokens": 4000,
-                "temperature": 0.7,
-            }
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=4000,
+            temperature=0.7,
+            messages=[{"role": "user", "content": prompt}]
         )
-        return response.text
+        return message.content[0].text
     except Exception as e:
         return f"Error generating care plan: {str(e)}"
 
@@ -440,7 +437,7 @@ def index():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     if not client:
-        return jsonify({'error': 'Gemini API not available. Please check your GEMINI_API_KEY environment variable.'}), 500
+        return jsonify({'error': 'Claude API not available. Please check your CLAUDE environment variable.'}), 500
 
     try:
         # Get form data
@@ -540,7 +537,7 @@ def analyze():
 def generate_care_plan():
     """Step 3: Generate final care plan based on manager's selections"""
     if not client:
-        return jsonify({'error': 'Gemini API not available. Please check your GEMINI_API_KEY environment variable.'}), 500
+        return jsonify({'error': 'Claude API not available. Please check your CLAUDE environment variable.'}), 500
 
     try:
         data = request.get_json()
@@ -636,7 +633,7 @@ def download_pdf():
 
         # Get styles
         styles = getSampleStyleSheet()
-
+        
         # Custom styles
         title_style = ParagraphStyle(
             'CustomTitle',
@@ -645,7 +642,7 @@ def download_pdf():
             spaceAfter=30,
             alignment=TA_CENTER,
         )
-
+        
         heading_style = ParagraphStyle(
             'CustomHeading',
             parent=styles['Heading2'],
@@ -666,7 +663,7 @@ def download_pdf():
             if not line:
                 elements.append(Spacer(1, 6))
                 continue
-
+                
             # Handle headers
             if line.startswith('# '):
                 text = re.sub(r'^# ', '', line)
@@ -724,6 +721,13 @@ def send_email():
         # - AWS SES
         # - SMTP server
         # - etc.
+
+        # Example implementation would look like:
+        # import smtplib
+        # from email.mime.text import MIMEText
+        # from email.mime.multipart import MIMEMultipart
+        # from email.mime.base import MIMEBase
+        # from email import encoders
 
         # Create email with care plan as attachment
         email_content = f"""

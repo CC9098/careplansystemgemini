@@ -4,8 +4,6 @@ anthropic
 markdown
 werkzeug
 PyPDF2
+PyPDF2
 reportlab
-openai
-google-generativeai
-openai
-google-generativeai
+reportlab

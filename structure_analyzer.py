@@ -267,29 +267,3 @@ def is_large_file(content):
     """Check if file is considered large"""
     lines = content.split('\n')
     return len(lines) > 500 or len(content) > 100000
-def analyze_csv_structure(content):
-    """Analyze CSV structure and return metadata"""
-    lines = content.strip().split('\n')
-    return {
-        'total_lines': len(lines),
-        'has_header': True,
-        'columns': [],
-        'sample_data': lines[:5] if lines else []
-    }
-
-def smart_compress_csv(content, structure_info):
-    """Compress CSV content by keeping important data"""
-    lines = content.strip().split('\n')
-    
-    # For large files, keep header + sample of recent data
-    if len(lines) > 100:
-        header = lines[0] if lines else ""
-        recent_data = lines[-50:]  # Keep last 50 entries
-        return header + '\n' + '\n'.join(recent_data)
-    
-    return content
-
-def is_large_file(content):
-    """Check if file is considered large and needs processing"""
-    lines = content.strip().split('\n')
-    return len(lines) > 100 or len(content) > 50000  # More than 100 lines or 50KB

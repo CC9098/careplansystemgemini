@@ -1,248 +1,989 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>護理計劃AI分析系統</title>
+    <title>CarePlanSync - AI Care Plan Analysis</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <div class="header-decoration">
-                <div class="header-svg header-svg-left">
-                    <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="25" cy="25" r="20" fill="#FADADD" opacity="0.6"/>
-                        <circle cx="75" cy="15" r="15" fill="#F2A5A8" opacity="0.5"/>
-                        <circle cx="10" cy="70" r="25" fill="#FEF2F3" opacity="0.7"/>
+            <div class="brand-container">
+                <div class="brand-logo">
+                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Main circle background -->
+                        <circle cx="32" cy="32" r="30" fill="url(#gradient1)" stroke="#F08080" stroke-width="2"/>
+                        
+                        <!-- Heart symbol for care -->
+                        <path d="M32 45c-1.5-1.5-12-10.5-12-18 0-4.5 3.5-8 8-8 2.5 0 4.5 1 6 2.5C35.5 19 37.5 18 40 18c4.5 0 8 3.5 8 8 0 7.5-10.5 16.5-12 18z" fill="white" stroke="#F08080" stroke-width="1.5"/>
+                        
+                        <!-- Medical cross -->
+                        <rect x="29" y="24" width="6" height="16" rx="1" fill="#F08080"/>
+                        <rect x="24" y="29" width="16" height="6" rx="1" fill="#F08080"/>
+                        
+                        <!-- Sync arrows -->
+                        <path d="M18 15 L22 11 L22 13 L28 13 L28 17 L22 17 L22 19 Z" fill="#FFC07F" opacity="0.8"/>
+                        <path d="M46 49 L42 53 L42 51 L36 51 L36 47 L42 47 L42 45 Z" fill="#FFC07F" opacity="0.8"/>
+                        
+                        <!-- Data dots -->
+                        <circle cx="12" cy="32" r="2" fill="#A5CBAF"/>
+                        <circle cx="52" cy="32" r="2" fill="#A5CBAF"/>
+                        <circle cx="32" cy="12" r="2" fill="#A5CBAF"/>
+                        <circle cx="32" cy="52" r="2" fill="#A5CBAF"/>
+                        
+                        <defs>
+                            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FEF2F3;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#FADADD;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
                     </svg>
                 </div>
-                <div class="header-svg header-svg-right">
-                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="95" cy="95" r="20" fill="#FFC07F" opacity="0.4"/>
-                        <circle cx="25" cy="105" r="15" fill="#A5CBAF" opacity="0.5"/>
-                        <circle cx="110" cy="30" r="25" fill="#FADADD" opacity="0.3"/>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="upload-icon">
-                <div class="brand-container">
-                    <div class="brand-circle">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
+                <div class="brand-text">
+                    <h1>CarePlanSync</h1>
                     <div class="brand-accent"></div>
                 </div>
             </div>
-
-            <h1>護理計劃 AI 分析系統</h1>
-            <p>上傳住戶日誌和現有護理計劃，AI 將為您分析並提供優化建議</p>
+            <p>Upload resident logs and current care plan. AI will analyze and provide optimization suggestions.</p>
         </header>
 
         <main>
+            <!-- Step 1: File Upload -->
             <form id="uploadForm" class="upload-section">
                 <div class="form-group">
-                    <label for="resident_name">住戶姓名：</label>
-                    <input type="text" id="resident_name" name="resident_name" placeholder="請輸入住戶姓名" required>
+                    <label for="resident_name">Resident Name:</label>
+                    <input type="text" id="resident_name" name="resident_name" placeholder="Enter resident name" required oninvalid="this.setCustomValidity('Please enter resident name')" oninput="this.setCustomValidity('')">
                 </div>
 
                 <div class="upload-grid">
-                    <div class="upload-area">
-                        <div class="upload-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <polyline points="14,2 14,8 20,8" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <line x1="16" y1="13" x2="8" y2="13" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <line x1="16" y1="17" x2="8" y2="17" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <polyline points="10,9 9,9 8,9" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <h3>每日護理日誌</h3>
-                        <p>請上傳包含住戶日常護理記錄的檔案</p>
-                        <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt,.pdf" required>
-                        <label for="daily_log" class="file-input-label">選擇檔案</label>
-                        <p class="file-info">支援格式：CSV, TXT, PDF</p>
+                    <div class="upload-box">
+                        <h3>Monthly Care Log</h3>
+                        <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt,.pdf" required oninvalid="this.setCustomValidity('Please select a care log file')" oninput="this.setCustomValidity('')">
+                        <label for="daily_log" class="file-label">
+                            <span>Click to select log file</span>
+                        </label>
+                        <p class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables.</small></p>
                     </div>
 
-                    <div class="upload-area">
-                        <div class="upload-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" stroke="#A5CBAF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <polyline points="14,2 14,8 20,8" stroke="#A5CBAF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M12 18v-6l-2 2" stroke="#A5CBAF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="m10 14 2-2 2 2" stroke="#A5CBAF" stroke="#A5CBAF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <h3>現有護理計劃</h3>
-                        <p>請上傳住戶目前的護理計劃檔案</p>
-                        <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt,.pdf" required>
-                        <label for="care_plan" class="file-input-label">選擇檔案</label>
-                        <p class="file-info">支援格式：CSV, TXT, PDF</p>
+                    <div class="upload-box">
+                        <h3>Current Care Plan</h3>
+                        <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt,.pdf" required oninvalid="this.setCustomValidity('Please select a care plan file')" oninput="this.setCustomValidity('')">
+                        <label for="care_plan" class="file-label">
+                            <span>Click to select care plan</span>
+                        </label>
+                        <p class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables.</small></p>
                     </div>
                 </div>
 
-                <button type="submit" class="analyze-btn">
-                    <span class="btn-text">開始 AI 分析</span>
-                    <div class="btn-spinner" style="display: none;"></div>
-                </button>
+                <button type="submit" class="analyze-btn">📊 Analyze & Get Suggestions</button>
             </form>
 
-            <div id="results" style="display: none;">
-                <div class="results-section">
-                    <div class="results-header">
-                        <h2>AI 分析結果</h2>
-                        <div class="download-actions">
-                            <button onclick="downloadMarkdown()" class="download-btn">
-                                <span>📄 下載 Markdown</span>
-                            </button>
-                            <button onclick="downloadPDF()" class="download-btn">
-                                <span>📋 下載 PDF</span>
-                            </button>
-                        </div>
+            <!-- Loading -->
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>AI is analyzing files, please wait...</p>
+            </div>
+
+            <!-- Step 2: Suggestion Selection -->
+            <div id="suggestions" class="results-section" style="display: none;">
+                <h2>📋 Care Plan Update Suggestions</h2>
+
+                <div id="analysisSummary" class="analysis-summary"></div>
+
+                <div class="suggestions-container">
+                    <h3>📋 Select suggestions to implement:</h3>
+                    <div id="suggestionsList"></div>
+
+                    <div class="manager-comments">
+                        <h4>💬 Additional Comments/Suggestions:</h4>
+                        <textarea id="managerComments" placeholder="Add your own observations or modifications..."></textarea>
                     </div>
-                    <div id="analysisContent" class="analysis-content"></div>
+
+                    <button id="generatePlanBtn" class="analyze-btn">✅ Generate Updated Care Plan</button>
                 </div>
             </div>
 
-            <div id="loading" class="loading" style="display: none;">
-                <div class="spinner"></div>
-                <p>AI 正在分析您的檔案，請稍候...</p>
+            <!-- Step 3: Final Care Plan -->
+            <div id="finalPlan" class="results-section" style="display: none;">
+                <div class="results-header">
+                    <h2>📄 Updated Care Plan</h2>
+                    <div class="action-buttons">
+                        <button id="copyContentBtn" class="action-btn">📋 Copy Content</button>
+                        <button id="editBtn" class="action-btn">✏️ Edit Plan</button>
+                        <button id="addToCalendarBtn" class="action-btn">📅 Add Review to Calendar</button>
+                        <div class="email-dropdown">
+                            <button id="emailBtn" class="action-btn dropdown-toggle">📧 Email Plan ▼</button>
+                            <div class="email-options">
+                                <button id="emailCareTeamBtn" class="email-option">👥 Email Care Team</button>
+                                <button id="emailFamilyBtn" class="email-option">👨‍👩‍👧‍👦 Email Family</button>
+                            </div>
+                        </div>
+                        <button id="downloadBtn" class="action-btn">📥 Download PDF</button>
+                        <button id="startOverBtn" class="action-btn">🔄 Start Over</button>
+                    </div>
+                </div>
+                <div id="carePlanContent" class="content"></div>
             </div>
+
+
         </main>
     </div>
 
     <script>
-        let currentAnalysisData = null;
-        let residentName = '';
+        let currentData = {};
 
+        // File upload handlers
+        document.getElementById('daily_log').addEventListener('change', function(e) {
+            updateFileLabel(this, 'Click to select log file');
+        });
+
+        document.getElementById('care_plan').addEventListener('change', function(e) {
+            updateFileLabel(this, 'Click to select care plan');
+        });
+
+        function updateFileLabel(input, defaultText) {
+            const label = input.nextElementSibling.querySelector('span');
+            label.textContent = input.files.length > 0 ? input.files[0].name : defaultText;
+        }
+
+        // Step 1: Upload and analyze
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const formData = new FormData();
+            // Check if files are selected
+            const residentName = document.getElementById('resident_name').value.trim();
             const dailyLogFile = document.getElementById('daily_log').files[0];
             const carePlanFile = document.getElementById('care_plan').files[0];
-            residentName = document.getElementById('resident_name').value;
 
-            if (!dailyLogFile || !carePlanFile || !residentName) {
-                alert('請確保所有欄位都已填寫並選擇了檔案');
+            if (!residentName) {
+                alert('Please enter resident name');
                 return;
             }
 
-            formData.append('daily_log', dailyLogFile);
-            formData.append('care_plan', carePlanFile);
-            formData.append('resident_name', residentName);
+            if (!dailyLogFile) {
+                alert('Please select a care log file');
+                return;
+            }
 
-            // Show loading
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('results').style.display = 'none';
+            if (!carePlanFile) {
+                alert('Please select a care plan file');
+                return;
+            }
 
-            // Update button state
-            const button = document.querySelector('.analyze-btn');
-            const btnText = button.querySelector('.btn-text');
-            const btnSpinner = button.querySelector('.btn-spinner');
+            const analyzeBtn = document.querySelector('.analyze-btn');
+            const originalBtnText = analyzeBtn.innerHTML;
+            
+            // Show loading state immediately
+            analyzeBtn.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <div class="btn-spinner"></div>
+                    <span>🤖 Analyzing...</span>
+                </div>
+            `;
+            analyzeBtn.disabled = true;
 
-            button.disabled = true;
-            btnText.textContent = '分析中...';
-            btnSpinner.style.display = 'inline-block';
+            const loading = document.getElementById('loading');
+            const suggestions = document.getElementById('suggestions');
+            const finalPlan = document.getElementById('finalPlan');
+
+            // Hide all sections
+            suggestions.style.display = 'none';
+            finalPlan.style.display = 'none';
+            loading.style.display = 'block';
 
             try {
+                const formData = new FormData(this);
                 const response = await fetch('/analyze', {
                     method: 'POST',
                     body: formData
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
 
-                if (data.success) {
-                    document.getElementById('analysisContent').innerHTML = data.html;
-                    currentAnalysisData = data;
-                    document.getElementById('results').style.display = 'block';
+                if (data.success && data.step === 'suggestions') {
+                    currentData = data;
+                    displaySuggestions(data);
+                    suggestions.style.display = 'block';
                 } else {
-                    alert('分析失敗：' + (data.error || '未知錯誤'));
+                    alert('Analysis failed: ' + (data.error || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error occurred:', error);
-                alert('發生錯誤：' + error.message);
+                alert('Error occurred: ' + error.message);
             } finally {
-                document.getElementById('loading').style.display = 'none';
-
-                // Reset button state
-                button.disabled = false;
-                btnText.textContent = '開始 AI 分析';
-                btnSpinner.style.display = 'none';
+                loading.style.display = 'none';
+                // Restore button state
+                analyzeBtn.innerHTML = originalBtnText;
+                analyzeBtn.disabled = false;
             }
         });
 
-        function downloadMarkdown() {
-            if (!currentAnalysisData || !currentAnalysisData.markdown) {
-                alert('沒有可下載的內容');
+        function displaySuggestions(data) {
+            // Display analysis summary with icon
+            let summaryHtml = `
+                <h4>🔍 Analysis Summary:</h4>
+                <p>${data.analysis_summary}</p>
+            `;
+
+            // Add care plan gaps alert if present
+            if (data.care_plan_gaps && data.care_plan_gaps.description) {
+                const alertClass = data.care_plan_gaps.alert_level === 'High' ? 'gap-alert-high' : 
+                                 data.care_plan_gaps.alert_level === 'Medium' ? 'gap-alert-medium' : 'gap-alert-low';
+                
+                summaryHtml += `
+                    <div class="care-plan-gap-alert ${alertClass}">
+                        <h4>⚠️ Care Plan Gap Alert - ${data.care_plan_gaps.alert_level} Priority</h4>
+                        <p><strong>Gap Description:</strong> ${data.care_plan_gaps.description}</p>
+                        <div class="missing-areas">
+                            <strong>Missing Areas:</strong>
+                            <ul>
+                                ${data.care_plan_gaps.missing_areas.map(area => `<li>${area}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <p class="gap-action"><strong>Action Required:</strong> Manager must review and update care plan to address these gaps immediately.</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('analysisSummary').innerHTML = summaryHtml;
+
+            // Display suggestions with specific issues and dynamic options
+            const suggestionsList = document.getElementById('suggestionsList');
+            suggestionsList.innerHTML = '';
+
+            if (!data.suggestions || data.suggestions.length === 0) {
+                suggestionsList.innerHTML = '<p>No suggestions found in the analysis.</p>';
                 return;
             }
 
-            fetch('/download', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    content: currentAnalysisData.markdown,
-                    resident_name: residentName
-                })
-            })
-            .then(response => response.blob())
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = `Care_Plan_${residentName}_${new Date().toISOString().slice(0,10)}.md`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            })
-            .catch(error => {
-                console.error('Download error:', error);
-                alert('下載失敗');
+            data.suggestions.forEach((suggestion, index) => {
+                const issueIcon = suggestion.icon || '📋';
+                const specificIssue = suggestion.specific_issue || suggestion.suggestion || 'Care Issue';
+                const description = suggestion.description || suggestion.reason || 'No description available';
+                
+                const div = document.createElement('div');
+                div.className = 'suggestion-card';
+                div.innerHTML = `
+                    <div class="suggestion-header priority-${suggestion.priority ? suggestion.priority.toLowerCase() : 'medium'}" onclick="toggleSuggestion(${index})">
+                        <div class="what-section">
+                            <span class="priority priority-${suggestion.priority ? suggestion.priority.toLowerCase() : 'medium'}">${suggestion.priority || 'Medium'}</span>
+                            <strong>${issueIcon} ${specificIssue}</strong>
+                            <p class="problem-statement">${description}</p>
+                        </div>
+                        <span class="expand-icon">▼</span>
+                    </div>
+
+                    <div id="suggestion-details-${index}" class="suggestion-details" style="display: none;">
+                        <div class="why-section">
+                            <h4>🤔 Possible Reasons (select all that apply):</h4>
+                            <div class="checkbox-group">
+                                ${generateReasonCheckboxes(suggestion.possible_reasons || [], index)}
+                                <label class="custom-reason">
+                                    <input type="checkbox" name="reason-${index}" value="custom"> Other: 
+                                    <input type="text" name="custom-reason-${index}" placeholder="Specify custom reason">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="how-section">
+                            <h4>✅ Suggested Interventions (select all that apply):</h4>
+                            <div class="checkbox-group">
+                                ${generateInterventionCheckboxes(suggestion.suggested_interventions || [], index)}
+                                <label class="custom-intervention">
+                                    <input type="checkbox" name="intervention-${index}" value="custom"> Custom: 
+                                    <input type="text" name="custom-intervention-${index}" placeholder="Specify custom intervention">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="include-section">
+                            <div class="flag-and-include">
+                                <label class="flag-suggestion">
+                                    <input type="checkbox" name="flag-suggestion" value="${index}">
+                                    <span class="flag-icon">🚩</span> <strong>Flag for Priority Follow-up</strong>
+                                </label>
+                                <label class="include-suggestion">
+                                    <input type="checkbox" name="include-suggestion" value="${index}">
+                                    <strong>Include this issue in final care plan</strong>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                suggestionsList.appendChild(div);
             });
         }
 
-        function downloadPDF() {
-            if (!currentAnalysisData || !currentAnalysisData.markdown) {
-                alert('沒有可下載的內容');
-                return;
+        function generateReasonCheckboxes(reasons, index) {
+            return reasons.map((reason, i) => 
+                `<label><input type="checkbox" name="reason-${index}" value="${i}"> ${reason}</label>`
+            ).join('');
+        }
+
+        function generateInterventionCheckboxes(interventions, index) {
+            return interventions.map((intervention, i) => 
+                `<label><input type="checkbox" name="intervention-${index}" value="${i}"> ${intervention}</label>`
+            ).join('');
+        }
+
+        function toggleSuggestion(index) {
+            const details = document.getElementById(`suggestion-details-${index}`);
+            const icon = details.previousElementSibling.querySelector('.expand-icon');
+
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                details.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+
+        // Generate care plan functionality
+        document.getElementById('generatePlanBtn').addEventListener('click', async function() {
+            const generateBtn = this;
+            const originalBtnText = generateBtn.innerHTML;
+            
+            // Show loading state immediately
+            generateBtn.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <div class="btn-spinner"></div>
+                    <span>✏️ Generating...</span>
+                </div>
+            `;
+            generateBtn.disabled = true;
+
+            const loading = document.getElementById('loading');
+            const finalPlan = document.getElementById('finalPlan');
+
+            loading.style.display = 'block';
+
+            try {
+                // Collect selected suggestions with WHAT-WHY-HOW data and flag status
+                const selectedSuggestions = [];
+
+                document.querySelectorAll('input[name="include-suggestion"]:checked').forEach(checkbox => {
+                    const index = parseInt(checkbox.value);
+                    const suggestion = currentData.suggestions[index];
+
+                    if (!suggestion) return;
+
+                    // Check if this item is flagged
+                    const isFlagged = document.querySelector(`input[name="flag-suggestion"][value="${index}"]`).checked;
+
+                    // Collect WHY data (reasons)
+                    const reasons = [];
+                    const reasonCheckboxes = document.querySelectorAll(`input[name="reason-${index}"]:checked`);
+                    reasonCheckboxes.forEach(cb => {
+                        if (cb.value === 'custom') {
+                            const customReason = document.querySelector(`input[name="custom-reason-${index}"]`).value;
+                            if (customReason) reasons.push(customReason);
+                        } else {
+                            const reasonIndex = parseInt(cb.value);
+                            if (suggestion.possible_reasons && suggestion.possible_reasons[reasonIndex]) {
+                                reasons.push(suggestion.possible_reasons[reasonIndex]);
+                            }
+                        }
+                    });
+
+                    // Collect HOW data (interventions)
+                    const interventions = [];
+                    const interventionCheckboxes = document.querySelectorAll(`input[name="intervention-${index}"]:checked`);
+                    interventionCheckboxes.forEach(cb => {
+                        if (cb.value === 'custom') {
+                            const customIntervention = document.querySelector(`input[name="custom-intervention-${index}"]`).value;
+                            if (customIntervention) interventions.push(customIntervention);
+                        } else {
+                            const interventionIndex = parseInt(cb.value);
+                            if (suggestion.suggested_interventions && suggestion.suggested_interventions[interventionIndex]) {
+                                interventions.push(suggestion.suggested_interventions[interventionIndex]);
+                            }
+                        }
+                    });
+
+                    selectedSuggestions.push({
+                        ...suggestion,
+                        reasons: reasons,
+                        interventions: interventions,
+                        flagged: isFlagged
+                    });
+                });
+
+                const managerComments = document.getElementById('managerComments').value || '';
+
+                console.log('Sending data:', {
+                    original_care_plan: currentData.original_care_plan,
+                    selected_suggestions: selectedSuggestions,
+                    manager_comments: managerComments,
+                    resident_name: currentData.resident_name
+                });
+
+                const response = await fetch('/generate_care_plan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        original_care_plan: currentData.original_care_plan,
+                        selected_suggestions: selectedSuggestions,
+                        manager_comments: managerComments,
+                        resident_name: currentData.resident_name
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.success) {
+                    document.getElementById('carePlanContent').innerHTML = data.care_plan.html;
+                    finalPlan.style.display = 'block';
+
+                    // Store for download
+                    window.currentReport = {
+                        content: data.care_plan.markdown,
+                        resident_name: currentData.resident_name
+                    };
+
+                    // Scroll to results
+                    finalPlan.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('Care plan generation failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error in generate care plan:', error);
+                alert('Error occurred: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+                // Restore button state
+                generateBtn.innerHTML = originalBtnText;
+                generateBtn.disabled = false;
+            }
+        });
+
+        // Copy content functionality (copies HTML content)
+        document.getElementById('copyContentBtn').addEventListener('click', function() {
+            const content = document.getElementById('carePlanContent');
+            if (content) {
+                const range = document.createRange();
+                range.selectNode(content);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                alert('Care plan content copied to clipboard!');
+            }
+        });
+
+        // Edit functionality
+        document.getElementById('editBtn').addEventListener('click', function() {
+            if (window.currentReport) {
+                const content = document.getElementById('carePlanContent');
+                const currentHtml = content.innerHTML;
+                
+                // Convert to editable
+                content.innerHTML = `
+                    <div class="edit-container">
+                        <textarea id="editableContent" style="width: 100%; min-height: 400px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 14px; line-height: 1.6;">${window.currentReport.content}</textarea>
+                        <div style="margin-top: 15px; text-align: right;">
+                            <button id="cancelEdit" class="action-btn" style="margin-right: 10px;">Cancel</button>
+                            <button id="saveEdit" class="action-btn primary">Save Changes</button>
+                        </div>
+                    </div>
+                `;
+                
+                // Cancel edit
+                document.getElementById('cancelEdit').addEventListener('click', function() {
+                    content.innerHTML = currentHtml;
+                });
+                
+                // Save edit
+                document.getElementById('saveEdit').addEventListener('click', function() {
+                    const newContent = document.getElementById('editableContent').value;
+                    window.currentReport.content = newContent;
+                    
+                    // Convert back to HTML display
+                    const converter = new showdown.Converter();
+                    content.innerHTML = converter.makeHtml(newContent);
+                    
+                    alert('Changes saved successfully!');
+                });
+            }
+        });
+
+        // Email dropdown toggle
+        document.getElementById('emailBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const dropdown = this.parentElement;
+            const options = dropdown.querySelector('.email-options');
+            const isVisible = options.style.display === 'block';
+            
+            // Hide all other dropdowns first
+            document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+            
+            options.style.display = isVisible ? 'none' : 'block';
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.email-dropdown')) {
+                document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+            }
+        });
+
+        // Google Calendar functionality
+        document.getElementById('addToCalendarBtn').addEventListener('click', function() {
+            if (window.currentReport) {
+                // Calculate next review date (30 days from today)
+                const today = new Date();
+                const reviewDate = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
+                
+                // Format dates for Google Calendar
+                const startDate = reviewDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+                const endDate = new Date(reviewDate.getTime() + (60 * 60 * 1000)).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'; // 1 hour duration
+                
+                // Extract priority items from care plan for event description
+                const content = window.currentReport.content;
+                let priorityItems = [];
+                
+                // Look for flagged items or high priority sections
+                if (content.includes('🚩 Priority Observation Areas') || content.includes('Priority Flagged Items')) {
+                    const prioritySection = content.match(/🚩\s*Priority[^#]*?(?=##|$)/g);
+                    if (prioritySection) {
+                        prioritySection.forEach(section => {
+                            const lines = section.split('\n');
+                            lines.forEach(line => {
+                                if (line.includes('🚩') && line.trim().length > 5) {
+                                    priorityItems.push(line.replace(/🚩/g, '').trim());
+                                }
+                            });
+                        });
+                    }
+                }
+                
+                // Build event description
+                let eventDescription = `Care Plan Review for ${window.currentReport.resident_name}\\n\\n`;
+                eventDescription += `📋 REVIEW CHECKLIST:\\n`;
+                eventDescription += `• Assess progress on current care interventions\\n`;
+                eventDescription += `• Review resident's response to care plan changes\\n`;
+                eventDescription += `• Update care strategies based on observations\\n`;
+                eventDescription += `• Document any new concerns or improvements\\n\\n`;
+                
+                if (priorityItems.length > 0) {
+                    eventDescription += `🚩 PRIORITY AREAS TO REVIEW:\\n`;
+                    priorityItems.slice(0, 5).forEach(item => {
+                        eventDescription += `• ${item}\\n`;
+                    });
+                    eventDescription += `\\n`;
+                }
+                
+                eventDescription += `📞 Attendees: Care Manager, Nursing Supervisor, Primary Care Staff\\n`;
+                eventDescription += `📄 Bring: Updated care plan document\\n`;
+                eventDescription += `⏰ Duration: 60 minutes`;
+                
+                // Google Calendar URL
+                const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Care Plan Review - ${window.currentReport.resident_name}`)}&dates=${startDate}/${endDate}&details=${encodeURIComponent(eventDescription)}&location=${encodeURIComponent('Care Facility - Conference Room')}&ctz=Asia/Hong_Kong`;
+                
+                window.open(calendarUrl, '_blank');
+            }
+        });
+
+        // Enhanced Email to Care Team functionality with dynamic content
+        document.getElementById('emailCareTeamBtn').addEventListener('click', function() {
+            if (window.currentReport) {
+                const content = window.currentReport.content;
+                
+                // Extract different types of updates dynamically
+                const updates = extractCareplanUpdates(content);
+                
+                const subject = encodeURIComponent(`URGENT: Care Plan Update - ${window.currentReport.resident_name} (${updates.highPriorityCount} Priority Items)`);
+                
+                // Generate dynamic email body based on care plan content
+                let emailBody = generateCareTeamEmail(window.currentReport.resident_name, updates);
+                
+                const body = encodeURIComponent(emailBody);
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
+                window.open(gmailUrl, '_blank');
+            }
+            
+            // Hide dropdown
+            document.querySelector('.email-options').style.display = 'none';
+        });
+
+        // Function to extract care plan updates dynamically
+        function extractCareplanUpdates(content) {
+            const updates = {
+                personalCare: [],
+                health: [],
+                behavioral: [],
+                nutrition: [],
+                mobility: [],
+                communication: [],
+                flaggedItems: [],
+                newInterventions: [],
+                monitoringRequirements: [],
+                highPriorityCount: 0,
+                mediumPriorityCount: 0
+            };
+            
+            const lines = content.split('\n');
+            let currentSection = '';
+            let currentUpdate = null;
+            
+            lines.forEach(line => {
+                line = line.trim();
+                
+                // Identify sections
+                if (line.includes('Personal Care') || line.includes('個人護理')) {
+                    currentSection = 'personalCare';
+                } else if (line.includes('Health') || line.includes('Medication') || line.includes('健康')) {
+                    currentSection = 'health';
+                } else if (line.includes('Behavior') || line.includes('行為')) {
+                    currentSection = 'behavioral';
+                } else if (line.includes('Nutrition') || line.includes('Eating') || line.includes('營養')) {
+                    currentSection = 'nutrition';
+                } else if (line.includes('Mobility') || line.includes('活動')) {
+                    currentSection = 'mobility';
+                } else if (line.includes('Communication') || line.includes('溝通')) {
+                    currentSection = 'communication';
+                }
+                
+                // Look for flagged items
+                if (line.includes('🚩')) {
+                    updates.flaggedItems.push(line.replace(/🚩/g, '').trim());
+                    updates.highPriorityCount++;
+                }
+                
+                // Look for new content markers
+                if (line.includes('✏️')) {
+                    const updateText = line.replace(/✏️/g, '').replace(/[#*]/g, '').trim();
+                    if (updateText && currentSection) {
+                        updates[currentSection].push(updateText);
+                    }
+                    if (line.toLowerCase().includes('high') || line.includes('urgent')) {
+                        updates.highPriorityCount++;
+                    } else {
+                        updates.mediumPriorityCount++;
+                    }
+                }
+                
+                // Look for action items
+                if (line.startsWith('•') && (line.includes('monitor') || line.includes('observe') || line.includes('track'))) {
+                    updates.monitoringRequirements.push(line.replace('•', '').trim());
+                }
+                
+                // Look for new interventions
+                if (line.startsWith('•') && (line.includes('implement') || line.includes('provide') || line.includes('ensure'))) {
+                    updates.newInterventions.push(line.replace('•', '').trim());
+                }
+            });
+            
+            return updates;
+        }
+
+        // Function to generate dynamic care team email
+        function generateCareTeamEmail(residentName, updates) {
+            const urgencyLevel = updates.highPriorityCount > 2 ? 'CRITICAL' : updates.highPriorityCount > 0 ? 'HIGH' : 'MODERATE';
+            const reviewDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString();
+            
+            let emailBody = `🚨 ${urgencyLevel} PRIORITY: Care Plan Update Required
+
+Dear Care Team,
+
+The care plan for ${residentName} has been updated and requires IMMEDIATE attention and implementation.
+
+📊 UPDATE SUMMARY:
+• ${updates.highPriorityCount} High Priority Changes
+• ${updates.mediumPriorityCount} Standard Updates
+• ${updates.flaggedItems.length} Items Flagged for Special Monitoring
+• Next Review Date: ${reviewDate}
+
+`;
+
+            // Add flagged items section
+            if (updates.flaggedItems.length > 0) {
+                emailBody += `🚩 CRITICAL MONITORING REQUIRED:\n`;
+                updates.flaggedItems.slice(0, 5).forEach((item, index) => {
+                    emailBody += `${index + 1}. ${item}\n`;
+                });
+                emailBody += `\n`;
             }
 
-            fetch('/download_pdf', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    content: currentAnalysisData.markdown,
-                    resident_name: residentName
-                })
-            })
-            .then(response => response.blob())
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = `Care_Plan_${residentName}_${new Date().toISOString().slice(0,10)}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            })
-            .catch(error => {
-                console.error('PDF download error:', error);
-                alert('PDF 下載失敗');
+            // Add category-specific updates
+            const categories = [
+                { key: 'personalCare', name: '個人護理 Personal Care', icon: '🚿' },
+                { key: 'health', name: '健康醫療 Health & Medication', icon: '💊' },
+                { key: 'behavioral', name: '行為支援 Behavioral Support', icon: '🧠' },
+                { key: 'nutrition', name: '營養飲食 Nutrition & Hydration', icon: '🍽️' },
+                { key: 'mobility', name: '活動能力 Mobility & Safety', icon: '🚶' },
+                { key: 'communication', name: '溝通交流 Communication', icon: '🗣️' }
+            ];
+
+            let hasUpdates = false;
+            categories.forEach(category => {
+                if (updates[category.key] && updates[category.key].length > 0) {
+                    if (!hasUpdates) {
+                        emailBody += `📋 SPECIFIC CARE AREA UPDATES:\n\n`;
+                        hasUpdates = true;
+                    }
+                    emailBody += `${category.icon} ${category.name}:\n`;
+                    updates[category.key].slice(0, 3).forEach(update => {
+                        emailBody += `   • ${update}\n`;
+                    });
+                    emailBody += `\n`;
+                }
             });
+
+            // Add new interventions
+            if (updates.newInterventions.length > 0) {
+                emailBody += `🎯 NEW INTERVENTIONS TO IMPLEMENT:\n`;
+                updates.newInterventions.slice(0, 5).forEach((intervention, index) => {
+                    emailBody += `${index + 1}. ${intervention}\n`;
+                });
+                emailBody += `\n`;
+            }
+
+            // Add monitoring requirements
+            if (updates.monitoringRequirements.length > 0) {
+                emailBody += `👁️ ENHANCED MONITORING REQUIREMENTS:\n`;
+                updates.monitoringRequirements.slice(0, 5).forEach((requirement, index) => {
+                    emailBody += `${index + 1}. ${requirement}\n`;
+                });
+                emailBody += `\n`;
+            }
+
+            emailBody += `📋 IMMEDIATE ACTION REQUIRED:
+✅ Review complete updated care plan (attached)
+✅ Brief ALL care staff on new procedures before next shift
+✅ Update care documentation systems
+✅ Implement new interventions immediately
+✅ Begin enhanced monitoring protocols
+✅ Schedule team meeting if high priority items exist
+
+⏰ IMPLEMENTATION TIMELINE:
+• Review: Within 2 hours of receiving this email
+• Staff briefing: Before next shift handover
+• Implementation: Start immediately
+• Documentation: Update within 24 hours
+• Follow-up review: ${reviewDate}
+
+📞 ESCALATION PROTOCOL:
+• Questions: Contact Nursing Supervisor immediately
+• Concerns: Notify Care Manager
+• Emergencies: Follow standard emergency procedures
+
+🎯 SUCCESS METRICS:
+• All staff briefed and signed off on changes
+• New interventions documented in care logs
+• Resident response monitored and recorded
+• Any issues or improvements noted for next review
+
+Generated by CarePlanSync AI System
+Timestamp: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
+Urgency Level: ${urgencyLevel}
+
+📄 Complete care plan document attached for detailed reference.`;
+
+            return emailBody;
         }
+
+        // Enhanced Email to Family functionality with dynamic content
+        document.getElementById('emailFamilyBtn').addEventListener('click', function() {
+            if (window.currentReport) {
+                const content = window.currentReport.content;
+                const updates = extractCareplanUpdates(content);
+                
+                const subject = encodeURIComponent(`${window.currentReport.resident_name}的護理計劃更新 Care Plan Update`);
+                
+                // Generate dynamic family email
+                let emailBody = generateFamilyEmail(window.currentReport.resident_name, updates, content);
+                
+                const body = encodeURIComponent(emailBody);
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
+                window.open(gmailUrl, '_blank');
+            }
+            
+            // Hide dropdown
+            document.querySelector('.email-options').style.display = 'none';
+        });
+
+        // Function to generate dynamic family email
+        function generateFamilyEmail(residentName, updates, content) {
+            const reviewDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString();
+            
+            let emailBody = `親愛的家人 Dear Family,
+
+我們希望您一切安好。我們想向您匯報${residentName}的護理計劃更新情況，並誠摯地希望聽取您寶貴的意見。
+
+We hope this message finds you well. We wanted to update you on ${residentName}'s care plan and seek your valuable input.
+
+🏥 護理計劃更新 CARE PLAN UPDATES:
+
+我們的護理團隊一直密切關注${residentName}的情況，並識別出一些可以提升護理質量的範疇：
+Our care team has been closely monitoring ${residentName} and has identified areas where we can enhance their care experience:
+
+`;
+
+            // Add positive progress if any
+            if (content.includes('improvement') || content.includes('progress') || content.includes('better')) {
+                emailBody += `🌟 好消息 POSITIVE DEVELOPMENTS:\n`;
+                emailBody += `我們很高興地報告${residentName}在一些方面有所進展。\n`;
+                emailBody += `We're pleased to report that ${residentName} has shown progress in several areas.\n\n`;
+            }
+
+            // Add care area updates in family-friendly language
+            const familyFriendlyCategories = [
+                { 
+                    key: 'personalCare', 
+                    name: '個人護理 Personal Care', 
+                    description: '我們正在調整日常護理程序以更好地滿足${residentName}的需要'
+                },
+                { 
+                    key: 'health', 
+                    name: '健康管理 Health Management', 
+                    description: '我們正在優化健康監護和醫療護理安排'
+                },
+                { 
+                    key: 'behavioral', 
+                    name: '情緒支援 Emotional Support', 
+                    description: '我們正在加強情緒和行為支援策略'
+                },
+                { 
+                    key: 'nutrition', 
+                    name: '營養飲食 Nutrition & Meals', 
+                    description: '我們正在改善用餐體驗和營養攝取'
+                },
+                { 
+                    key: 'mobility', 
+                    name: '活動安全 Mobility & Safety', 
+                    description: '我們正在優化活動安排和安全措施'
+                },
+                { 
+                    key: 'communication', 
+                    name: '溝通交流 Communication', 
+                    description: '我們正在改善溝通方式和社交互動'
+                }
+            ];
+
+            let hasSpecificUpdates = false;
+            familyFriendlyCategories.forEach((category, index) => {
+                if (updates[category.key] && updates[category.key].length > 0) {
+                    if (!hasSpecificUpdates) {
+                        emailBody += `📋 具體更新範疇 SPECIFIC UPDATE AREAS:\n\n`;
+                        hasSpecificUpdates = true;
+                    }
+                    emailBody += `${index + 1}. ${category.name}\n`;
+                    emailBody += `   ${category.description.replace('${residentName}', residentName)}\n`;
+                    
+                    // Add 1-2 specific items in gentle language
+                    const gentleUpdates = updates[category.key].slice(0, 2).map(update => {
+                        return update.replace(/urgent|immediate|critical/gi, 'enhanced')
+                                    .replace(/monitor closely/gi, 'pay special attention to')
+                                    .replace(/implement/gi, 'introduce');
+                    });
+                    
+                    gentleUpdates.forEach(update => {
+                        emailBody += `   • ${update}\n`;
+                    });
+                    emailBody += `\n`;
+                }
+            });
+
+            // Add comfort and reassurance section
+            emailBody += `🤗 請放心 PLEASE BE ASSURED:
+
+• 所有變更都是為了提升${residentName}的舒適度和生活品質
+• All changes are designed to enhance ${residentName}'s comfort and quality of life
+• 我們的專業團隊會密切監察護理效果
+• Our professional team will closely monitor the effectiveness of care
+• ${residentName}的安全和福祉始終是我們的首要考慮
+• ${residentName}'s safety and wellbeing remain our top priority
+
+💭 我們重視您的意見 WE VALUE YOUR INPUT:
+
+您對${residentName}的瞭解對我們來說非常寶貴。請分享：
+Your insights about ${residentName} are invaluable to us. Please share:
+
+• 對這些更新的任何疑問或關注 Any concerns or questions about these updates
+• 您對${residentName}喜好的觀察 Your observations about ${residentName}'s preferences  
+• 基於家庭經驗的建議 Suggestions based on family experience
+• 任何可能幫助我們的背景資訊 Any background information that might help us
+• 您希望我們如何與您溝通未來的更新 How you'd like us to communicate future updates
+
+📞 下一步 NEXT STEPS:
+
+下次回顧日期：${reviewDate}
+Next review date: ${reviewDate}
+
+請隨時：
+Please feel free to:
+• 回覆此電郵分享您的想法 Reply to this email with your thoughts
+• 致電 [電話號碼] 討論 Call us at [PHONE NUMBER] to discuss  
+• 安排與護理團隊會面 Schedule a meeting with the care team
+• 探訪並觀察新的護理方式 Visit and observe the new care approaches
+
+我們致力於讓您了解並參與${residentName}的護理過程。
+We're committed to keeping you informed and involved in ${residentName}'s care journey.
+
+此致敬禮 With warm regards,
+護理管理團隊 The Care Management Team
+${new Date().toLocaleDateString()}
+
+附註：完整的護理計劃文件已附上供您參考。
+P.S. The complete care plan document is attached for your reference.`;
+
+            return emailBody;
+        }
+
+        // Download functionality (PDF)
+        document.getElementById('downloadBtn').addEventListener('click', async function() {
+            if (window.currentReport) {
+                try {
+                    const response = await fetch('/download_pdf', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(window.currentReport)
+                    });
+
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `Care_Plan_${window.currentReport.resident_name}_${new Date().getTime()}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                } catch (error) {
+                    alert('Download failed: ' + error.message);
+                }
+            }
+        });
+
+        // Start over functionality
+        document.getElementById('startOverBtn').addEventListener('click', function() {
+            document.getElementById('suggestions').style.display = 'none';
+            document.getElementById('finalPlan').style.display = 'none';
+            document.getElementById('charts').style.display = 'none';
+            document.getElementById('uploadForm').reset();
+            updateFileLabel(document.getElementById('daily_log'), 'Click to select log file');
+            updateFileLabel(document.getElementById('care_plan'), 'Click to select care plan');
+            window.currentReport = null;
+            currentData = {};
+        });
+
+
     </script>
 </body>
 </html>
