@@ -5,9 +5,10 @@ os.environ['HTTPX_DISABLE_PROXY'] = 'true'
 import csv
 import io
 import json
+import sqlite3
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, send_file
-import google.generativeai as genai
+from openai import OpenAI
 from werkzeug.utils import secure_filename
 import markdown
 import re
@@ -22,19 +23,18 @@ app.config['UPLOAD_FOLDER'] = 'temp_uploads'
 # Create temp folder
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Initialize Gemini API
-api_key = os.environ.get('GEMINI_API_KEY')
+# Initialize OpenAI API
+api_key = os.environ.get('OPENAI_API_KEY')
 if not api_key:
-    print("Warning: GEMINI_API_KEY not found in environment variables")
-    print("Available environment variables:", [k for k in os.environ.keys() if 'GEMINI' in k or 'API' in k])
+    print("Warning: OPENAI_API_KEY not found in environment variables")
+    print("Available environment variables:", [k for k in os.environ.keys() if 'OPENAI' in k or 'API' in k])
     client = None
 else:
     try:
-        genai.configure(api_key=api_key)
-        client = genai.GenerativeModel('gemini-2.5-flash-preview-05-20')
-        print("Gemini API client initialized successfully with gemini-2.5-flash-preview-05-20")
+        client = OpenAI(api_key=api_key)
+        print("OpenAI API client initialized successfully")
     except Exception as e:
-        print(f"Gemini initialization error: {e}")
+        print(f"OpenAI initialization error: {e}")
         client = None
 
 import PyPDF2
@@ -182,15 +182,14 @@ Guidelines:
 - For care_plan_gaps, identify significant patterns/events in logs that are completely missing from the current care plan"""
 
     try:
-        response = client.generate_content(
-            prompt,
-            generation_config={
-                "max_output_tokens": 3000,
-                "temperature": 0.7,
-            }
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=3000,
+            temperature=0.7
         )
 
-        response_text = response.text
+        response_text = response.choices[0].message.content
         # Try to extract JSON from the response
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
         if json_match:
@@ -296,14 +295,13 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
 Generate the complete updated care plan with natural integration."""
 
     try:
-        response = client.generate_content(
-            prompt,
-            generation_config={
-                "max_output_tokens": 4000,
-                "temperature": 0.7,
-            }
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=4000,
+            temperature=0.7
         )
-        return response.text
+        return response.choices[0].message.content
     except Exception as e:
         return f"Error generating care plan: {str(e)}"
 

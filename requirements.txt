@@ -6,3 +6,5 @@ werkzeug
 PyPDF2
 reportlab
 openai
+google-generativeai
+openai
