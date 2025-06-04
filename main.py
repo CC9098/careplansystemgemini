@@ -449,7 +449,7 @@ def analyze():
     print("=== ANALYZE ROUTE CALLED ===")
 
     if not client:
-        print("ERROR: Gemini client not available")
+        print("ERROR: OpenAI client not available")
         return jsonify({'error': 'OpenAI API not available. Please check your OPENAI_API_KEY environment variable.'}), 500
 
     try:
