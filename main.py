@@ -15,7 +15,7 @@ from collections import defaultdict
 from data_validation_config import *
 from structure_analyzer import analyze_csv_structure, smart_compress_csv, is_large_file
 
-app = Flask(__name__, template_folder='Templates')
+app = Flask(__name__, template_folder='templates')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB file limit
 app.config['UPLOAD_FOLDER'] = 'temp_uploads'
 
@@ -437,9 +437,20 @@ def read_csv_flexible(file_path):
 def index():
     return render_template('index.html')
 
+@app.route('/test')
+def test():
+    return jsonify({
+        'status': 'ok',
+        'gemini_available': client is not None,
+        'template_folder': app.template_folder
+    })
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
+    print("=== ANALYZE ROUTE CALLED ===")
+    
     if not client:
+        print("ERROR: Gemini client not available")
         return jsonify({'error': 'Gemini API not available. Please check your GEMINI_API_KEY environment variable.'}), 500
 
     try:
@@ -550,9 +561,12 @@ def analyze():
         })
 
     except Exception as e:
-        print(f"Error in analyze endpoint: {str(e)}")
+        print(f"=== ERROR IN ANALYZE ENDPOINT ===")
+        print(f"Error: {str(e)}")
+        print(f"Error type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
+        print("=== END ERROR INFO ===")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/generate_care_plan', methods=['POST'])
