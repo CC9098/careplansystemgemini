@@ -207,15 +207,15 @@ Guidelines:
 
 def generate_final_care_plan(original_care_plan, selected_suggestions, manager_comments, resident_name):
     """Step 3: Generate final care plan with better integration and priority observation section"""
-    
+
     # Get current date
     from datetime import datetime
     today = datetime.now().strftime('%Y-%m-%d')
-    
+
     # Separate flagged items for priority observation section
     flagged_items = [s for s in selected_suggestions if s.get('flagged', False)]
     regular_updates = [s for s in selected_suggestions if not s.get('flagged', False)]
-    
+
     # Format selected suggestions by category for better integration
     updates_by_category = {}
     for suggestion in regular_updates:
@@ -223,7 +223,7 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
         if category not in updates_by_category:
             updates_by_category[category] = []
         updates_by_category[category].append(suggestion)
-    
+
     # Format updates for integration
     categorized_updates = ""
     if updates_by_category:
@@ -235,7 +235,7 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
                 if suggestion.get('interventions'):
                     categorized_updates += f"  Actions: {', '.join(suggestion['interventions'][:3])}\n"
             categorized_updates += "\n"
-    
+
     # Format flagged items for priority section
     priority_observations = ""
     if flagged_items:
@@ -437,7 +437,7 @@ def index():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     if not client:
-        return jsonify({'error': 'Claude API not available. Please check your CLAUDE environment variable.'}), 500
+        return jsonify({'error': 'Gemini API not available. Please check your GEMINI_API_KEY environment variable.'}), 500
 
     try:
         # Get form data
@@ -537,7 +537,7 @@ def analyze():
 def generate_care_plan():
     """Step 3: Generate final care plan based on manager's selections"""
     if not client:
-        return jsonify({'error': 'Claude API not available. Please check your CLAUDE environment variable.'}), 500
+        return jsonify({'error': 'Gemini API not available. Please check your GEMINI_API_KEY environment variable.'}), 500
 
     try:
         data = request.get_json()
@@ -633,7 +633,7 @@ def download_pdf():
 
         # Get styles
         styles = getSampleStyleSheet()
-        
+
         # Custom styles
         title_style = ParagraphStyle(
             'CustomTitle',
@@ -642,7 +642,7 @@ def download_pdf():
             spaceAfter=30,
             alignment=TA_CENTER,
         )
-        
+
         heading_style = ParagraphStyle(
             'CustomHeading',
             parent=styles['Heading2'],
@@ -663,7 +663,7 @@ def download_pdf():
             if not line:
                 elements.append(Spacer(1, 6))
                 continue
-                
+
             # Handle headers
             if line.startswith('# '):
                 text = re.sub(r'^# ', '', line)
@@ -721,13 +721,6 @@ def send_email():
         # - AWS SES
         # - SMTP server
         # - etc.
-
-        # Example implementation would look like:
-        # import smtplib
-        # from email.mime.text import MIMEText
-        # from email.mime.multipart import MIMEMultipart
-        # from email.mime.base import MIMEBase
-        # from email import encoders
 
         # Create email with care plan as attachment
         email_content = f"""

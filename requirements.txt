@@ -7,3 +7,4 @@ PyPDF2
 PyPDF2
 reportlab
 reportlab
+google-generativeai
