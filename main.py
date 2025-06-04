@@ -5,10 +5,9 @@ os.environ['HTTPX_DISABLE_PROXY'] = 'true'
 import csv
 import io
 import json
-import sqlite3
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, send_file
-from openai import OpenAI
+import google.generativeai as genai
 from werkzeug.utils import secure_filename
 import markdown
 import re
@@ -23,18 +22,18 @@ app.config['UPLOAD_FOLDER'] = 'temp_uploads'
 # Create temp folder
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Initialize OpenAI API
-api_key = os.environ.get('OPENAI_API_KEY')
+# Initialize Gemini API
+api_key = os.environ.get('GEMINI_API_KEY')
 if not api_key:
-    print("Warning: OPENAI_API_KEY not found in environment variables")
-    print("Available environment variables:", [k for k in os.environ.keys() if 'OPENAI' in k or 'API' in k])
+    print("Warning: GEMINI_API_KEY not found in environment variables")
     client = None
 else:
     try:
-        client = OpenAI(api_key=api_key)
-        print("OpenAI API client initialized successfully")
+        genai.configure(api_key=api_key)
+        client = genai.GenerativeModel('gemini-2.0-flash-exp')
+        print("Gemini API client initialized successfully")
     except Exception as e:
-        print(f"OpenAI initialization error: {e}")
+        print(f"Gemini initialization error: {e}")
         client = None
 
 import PyPDF2
@@ -182,14 +181,15 @@ Guidelines:
 - For care_plan_gaps, identify significant patterns/events in logs that are completely missing from the current care plan"""
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=3000,
-            temperature=0.7
+        response = client.generate_content(
+            prompt,
+            generation_config={
+                "max_output_tokens": 3000,
+                "temperature": 0.7,
+            }
         )
 
-        response_text = response.choices[0].message.content
+        response_text = response.text
         # Try to extract JSON from the response
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
         if json_match:
@@ -295,13 +295,14 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
 Generate the complete updated care plan with natural integration."""
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=4000,
-            temperature=0.7
+        response = client.generate_content(
+            prompt,
+            generation_config={
+                "max_output_tokens": 4000,
+                "temperature": 0.7,
+            }
         )
-        return response.choices[0].message.content
+        return response.text
     except Exception as e:
         return f"Error generating care plan: {str(e)}"
 
@@ -436,24 +437,12 @@ def read_csv_flexible(file_path):
 def index():
     return render_template('index.html')
 
-@app.route('/test')
-def test():
-    return jsonify({
-        'status': 'ok',
-        'gemini_available': client is not None,
-        'template_folder': app.template_folder
-    })
-
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    print("=== ANALYZE ROUTE CALLED ===")
-
     if not client:
-        print("ERROR: OpenAI client not available")
-        return jsonify({'error': 'OpenAI API not available. Please check your OPENAI_API_KEY environment variable.'}), 500
+        return jsonify({'error': 'Gemini API not available. Please check your GEMINI_API_KEY environment variable.'}), 500
 
     try:
-        print("Starting analysis...")  # Debug log
         # Get form data
         resident_name = request.form.get('resident_name', 'Unnamed Resident')
 
@@ -530,49 +519,28 @@ def analyze():
 
         # File cleanup is handled in processing logic above
 
-        # Convert to HTML for display
-        html_content = f"""
-        <div class="analysis-results">
-            <h3>Analysis Summary</h3>
-            <p>{analysis_result.get('analysis_summary', '')}</p>
-
-            <h3>Suggestions ({len(analysis_result.get('suggestions', []))} items)</h3>
-            <div class="suggestions-list">
-        """
-
-        for i, suggestion in enumerate(analysis_result.get('suggestions', [])):
-            html_content += f"""
-                <div class="suggestion-item">
-                    <h4>{suggestion.get('icon', '📋')} {suggestion.get('specific_issue', 'Issue')}</h4>
-                    <p><strong>Category:</strong> {suggestion.get('category', 'General')}</p>
-                    <p><strong>Priority:</strong> {suggestion.get('priority', 'Medium')}</p>
-                    <p>{suggestion.get('description', '')}</p>
-                </div>
-            """
-
-        html_content += "</div></div>"
-
         return jsonify({
             'success': True,
-            'html': html_content,
-            'markdown': f"# Analysis Report\n\n## Summary\n{analysis_result.get('analysis_summary', '')}\n\n## Suggestions\n" + 
-                       "\n".join([f"- {s.get('specific_issue', '')}: {s.get('description', '')}" for s in analysis_result.get('suggestions', [])])
+            'step': 'suggestions',
+            'analysis_summary': analysis_result.get('analysis_summary', ''),
+            'suggestions': analysis_result.get('suggestions', []),
+            'resident_name': resident_name,
+            'original_care_plan': care_plan_content,
+            'processing_steps': processing_steps,
+            'was_compressed': is_large_file(daily_log_content)
         })
 
     except Exception as e:
-        print(f"=== ERROR IN ANALYZE ENDPOINT ===")
-        print(f"Error: {str(e)}")
-        print(f"Error type: {type(e).__name__}")
+        print(f"Error in analyze endpoint: {str(e)}")
         import traceback
         traceback.print_exc()
-        print("=== END ERROR INFO ===")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/generate_care_plan', methods=['POST'])
 def generate_care_plan():
     """Step 3: Generate final care plan based on manager's selections"""
     if not client:
-        return jsonify({'error': 'OpenAI API not available. Please check your OPENAI_API_KEY environment variable.'}), 500
+        return jsonify({'error': 'Gemini API not available. Please check your GEMINI_API_KEY environment variable.'}), 500
 
     try:
         data = request.get_json()

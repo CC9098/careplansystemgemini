@@ -8,3 +8,4 @@ reportlab
 openai
 google-generativeai
 openai
+google-generativeai
