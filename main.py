@@ -26,12 +26,13 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 api_key = os.environ.get('GEMINI_API_KEY')
 if not api_key:
     print("Warning: GEMINI_API_KEY not found in environment variables")
+    print("Available environment variables:", [k for k in os.environ.keys() if 'GEMINI' in k or 'API' in k])
     client = None
 else:
     try:
         genai.configure(api_key=api_key)
-        client = genai.GenerativeModel('gemini-2.0-flash-exp')
-        print("Gemini API client initialized successfully")
+        client = genai.GenerativeModel('gemini-2.5-flash-preview-05-20')
+        print("Gemini API client initialized successfully with gemini-2.5-flash-preview-05-20")
     except Exception as e:
         print(f"Gemini initialization error: {e}")
         client = None
