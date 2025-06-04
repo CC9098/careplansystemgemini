@@ -7,7 +7,7 @@ import io
 import json
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, send_file
-import anthropic
+import google.generativeai as genai
 from werkzeug.utils import secure_filename
 import markdown
 import re
@@ -22,17 +22,18 @@ app.config['UPLOAD_FOLDER'] = 'temp_uploads'
 # Create temp folder
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Initialize Claude API
-api_key = os.environ.get('CLAUDE')
+# Initialize Gemini API
+api_key = os.environ.get('GEMINI_API_KEY')
 if not api_key:
-    print("Warning: CLAUDE API key not found in environment variables")
+    print("Warning: GEMINI_API_KEY not found in environment variables")
     client = None
 else:
     try:
-        client = anthropic.Anthropic(api_key=api_key)
-        print("Claude API client initialized successfully")
+        genai.configure(api_key=api_key)
+        client = genai.GenerativeModel('gemini-2.0-flash-exp')
+        print("Gemini API client initialized successfully")
     except Exception as e:
-        print(f"Anthropic initialization error: {e}")
+        print(f"Gemini initialization error: {e}")
         client = None
 
 import PyPDF2
@@ -180,14 +181,15 @@ Guidelines:
 - For care_plan_gaps, identify significant patterns/events in logs that are completely missing from the current care plan"""
 
     try:
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=3000,
-            temperature=0.7,
-            messages=[{"role": "user", "content": prompt}]
+        response = client.generate_content(
+            prompt,
+            generation_config={
+                "max_output_tokens": 3000,
+                "temperature": 0.7,
+            }
         )
 
-        response_text = message.content[0].text
+        response_text = response.text
         # Try to extract JSON from the response
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
         if json_match:
@@ -293,13 +295,14 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
 Generate the complete updated care plan with natural integration."""
 
     try:
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=4000,
-            temperature=0.7,
-            messages=[{"role": "user", "content": prompt}]
+        response = client.generate_content(
+            prompt,
+            generation_config={
+                "max_output_tokens": 4000,
+                "temperature": 0.7,
+            }
         )
-        return message.content[0].text
+        return response.text
     except Exception as e:
         return f"Error generating care plan: {str(e)}"
 
