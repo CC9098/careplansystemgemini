@@ -15,7 +15,7 @@ from collections import defaultdict
 from data_validation_config import *
 from structure_analyzer import analyze_csv_structure, smart_compress_csv, is_large_file
 
-app = Flask(__name__, template_folder='templates')
+app = Flask(__name__, template_folder='Templates')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB file limit
 app.config['UPLOAD_FOLDER'] = 'temp_uploads'
 
@@ -443,6 +443,7 @@ def analyze():
         return jsonify({'error': 'Gemini API not available. Please check your GEMINI_API_KEY environment variable.'}), 500
 
     try:
+        print("Starting analysis...")  # Debug log
         # Get form data
         resident_name = request.form.get('resident_name', 'Unnamed Resident')
 
@@ -519,15 +520,33 @@ def analyze():
 
         # File cleanup is handled in processing logic above
 
+        # Convert to HTML for display
+        html_content = f"""
+        <div class="analysis-results">
+            <h3>Analysis Summary</h3>
+            <p>{analysis_result.get('analysis_summary', '')}</p>
+            
+            <h3>Suggestions ({len(analysis_result.get('suggestions', []))} items)</h3>
+            <div class="suggestions-list">
+        """
+        
+        for i, suggestion in enumerate(analysis_result.get('suggestions', [])):
+            html_content += f"""
+                <div class="suggestion-item">
+                    <h4>{suggestion.get('icon', '📋')} {suggestion.get('specific_issue', 'Issue')}</h4>
+                    <p><strong>Category:</strong> {suggestion.get('category', 'General')}</p>
+                    <p><strong>Priority:</strong> {suggestion.get('priority', 'Medium')}</p>
+                    <p>{suggestion.get('description', '')}</p>
+                </div>
+            """
+        
+        html_content += "</div></div>"
+
         return jsonify({
             'success': True,
-            'step': 'suggestions',
-            'analysis_summary': analysis_result.get('analysis_summary', ''),
-            'suggestions': analysis_result.get('suggestions', []),
-            'resident_name': resident_name,
-            'original_care_plan': care_plan_content,
-            'processing_steps': processing_steps,
-            'was_compressed': is_large_file(daily_log_content)
+            'html': html_content,
+            'markdown': f"# Analysis Report\n\n## Summary\n{analysis_result.get('analysis_summary', '')}\n\n## Suggestions\n" + 
+                       "\n".join([f"- {s.get('specific_issue', '')}: {s.get('description', '')}" for s in analysis_result.get('suggestions', [])])
         })
 
     except Exception as e:
