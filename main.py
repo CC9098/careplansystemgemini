@@ -14,6 +14,7 @@ import re
 from collections import defaultdict
 from data_validation_config import *
 from structure_analyzer import analyze_csv_structure, smart_compress_csv, is_large_file
+from risk_assessment import RiskAssessmentCalculator, format_risk_assessment_for_care_plan
 
 app = Flask(__name__, template_folder='templates')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB file limit
@@ -205,7 +206,7 @@ Guidelines:
             "suggestions": []
         }
 
-def generate_final_care_plan(original_care_plan, selected_suggestions, manager_comments, resident_name):
+def generate_final_care_plan(original_care_plan, selected_suggestions, manager_comments, resident_name, risk_assessment_data=None):
     """Step 3: Generate final care plan with better integration and priority observation section"""
 
     # Get current date
@@ -246,6 +247,11 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
             if item.get('interventions'):
                 priority_observations += f"   Key Actions: {', '.join(item['interventions'][:2])}\n"
             priority_observations += "\n"
+    
+    # Format risk assessment data
+    risk_assessment_section = ""
+    if risk_assessment_data and 'assessments' in risk_assessment_data:
+        risk_assessment_section = format_risk_assessment_for_care_plan(risk_assessment_data)
 
     prompt = f"""You are a professional care home management assistant. Your task is to rewrite and organize the existing care plan, seamlessly integrating updates into appropriate sections and adding a priority observation section.
 
@@ -257,6 +263,9 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
 
 **PRIORITY FLAGGED ITEMS:**
 {priority_observations}
+
+**RISK ASSESSMENT RESULTS:**
+{risk_assessment_section}
 
 **MANAGER'S ADDITIONAL COMMENTS:**
 {manager_comments}
@@ -391,6 +400,62 @@ def convert_pdf_table_to_csv(text):
 
     return '\n'.join(csv_lines)
 
+def extract_weight_data(log_content):
+    """Extract weight measurements from log content"""
+    weights = []
+    weight_pattern = r'(?:weight|體重).*?(\d+(?:\.\d+)?)\s*(?:kg|kilogram|公斤)'
+    matches = re.findall(weight_pattern, log_content.lower())
+    
+    for match in matches:
+        try:
+            weight = float(match)
+            if 30 <= weight <= 200:  # Reasonable weight range
+                weights.append(weight)
+        except ValueError:
+            continue
+    
+    return weights
+
+def extract_height_data(care_plan_content):
+    """Extract height from care plan"""
+    height_pattern = r'(?:height|身高).*?(\d+(?:\.\d+)?)\s*(?:cm|centimeter|公分)'
+    match = re.search(height_pattern, care_plan_content.lower())
+    
+    if match:
+        try:
+            height = float(match.group(1))
+            if 100 <= height <= 220:  # Reasonable height range
+                return height
+        except ValueError:
+            pass
+    
+    return None
+
+def extract_resident_data(care_plan_content, resident_name):
+    """Extract resident data for risk assessment"""
+    data = {'name': resident_name}
+    
+    # Extract age from date of birth
+    dob_pattern = r'(?:date of birth|dob|birth).*?(\d{1,2})[/-](\d{1,2})[/-](\d{4})'
+    dob_match = re.search(dob_pattern, care_plan_content.lower())
+    
+    if dob_match:
+        try:
+            day, month, year = map(int, dob_match.groups())
+            birth_date = datetime(year, month, day)
+            age = (datetime.now() - birth_date).days // 365
+            data['age'] = age
+        except ValueError:
+            pass
+    
+    # Extract gender
+    if any(keyword in care_plan_content.lower() for keyword in ['female', 'woman', 'she', 'her']):
+        data['gender'] = 'female'
+    elif any(keyword in care_plan_content.lower() for keyword in ['male', 'man', 'he', 'him']):
+        data['gender'] = 'male'
+    
+    return data
+
 def read_csv_flexible(file_path):
     """Flexibly read CSV files, auto-detect encoding and format"""
     encodings = ['utf-8', 'big5', 'gb2312', 'gbk', 'latin1']
@@ -513,8 +578,217 @@ def analyze():
 
         # Get suggestions using processed content
         analysis_result = analyze_and_suggest_changes(processed_daily_log, care_plan_content, resident_name)
+        
+        # Calculate risk assessments
+        processing_steps.append("🛡️ Calculating risk assessments...")
+        risk_calculator = RiskAssessmentCalculator()
+        
+        # Extract weight data from logs if available
+        weight_logs = extract_weight_data(processed_daily_log)
+        height = extract_height_data(care_plan_content)
+        resident_data = extract_resident_data(care_plan_content, resident_name)
+        
+        risk_assessment_results = risk_calculator.calculate_all_assessments(
+            care_plan_content, 
+            processed_daily_log, 
+            weight_logs, 
+            height, 
+            resident_data
+        )
 
         # File cleanup is handled in processing logic above
+
+
+@app.route('/risk_assessment_details', methods=['POST'])
+def risk_assessment_details():
+    """Get detailed risk assessment calculation breakdown"""
+    if not client:
+        return jsonify({'error': 'API not available'}), 500
+
+    try:
+        data = request.get_json()
+        care_plan_content = data.get('care_plan_content', '')
+        daily_log_content = data.get('daily_log_content', '')
+        resident_name = data.get('resident_name', 'Unnamed Resident')
+
+        # Calculate risk assessments with detailed breakdown
+        risk_calculator = RiskAssessmentCalculator()
+        
+        # Extract data for calculations
+        weight_logs = extract_weight_data(daily_log_content)
+        height = extract_height_data(care_plan_content)
+        resident_data = extract_resident_data(care_plan_content, resident_name)
+        
+        # Get all assessment results
+        risk_results = risk_calculator.calculate_all_assessments(
+            care_plan_content, 
+            daily_log_content, 
+            weight_logs, 
+            height, 
+            resident_data
+        )
+        
+        # Add detailed calculation breakdown
+        calculation_details = {
+            'input_data': {
+                'weight_logs': weight_logs,
+                'height': height,
+                'resident_data': resident_data,
+                'care_plan_keywords_found': extract_keywords_found(care_plan_content),
+                'daily_log_keywords_found': extract_keywords_found(daily_log_content)
+            },
+            'calculation_process': get_calculation_process(
+                care_plan_content, daily_log_content, weight_logs, height, resident_data
+            )
+        }
+        
+        return jsonify({
+            'success': True,
+            'risk_assessment': risk_results,
+            'calculation_details': calculation_details
+        })
+
+    except Exception as e:
+        print(f"Error in risk assessment details: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+def extract_keywords_found(text):
+    """Extract and return keywords found in text for transparency"""
+    keywords_found = {
+        'falls_keywords': [],
+        'mobility_keywords': [],
+        'nutrition_keywords': [],
+        'skin_keywords': [],
+        'pain_keywords': [],
+        'continence_keywords': [],
+        'medication_keywords': []
+    }
+    
+    text_lower = text.lower()
+    
+    # Falls keywords
+    falls_keywords = ["fall", "fell", "trip", "stumble", "slip", "tumble"]
+    keywords_found['falls_keywords'] = [kw for kw in falls_keywords if kw in text_lower]
+    
+    # Mobility keywords
+    mobility_keywords = ["wheelchair", "bedbound", "immobile", "hoist", "assistance walking", "balance", "unsteady", "dizzy"]
+    keywords_found['mobility_keywords'] = [kw for kw in mobility_keywords if kw in text_lower]
+    
+    # Nutrition keywords
+    nutrition_keywords = ["poor appetite", "not eating", "weight loss", "malnourished", "refusing food"]
+    keywords_found['nutrition_keywords'] = [kw for kw in nutrition_keywords if kw in text_lower]
+    
+    # Skin keywords
+    skin_keywords = ["bruising", "discoloured", "mottled", "broken skin", "red", "sore", "pressure", "ulcer"]
+    keywords_found['skin_keywords'] = [kw for kw in skin_keywords if kw in text_lower]
+    
+    # Pain keywords
+    pain_keywords = ["pain", "discomfort", "sore", "ache", "hurts", "crying", "moaning", "grimacing"]
+    keywords_found['pain_keywords'] = [kw for kw in pain_keywords if kw in text_lower]
+    
+    # Continence keywords
+    continence_keywords = ["incontinent", "wet", "soiled", "catheter", "pad"]
+    keywords_found['continence_keywords'] = [kw for kw in continence_keywords if kw in text_lower]
+    
+    # Medication keywords
+    medication_keywords = ["tablet", "mg", "medication", "drug", "pill", "capsule"]
+    keywords_found['medication_keywords'] = [kw for kw in medication_keywords if kw in text_lower]
+    
+    return keywords_found
+
+def get_calculation_process(care_plan_content, daily_log_content, weight_logs, height, resident_data):
+    """Get step-by-step calculation process for transparency"""
+    process = {}
+    combined_text = (care_plan_content + " " + daily_log_content).lower()
+    
+    # Falls Screening calculation process
+    falls_process = {
+        'total_score': 0,
+        'steps': []
+    }
+    
+    # Check falls history
+    fall_keywords = ["fall", "fell", "trip", "stumble", "slip", "tumble"]
+    if any(keyword in combined_text for keyword in fall_keywords):
+        falls_process['total_score'] += 1
+        falls_process['steps'].append({
+            'item': 'Falls history',
+            'score': 1,
+            'reason': f"Found keywords: {[kw for kw in fall_keywords if kw in combined_text]}"
+        })
+    else:
+        falls_process['steps'].append({
+            'item': 'Falls history',
+            'score': 0,
+            'reason': 'No fall-related keywords found'
+        })
+    
+    # Check medication count
+    medication_count = len(re.findall(r'(?:tablet|mg|medication|drug|pill)', combined_text))
+    if medication_count >= 4:
+        falls_process['total_score'] += 1
+        falls_process['steps'].append({
+            'item': 'Medication count',
+            'score': 1,
+            'reason': f"Found {medication_count} medication references (≥4)"
+        })
+    else:
+        falls_process['steps'].append({
+            'item': 'Medication count',
+            'score': 0,
+            'reason': f"Found {medication_count} medication references (<4)"
+        })
+    
+    process['falls_screening'] = falls_process
+    
+    # MUST calculation process if weight data available
+    if weight_logs and height:
+        must_process = {
+            'total_score': 0,
+            'steps': []
+        }
+        
+        # BMI calculation
+        latest_weight = weight_logs[-1]
+        bmi = latest_weight / (height/100)**2
+        
+        if bmi < 18.5:
+            bmi_score = 2
+        elif 18.5 <= bmi <= 20:
+            bmi_score = 1
+        else:
+            bmi_score = 0
+            
+        must_process['total_score'] += bmi_score
+        must_process['steps'].append({
+            'item': 'BMI calculation',
+            'score': bmi_score,
+            'reason': f"BMI = {bmi:.1f} (Weight: {latest_weight}kg, Height: {height}cm)"
+        })
+        
+        # Weight loss calculation
+        if len(weight_logs) >= 2:
+            weight_change = (weight_logs[0] - weight_logs[-1]) / weight_logs[0] * 100
+            if weight_change > 10:
+                weight_score = 2
+            elif 5 <= weight_change <= 10:
+                weight_score = 1
+            else:
+                weight_score = 0
+                
+            must_process['total_score'] += weight_score
+            must_process['steps'].append({
+                'item': 'Weight loss',
+                'score': weight_score,
+                'reason': f"Weight change: {weight_change:.1f}% (from {weight_logs[0]}kg to {weight_logs[-1]}kg)"
+            })
+        
+        process['must_nutrition'] = must_process
+    
+    return process
+
 
         return jsonify({
             'success': True,
@@ -524,7 +798,8 @@ def analyze():
             'resident_name': resident_name,
             'original_care_plan': care_plan_content,
             'processing_steps': processing_steps,
-            'was_compressed': is_large_file(daily_log_content)
+            'was_compressed': is_large_file(daily_log_content),
+            'risk_assessment': risk_assessment_results
         })
 
     except Exception as e:
@@ -554,12 +829,16 @@ def generate_care_plan():
         print(f"Selected suggestions count: {len(selected_suggestions)}")
         print(f"Manager comments length: {len(manager_comments)}")
 
+        # Include risk assessment in care plan generation
+        risk_assessment_data = data.get('risk_assessment', {})
+        
         # Generate final care plan
         final_care_plan = generate_final_care_plan(
             original_care_plan, 
             selected_suggestions, 
             manager_comments, 
-            resident_name
+            resident_name,
+            risk_assessment_data
         )
 
         if final_care_plan.startswith("Error"):

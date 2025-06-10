@@ -15,24 +15,24 @@
                     <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <!-- Main circle background -->
                         <circle cx="32" cy="32" r="30" fill="url(#gradient1)" stroke="#F08080" stroke-width="2"/>
-                        
+
                         <!-- Heart symbol for care -->
                         <path d="M32 45c-1.5-1.5-12-10.5-12-18 0-4.5 3.5-8 8-8 2.5 0 4.5 1 6 2.5C35.5 19 37.5 18 40 18c4.5 0 8 3.5 8 8 0 7.5-10.5 16.5-12 18z" fill="white" stroke="#F08080" stroke-width="1.5"/>
-                        
+
                         <!-- Medical cross -->
                         <rect x="29" y="24" width="6" height="16" rx="1" fill="#F08080"/>
                         <rect x="24" y="29" width="16" height="6" rx="1" fill="#F08080"/>
-                        
+
                         <!-- Sync arrows -->
                         <path d="M18 15 L22 11 L22 13 L28 13 L28 17 L22 17 L22 19 Z" fill="#FFC07F" opacity="0.8"/>
                         <path d="M46 49 L42 53 L42 51 L36 51 L36 47 L42 47 L42 45 Z" fill="#FFC07F" opacity="0.8"/>
-                        
+
                         <!-- Data dots -->
                         <circle cx="12" cy="32" r="2" fill="#A5CBAF"/>
                         <circle cx="52" cy="32" r="2" fill="#A5CBAF"/>
                         <circle cx="32" cy="12" r="2" fill="#A5CBAF"/>
                         <circle cx="32" cy="52" r="2" fill="#A5CBAF"/>
-                        
+
                         <defs>
                             <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
                                 <stop offset="0%" style="stop-color:#FEF2F3;stop-opacity:1" />
@@ -124,7 +124,7 @@
                     </div>
                 </div>
                 <div id="carePlanContent" class="content"></div>
-                
+
                 <!-- Bottom Action Buttons -->
                 <div class="action-buttons bottom-actions" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee;">
                     <button id="copyContentBtnBottom" class="action-btn">📋 Copy Content</button>
@@ -188,7 +188,7 @@
 
             const analyzeBtn = document.querySelector('.analyze-btn');
             const originalBtnText = analyzeBtn.innerHTML;
-            
+
             // Show loading state immediately
             analyzeBtn.innerHTML = `
                 <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
@@ -249,7 +249,7 @@
             if (data.care_plan_gaps && data.care_plan_gaps.description) {
                 const alertClass = data.care_plan_gaps.alert_level === 'High' ? 'gap-alert-high' : 
                                  data.care_plan_gaps.alert_level === 'Medium' ? 'gap-alert-medium' : 'gap-alert-low';
-                
+
                 summaryHtml += `
                     <div class="care-plan-gap-alert ${alertClass}">
                         <h4>⚠️ Care Plan Gap Alert - ${data.care_plan_gaps.alert_level} Priority</h4>
@@ -280,7 +280,7 @@
                 const issueIcon = suggestion.icon || '📋';
                 const specificIssue = suggestion.specific_issue || suggestion.suggestion || 'Care Issue';
                 const description = suggestion.description || suggestion.reason || 'No description available';
-                
+
                 const div = document.createElement('div');
                 div.className = 'suggestion-card';
                 div.innerHTML = `
@@ -363,7 +363,7 @@
         document.getElementById('generatePlanBtn').addEventListener('click', async function() {
             const generateBtn = this;
             const originalBtnText = generateBtn.innerHTML;
-            
+
             // Show loading state immediately
             generateBtn.innerHTML = `
                 <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
@@ -500,10 +500,10 @@
             const dropdown = this.parentElement;
             const options = dropdown.querySelector('.email-options');
             const isVisible = options.style.display === 'block';
-            
+
             // Hide all other dropdowns first
             document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
-            
+
             options.style.display = isVisible ? 'none' : 'block';
         });
 
@@ -541,10 +541,10 @@
                 const dropdown = e.target.parentElement;
                 const options = dropdown.querySelector('.email-options');
                 const isVisible = options.style.display === 'block';
-                
+
                 // Hide all other dropdowns first
                 document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
-                
+
                 options.style.display = isVisible ? 'none' : 'block';
             }
         });
@@ -552,7 +552,7 @@
         function sendCareTeamEmail() {
             if (window.currentReport) {
                 const subject = encodeURIComponent(`URGENT: Care Plan Update - ${window.currentReport.resident_name}`);
-                
+
                 // Extract sections dynamically from care plan
                 const content = window.currentReport.content;
                 let criticalUpdates = [];
@@ -560,14 +560,14 @@
                 let behaviorConcerns = [];
                 let mobilityUpdates = [];
                 let priorityFlags = [];
-                
+
                 // Parse care plan sections
                 const sections = content.split(/^## /m);
-                
+
                 sections.forEach(section => {
                     const lines = section.split('\n');
                     const title = lines[0];
-                    
+
                     // Look for priority flagged items
                     if (title.includes('🚩 Priority Observation Areas') || title.includes('Priority') || title.includes('Flagged')) {
                         lines.forEach(line => {
@@ -576,25 +576,25 @@
                             }
                         });
                     }
-                    
+
                     // Extract medication updates
                     if (title.toLowerCase().includes('medication') || title.toLowerCase().includes('health')) {
                         const updates = extractUpdatedItems(lines);
                         medicationChanges.push(...updates);
                     }
-                    
+
                     // Extract behavior updates
                     if (title.toLowerCase().includes('behavior') || title.toLowerCase().includes('communication')) {
                         const updates = extractUpdatedItems(lines);
                         behaviorConcerns.push(...updates);
                     }
-                    
+
                     // Extract mobility updates
                     if (title.toLowerCase().includes('mobility') || title.toLowerCase().includes('safety')) {
                         const updates = extractUpdatedItems(lines);
                         mobilityUpdates.push(...updates);
                     }
-                    
+
                     // Look for any items marked with ✏️ (recent updates)
                     lines.forEach(line => {
                         if (line.includes('✏️')) {
@@ -602,7 +602,7 @@
                         }
                     });
                 });
-                
+
                 // Generate Care Team email body
                 let emailBody = `Dear Care Team,
 
@@ -690,46 +690,46 @@ Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
         function sendFamilyEmail() {
             if (window.currentReport) {
                 const subject = encodeURIComponent(`Care Plan Update - ${window.currentReport.resident_name}`);
-                
+
                 // Extract family-relevant information from care plan
                 const content = window.currentReport.content;
                 let personalCareUpdates = [];
                 let wellnessUpdates = [];
                 let socialUpdates = [];
                 let comfortUpdates = [];
-                
+
                 // Parse care plan sections for family-friendly content
                 const sections = content.split(/^## /m);
-                
+
                 sections.forEach(section => {
                     const lines = section.split('\n');
                     const title = lines[0];
-                    
+
                     // Extract personal care updates
                     if (title.toLowerCase().includes('personal care') || title.toLowerCase().includes('daily routine')) {
                         const updates = extractFamilyFriendlyUpdates(lines);
                         personalCareUpdates.push(...updates);
                     }
-                    
+
                     // Extract health and wellness updates
                     if (title.toLowerCase().includes('health') || title.toLowerCase().includes('nutrition') || title.toLowerCase().includes('medication')) {
                         const updates = extractFamilyFriendlyUpdates(lines);
                         wellnessUpdates.push(...updates);
                     }
-                    
+
                     // Extract social and communication updates
                     if (title.toLowerCase().includes('social') || title.toLowerCase().includes('communication') || title.toLowerCase().includes('behavior')) {
                         const updates = extractFamilyFriendlyUpdates(lines);
                         socialUpdates.push(...updates);
                     }
-                    
+
                     // Extract comfort and preference updates
                     if (title.toLowerCase().includes('comfort') || title.toLowerCase().includes('preference') || title.toLowerCase().includes('environment')) {
                         const updates = extractFamilyFriendlyUpdates(lines);
                         comfortUpdates.push(...updates);
                     }
                 });
-                
+
                 // Generate Family email body
                 let emailBody = `Dear ${window.currentReport.resident_name}'s Family,
 
@@ -839,7 +839,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                 if (line.includes('✏️') || line.includes('Updated:') || line.includes('New:') || line.includes('Enhanced:')) {
                     // Convert clinical language to family-friendly language
                     let cleaned = line.replace(/✏️/g, '').replace(/\*\*/g, '').trim();
-                    
+
                     // Make language more family-friendly
                     cleaned = cleaned.replace(/intervention/gi, 'support approach');
                     cleaned = cleaned.replace(/protocol/gi, 'routine');
@@ -847,7 +847,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                     cleaned = cleaned.replace(/monitor/gi, 'keep an eye on');
                     cleaned = cleaned.replace(/implement/gi, 'try');
                     cleaned = cleaned.replace(/compliance/gi, 'following along with');
-                    
+
                     if (cleaned && cleaned.length > 10) {
                         updates.push(cleaned);
                     }
@@ -901,7 +901,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             if (window.currentReport) {
                 const content = document.getElementById('carePlanContent');
                 const currentHtml = content.innerHTML;
-                
+
                 // Convert to editable
                 content.innerHTML = `
                     <div class="edit-container">
@@ -912,21 +912,21 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                         </div>
                     </div>
                 `;
-                
+
                 // Cancel edit
                 document.getElementById('cancelEdit').addEventListener('click', function() {
                     content.innerHTML = currentHtml;
                 });
-                
+
                 // Save edit
                 document.getElementById('saveEdit').addEventListener('click', function() {
                     const newContent = document.getElementById('editableContent').value;
                     window.currentReport.content = newContent;
-                    
+
                     // Convert back to HTML display
                     const converter = new showdown.Converter();
                     content.innerHTML = converter.makeHtml(newContent);
-                    
+
                     alert('Changes saved successfully!');
                 });
             }
@@ -969,7 +969,71 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             currentData = {};
         }
 
+        // Risk assessment
+        function displayRiskAssessment(riskData) {
+            const section = document.getElementById('risk-assessment-section');
+            const summaryDiv = document.getElementById('risk-summary');
+            const detailsDiv = document.getElementById('risk-details');
 
+            if (!riskData || !riskData.summary) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+
+            // Display summary
+            const summary = riskData.summary;
+            summaryDiv.innerHTML = `
+                <div class="risk-overview">
+                    <div class="risk-stats">
+                        <span class="risk-stat high">🔴 High Risk: ${summary.high_risk_count || 0}</span>
+                        <span class="risk-stat medium">🟡 Medium Risk: ${summary.medium_risk_count || 0}</span>
+                        <span class="risk-stat low">🟢 Low Risk: ${summary.low_risk_count || 0}</span>
+                    </div>
+                    ${summary.priority_alerts && summary.priority_alerts.length > 0 ?
+                        `<div class="priority-alerts">
+                            <h4>🚨 Priority Alerts:</h4>
+                            ${summary.priority_alerts.map(alert => `<div class="alert-item">${alert.alert}</div>`).join('')}
+                        </div>` : ''
+                    }
+                </div>
+            `;
+
+            // Display detailed assessments
+            if (riskData.assessments) {
+                let detailsHTML = '<div class="risk-assessments">';
+
+                Object.entries(riskData.assessments).forEach(([toolName, assessment]) => {
+                    if (assessment.error) return;
+
+                    detailsHTML += `
+                        <div class="assessment-item">
+                            <h4>${assessment.tool_name}</h4>
+                            <div class="assessment-score">
+                                Score: ${assessment.score}/${assessment.max_score} -
+                                <span class="risk-level ${assessment.risk_level.toLowerCase().replace(' ', '-')}">${assessment.risk_level}</span>
+                            </div>
+                            ${assessment.evidence && assessment.evidence.length > 0 ?
+                                `<div class="evidence">
+                                    <strong>Evidence:</strong>
+                                    <ul>${assessment.evidence.map(e => `<li>${e}</li>`).join('')}</ul>
+                                </div>` : ''
+                            }
+                            <div class="next-review">Next Review: ${assessment.next_review_date}</div>
+                        </div>
+                    `;
+                });
+
+                detailsHTML += '</div>';
+                detailsDiv.innerHTML = detailsHTML;
+            }
+        }
+
+        // Risk details view
+        function viewRiskDetails() {
+            alert('Detailed risk calculation process will be displayed here.');
+        }
     </script>
 </body>
 </html>

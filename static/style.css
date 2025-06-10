@@ -1484,3 +1484,193 @@ footer::before {
   background: linear-gradient(90deg, var(--accent-orange), var(--accent-color));
   border-radius: 2px;
 }
+        .btn-generate:hover {
+            background: #2196F3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        /* Risk Assessment Styles */
+        .risk-overview {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .risk-stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .risk-stat {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .risk-stat.high {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .risk-stat.medium {
+            background: #fff8e1;
+            color: #f57f17;
+        }
+
+        .risk-stat.low {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .priority-alerts {
+            margin-top: 15px;
+            padding: 15px;
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            border-radius: 5px;
+        }
+
+        .alert-item {
+            margin: 5px 0;
+            font-weight: 500;
+        }
+
+        .risk-assessments {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .assessment-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .assessment-score {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+
+        .risk-level {
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .risk-level.high-risk,
+        .risk-level.very-high-risk,
+        .risk-level.severe-pain {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .risk-level.medium-risk,
+        .risk-level.moderate-pain {
+            background: #fff8e1;
+            color: #f57f17;
+        }
+
+        .risk-level.low-risk,
+        .risk-level.no-pain-to-mild-pain {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .evidence ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .next-review {
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        /* Risk Details Modal */
+        .risk-details-modal {
+            display: block;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0;
+            border: none;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            background: #4CAF50;
+            color: white;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            opacity: 0.7;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .input-data,
+        .keywords-found {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .calculation-steps {
+            margin-top: 15px;
+        }
+
+        .assessment-calculation {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .calculation-step {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 3px solid #4CAF50;
+        }
