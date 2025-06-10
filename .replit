@@ -12,8 +12,8 @@ language = "python3"
 requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
-deploymentTarget = "static"
-publicDir = "careplaner"
+deploymentTarget = "cloudrun"
+run = ["sh", "-c", "python main.py"]
 
 [workflows]
 runButton = "Run Flask App"
