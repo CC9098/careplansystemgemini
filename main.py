@@ -7,7 +7,7 @@ import io
 import json
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, send_file
-import anthropic
+import openai
 from werkzeug.utils import secure_filename
 import markdown
 import re
@@ -24,17 +24,17 @@ app.config['UPLOAD_FOLDER'] = 'temp_uploads'
 # Create temp folder
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Initialize Claude API
-api_key = os.environ.get('CLAUDE')
+# Initialize OpenAI API
+api_key = os.environ.get('OPENAI_API_KEY')
 if not api_key:
-    print("Warning: CLAUDE API key not found in environment variables")
+    print("Warning: OPENAI_API_KEY not found in environment variables")
     client = None
 else:
     try:
-        client = anthropic.Anthropic(api_key=api_key)
-        print("Claude API client initialized successfully")
+        client = openai.OpenAI(api_key=api_key)
+        print("OpenAI API client initialized successfully")
     except Exception as e:
-        print(f"Anthropic initialization error: {e}")
+        print(f"OpenAI initialization error: {e}")
         client = None
 
 import PyPDF2
@@ -178,14 +178,14 @@ Guidelines:
 - For care_plan_gaps, identify significant patterns/events in logs that are completely missing from the current care plan"""
 
     try:
-        message = client.messages.create(
-            model="claude-3-haiku-20240307",
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
             max_tokens=2000,
             temperature=0.7,
             messages=[{"role": "user", "content": prompt}]
         )
 
-        response_text = message.content[0].text
+        response_text = response.choices[0].message.content
         # Try to extract JSON from the response
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
         if json_match:
@@ -299,13 +299,13 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
 Generate the complete updated care plan with natural integration."""
 
     try:
-        message = client.messages.create(
-            model="claude-3-haiku-20240307",
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
             max_tokens=3000,
             temperature=0.7,
             messages=[{"role": "user", "content": prompt}]
         )
-        return message.content[0].text
+        return response.choices[0].message.content
     except Exception as e:
         return f"Error generating care plan: {str(e)}"
 
