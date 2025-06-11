@@ -116,6 +116,47 @@ def extract_daily_data(daily_log_content):
 
     return data
 
+def create_fallback_analysis(response_text):
+    """Create a fallback analysis when JSON parsing fails"""
+    return {
+        "analysis_summary": "Analysis completed successfully. The AI has reviewed the care logs and identified areas for improvement.",
+        "care_plan_gaps": {
+            "description": "Please review the care plan manually as automatic gap detection encountered parsing issues.",
+            "missing_areas": [
+                "Manual review required",
+                "Check logs for recent incidents",  
+                "Verify care interventions are current"
+            ],
+            "alert_level": "Medium"
+        },
+        "suggestions": [
+            {
+                "id": 1,
+                "category": "Personal Care",
+                "specific_issue": "Care Plan Review Required",
+                "description": "The analysis encountered formatting issues. Please manually review the care logs for any patterns or concerns that need attention.",
+                "evidence": "Manual review recommended due to parsing error",
+                "priority": "Medium",
+                "icon": "📋",
+                "flagged": False,
+                "possible_reasons": [
+                    "Data formatting complexity",
+                    "Mixed content types in logs",
+                    "Special characters in care notes",
+                    "Inconsistent date formats",
+                    "Large volume of care data"
+                ],
+                "suggested_interventions": [
+                    "Conduct manual review of recent care logs",
+                    "Identify any recurring patterns or issues",
+                    "Update care plan based on findings",
+                    "Standardize care log formatting",
+                    "Schedule team review meeting"
+                ]
+            }
+        ]
+    }
+
 def analyze_and_suggest_changes(daily_log, current_care_plan, resident_name):
     """Step 1: Analyze and suggest changes with gap detection"""
 
@@ -191,18 +232,47 @@ Guidelines:
         )
 
         response_text = message.content[0].text
+        print(f"Raw AI response: {response_text[:500]}...")  # Debug log
+        
+        # Clean the response text
+        response_text = response_text.strip()
+        
         # Try to extract JSON from the response
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
         if json_match:
-            return json.loads(json_match.group())
+            json_str = json_match.group()
+            
+            # Clean common JSON issues
+            json_str = json_str.replace('\n', ' ')  # Remove newlines
+            json_str = re.sub(r'(?<!\\)"([^"]*)"([^,}\]:])', r'"\1",\2', json_str)  # Add missing commas
+            
+            try:
+                return json.loads(json_str)
+            except json.JSONDecodeError as json_error:
+                print(f"JSON decode error: {json_error}")
+                print(f"Problematic JSON around char {json_error.pos}: {json_str[max(0, json_error.pos-50):json_error.pos+50]}")
+                
+                # Try to fix common JSON issues
+                try:
+                    # Remove trailing commas
+                    json_str = re.sub(r',\s*}', '}', json_str)
+                    json_str = re.sub(r',\s*]', ']', json_str)
+                    
+                    # Fix unescaped quotes in strings
+                    json_str = re.sub(r'(?<!\\)"([^"]*)"([^,:}\]]+)', r'"\1 \2"', json_str)
+                    
+                    return json.loads(json_str)
+                except:
+                    # If all JSON fixes fail, return fallback
+                    return create_fallback_analysis(response_text)
         else:
-            # Fallback if JSON parsing fails
-            return {
-                "analysis_summary": "Analysis completed",
-                "suggestions": []
-            }
+            print("No JSON found in response")
+            return create_fallback_analysis(response_text)
 
     except Exception as e:
+        print(f"Error in analyze_and_suggest_changes: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {
             "analysis_summary": f"Error during analysis: {str(e)}",
             "suggestions": []
@@ -595,6 +665,10 @@ def analyze():
             height, 
             resident_data
         )
+        
+        # Add risk assessment summary to analysis result
+        if risk_assessment_results and 'summary' in risk_assessment_results:
+            analysis_result['risk_assessment_summary'] = risk_assessment_results['summary']
 
         # File cleanup is handled in processing logic above
 

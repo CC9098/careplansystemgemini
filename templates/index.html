@@ -994,6 +994,9 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             const loadingText = document.getElementById('loading-text');
             const progressSteps = document.getElementById('progress-steps');
             
+            // Clear previous steps
+            progressSteps.innerHTML = '';
+            
             const steps = [
                 { text: "📄 Reading uploaded files...", progress: 15 },
                 { text: "🔍 Analyzing care log data...", progress: 30 },
@@ -1004,6 +1007,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             ];
             
             let currentStep = 0;
+            let progressInterval;
             
             function updateProgress() {
                 if (currentStep < steps.length) {
@@ -1015,6 +1019,9 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                     // Add step to progress steps
                     const stepDiv = document.createElement('div');
                     stepDiv.className = 'progress-step';
+                    stepDiv.style.opacity = '0';
+                    stepDiv.style.transform = 'translateX(-20px)';
+                    stepDiv.style.transition = 'all 0.3s ease';
                     stepDiv.textContent = step.text;
                     progressSteps.appendChild(stepDiv);
                     
@@ -1026,9 +1033,20 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                     
                     currentStep++;
                     
-                    // Random delay between 800ms to 2000ms for realistic feel
-                    const delay = Math.random() * 1200 + 800;
+                    // Realistic timing - first steps faster, AI processing slower
+                    let delay;
+                    if (currentStep <= 2) {
+                        delay = Math.random() * 800 + 600;  // 600-1400ms for file operations
+                    } else if (currentStep === 3) {
+                        delay = Math.random() * 2000 + 2000; // 2-4s for AI processing
+                    } else {
+                        delay = Math.random() * 1000 + 800;  // 800-1800ms for final steps
+                    }
+                    
                     setTimeout(updateProgress, delay);
+                } else {
+                    // Keep animation running until response comes back
+                    clearInterval(progressInterval);
                 }
             }
             
