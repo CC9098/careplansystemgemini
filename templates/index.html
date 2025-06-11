@@ -1618,6 +1618,77 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             }
         }
 
+        function saveAllAdjustments() {
+            if (!currentData.risk_assessment) return;
+
+            const adjustments = {};
+            
+            Object.keys(currentData.risk_assessment.assessments).forEach(toolName => {
+                const assessment = currentData.risk_assessment.assessments[toolName];
+                if (assessment.error) return;
+
+                const manualScoreInput = document.getElementById(`manual-score-${toolName}`);
+                const reasonTextarea = document.getElementById(`reason-${toolName}`);
+                
+                if (manualScoreInput) {
+                    const originalScore = assessment.original_score || assessment.score;
+                    const adjustedScore = parseInt(manualScoreInput.value);
+                    const reason = reasonTextarea ? reasonTextarea.value : '';
+                    
+                    if (adjustedScore !== originalScore) {
+                        adjustments[toolName] = {
+                            original_score: originalScore,
+                            adjusted_score: adjustedScore,
+                            reason: reason,
+                            timestamp: new Date().toISOString()
+                        };
+                        
+                        // Update the assessment in currentData
+                        assessment.score = adjustedScore;
+                        assessment.original_score = originalScore;
+                        assessment.risk_level = calculateRiskLevel(toolName, adjustedScore, assessment.max_score);
+                    }
+                }
+            });
+
+            // Store adjustments in currentData
+            currentData.risk_assessment.manual_adjustments = adjustments;
+            
+            // Update the display
+            displayRiskAssessment(currentData.risk_assessment);
+            
+            // Show success message
+            if (Object.keys(adjustments).length > 0) {
+                alert(`Successfully saved ${Object.keys(adjustments).length} risk score adjustments.`);
+            } else {
+                alert('No score changes detected to save.');
+            }
+        }
+
+        function calculateRiskLevel(toolName, score, maxScore) {
+            // Implement risk level calculation based on tool and score
+            if (toolName === 'falls_screening') {
+                if (score >= 3) return 'High Risk';
+                else if (score >= 2) return 'Medium Risk';
+                else return 'Low Risk';
+            } else if (toolName === 'must_nutrition') {
+                if (score >= 2) return 'High Risk';
+                else if (score == 1) return 'Medium Risk';
+                else return 'Low Risk';
+            } else if (toolName === 'abbey_pain') {
+                if (score >= 14) return 'Severe Pain';
+                else if (score >= 8) return 'Moderate Pain';
+                else if (score >= 3) return 'Mild Pain';
+                else return 'No Pain to Mild Pain';
+            }
+            
+            // Generic calculation for other tools
+            const percentage = (score / maxScore) * 100;
+            if (percentage >= 70) return 'High Risk';
+            else if (percentage >= 40) return 'Medium Risk';
+            else return 'Low Risk';
+        }
+
         </script>
 </body>
 </html>

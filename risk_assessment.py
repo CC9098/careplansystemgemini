@@ -26,7 +26,7 @@ class RiskAssessmentCalculator:
     def calculate_all_assessments(self, care_plan_text: str, log_entries: str, 
                                 weight_logs: List[float] = None, height: float = None,
                                 resident_data: Dict = None) -> Dict[str, Any]:
-        """Calculate all risk assessments and return comprehensive results"""
+        """Create standardized assessment forms with AI filling available data"""
         
         results = {
             'assessment_date': datetime.now().strftime('%Y-%m-%d'),
@@ -39,34 +39,54 @@ class RiskAssessmentCalculator:
             }
         }
         
-        # Calculate each assessment
+        # Create standardized forms for each assessment tool
         for tool_name, calculator in self.assessment_tools.items():
             try:
-                if tool_name == 'must_nutrition':
-                    assessment = calculator(care_plan_text, log_entries, weight_logs, height)
-                else:
-                    assessment = calculator(care_plan_text, log_entries, resident_data)
+                # Create standardized form structure
+                form = self._create_standard_form(tool_name)
                 
-                results['assessments'][tool_name] = assessment
+                # Fill form with AI-detected data
+                if tool_name == 'must_nutrition':
+                    filled_form = self._fill_form_with_ai_data(form, care_plan_text, log_entries, weight_logs, height, resident_data)
+                else:
+                    filled_form = self._fill_form_with_ai_data(form, care_plan_text, log_entries, None, None, resident_data)
+                
+                # Calculate score from filled form
+                calculated_score = self._calculate_score_from_form(tool_name, filled_form)
+                
+                # Determine risk level
+                risk_level = self._determine_risk_level(tool_name, calculated_score['total_score'])
+                
+                results['assessments'][tool_name] = {
+                    'tool_name': filled_form['tool_name'],
+                    'form_items': filled_form['items'],
+                    'score': calculated_score['total_score'],
+                    'max_score': filled_form['max_score'],
+                    'risk_level': risk_level,
+                    'ai_filled_items': calculated_score['ai_filled_count'],
+                    'manager_required_items': calculated_score['missing_count'],
+                    'calculation_formula': filled_form['formula'],
+                    'next_review_date': (datetime.now() + timedelta(weeks=self._get_review_interval(tool_name))).strftime('%Y-%m-%d')
+                }
                 
                 # Update summary
-                risk_level = assessment['risk_level'].lower()
-                if 'high' in risk_level or 'severe' in risk_level:
+                if 'high' in risk_level.lower() or 'severe' in risk_level.lower():
                     results['summary']['high_risk_count'] += 1
-                    results['summary']['priority_alerts'].append({
-                        'tool': tool_name,
-                        'score': assessment['score'],
-                        'risk_level': assessment['risk_level'],
-                        'alert': f"HIGH RISK: {assessment['tool_name']} score {assessment['score']}"
-                    })
-                elif 'medium' in risk_level or 'moderate' in risk_level:
+                    if calculated_score['total_score'] > 0:  # Only alert if there's actual data
+                        results['summary']['priority_alerts'].append({
+                            'tool': tool_name,
+                            'score': calculated_score['total_score'],
+                            'risk_level': risk_level,
+                            'alert': f"HIGH RISK: {filled_form['tool_name']} score {calculated_score['total_score']}"
+                        })
+                elif 'medium' in risk_level.lower() or 'moderate' in risk_level.lower():
                     results['summary']['medium_risk_count'] += 1
                 else:
                     results['summary']['low_risk_count'] += 1
                     
             except Exception as e:
                 results['assessments'][tool_name] = {
-                    'error': f"Calculation error: {str(e)}",
+                    'error': f"Form creation error: {str(e)}",
                     'score': 0,
                     'risk_level': 'Unable to assess'
                 }
@@ -740,6 +760,294 @@ class RiskAssessmentCalculator:
                 "Can evacuate independently",
                 "Include in general evacuation procedures"
             ]
+    
+    def _create_standard_form(self, tool_name: str) -> Dict[str, Any]:
+        """Create standardized form for each assessment tool"""
+        
+        forms = {
+            'falls_screening': {
+                'tool_name': 'Falls Screening',
+                'max_score': 6,
+                'formula': 'Falls History(0-1) + Medications≥4(0-1) + Diagnosis(0-1) + Balance Issues(0-1) + Chair Rise(0-1) + Postural Hypotension(0-1)',
+                'items': [
+                    {'id': 'falls_history', 'name': 'Falls history in past year', 'score_range': '0-1', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'medications', 'name': 'Daily medications ≥4', 'score_range': '0-1', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'diagnosis', 'name': 'Dementia/Stroke/Parkinson\'s diagnosis', 'score_range': '0-1', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'balance', 'name': 'Balance problems', 'score_range': '0-1', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'chair_rise', 'name': 'Chair rise test (unable to rise)', 'score_range': '0-1', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'postural_bp', 'name': 'Postural hypotension (optional)', 'score_range': '0-1', 'ai_value': None, 'manager_input_required': True}
+                ]
+            },
+            'must_nutrition': {
+                'tool_name': 'MUST Nutrition Screening',
+                'max_score': 6,
+                'formula': 'BMI Score(0-2) + Weight Loss(0-2) + Acute Illness Fasting(0-2)',
+                'items': [
+                    {'id': 'bmi', 'name': 'BMI calculation', 'score_range': '0-2', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'weight_loss', 'name': 'Unplanned weight loss 3-6 months', 'score_range': '0-2', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'acute_illness', 'name': 'Acute illness with no intake 5+ days', 'score_range': '0-2', 'ai_value': None, 'manager_input_required': True}
+                ]
+            },
+            'waterlow': {
+                'tool_name': 'Waterlow Pressure Ulcer Assessment',
+                'max_score': 'Variable',
+                'formula': 'Age + Gender + BMI + Skin + Mobility + Nutrition + Continence + Special Conditions',
+                'items': [
+                    {'id': 'age', 'name': 'Age scoring', 'score_range': '1-5', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'gender', 'name': 'Gender', 'score_range': '1-2', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'skin_condition', 'name': 'Skin type/condition', 'score_range': '0-2', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'mobility', 'name': 'Mobility level', 'score_range': '0-4', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'continence', 'name': 'Continence status', 'score_range': '0-3', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'nutrition', 'name': 'Nutrition status', 'score_range': '0-1', 'ai_value': None, 'manager_input_required': True}
+                ]
+            },
+            'abbey_pain': {
+                'tool_name': 'Abbey Pain Scale',
+                'max_score': 18,
+                'formula': 'Vocalisation(0-3) + Facial(0-3) + Body Language(0-3) + Behavioural(0-3) + Physiological(0-3) + Physical(0-3)',
+                'items': [
+                    {'id': 'vocalisation', 'name': 'Vocalisation (crying, moaning, groaning)', 'score_range': '0-3', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'facial', 'name': 'Facial expression (grimacing, frowning)', 'score_range': '0-3', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'body_language', 'name': 'Body language changes (restless, guarding)', 'score_range': '0-3', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'behavioural', 'name': 'Behavioural changes (confusion, refusal)', 'score_range': '0-3', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'physiological', 'name': 'Physiological changes (BP, pulse, temp)', 'score_range': '0-3', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'physical', 'name': 'Physical changes (skin tears, pressure areas)', 'score_range': '0-3', 'ai_value': None, 'manager_input_required': True}
+                ]
+            },
+            'cornell_depression': {
+                'tool_name': 'Cornell Depression Scale',
+                'max_score': 38,
+                'formula': 'Mood Signs(0-8) + Behavioural(0-8) + Physical(0-6) + Cyclic Functions(0-8) + Ideational(0-8)',
+                'items': [
+                    {'id': 'mood_signs', 'name': 'Mood-related signs (anxiety, sadness)', 'score_range': '0-8', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'behavioural_dist', 'name': 'Behavioural disturbance (agitation, retardation)', 'score_range': '0-8', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'physical_signs', 'name': 'Physical signs (appetite, weight, energy)', 'score_range': '0-6', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'cyclic_functions', 'name': 'Sleep and cyclic functions', 'score_range': '0-8', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'ideational', 'name': 'Ideational disturbance (suicide, pessimism)', 'score_range': '0-8', 'ai_value': None, 'manager_input_required': True}
+                ]
+            },
+            'moving_handling': {
+                'tool_name': 'Moving and Handling Assessment',
+                'max_score': 5,
+                'formula': 'Maximum risk level across all activities (Standing, Walking, Transferring, Personal Care)',
+                'items': [
+                    {'id': 'standing', 'name': 'Standing ability', 'score_range': '0-5', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'walking', 'name': 'Walking ability', 'score_range': '0-5', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'transferring', 'name': 'Transferring ability', 'score_range': '0-5', 'ai_value': None, 'manager_input_required': True},
+                    {'id': 'personal_care', 'name': 'Personal care activities', 'score_range': '0-5', 'ai_value': None, 'manager_input_required': True}
+                ]
+            },
+            'peep': {
+                'tool_name': 'Personal Emergency Evacuation Plan',
+                'max_score': 4,
+                'formula': 'Single risk level assessment (1=Low, 2=Medium, 3=High, 4=Severe)',
+                'items': [
+                    {'id': 'evacuation_ability', 'name': 'Evacuation ability assessment', 'score_range': '1-4', 'ai_value': None, 'manager_input_required': True}
+                ]
+            }
+        }
+        
+        return forms.get(tool_name, {})
+    
+    def _fill_form_with_ai_data(self, form: Dict, care_plan_text: str, log_entries: str, 
+                               weight_logs: List[float] = None, height: float = None,
+                               resident_data: Dict = None) -> Dict[str, Any]:
+        """Fill standardized form with AI-detected data where possible"""
+        
+        combined_text = (care_plan_text + " " + log_entries).lower()
+        
+        # Process each form item
+        for item in form['items']:
+            ai_result = self._ai_detect_item_value(item['id'], combined_text, weight_logs, height, resident_data)
+            item['ai_value'] = ai_result['value']
+            item['ai_confidence'] = ai_result['confidence']
+            item['ai_evidence'] = ai_result['evidence']
+            item['manager_input_required'] = ai_result['value'] is None
+        
+        return form
+    
+    def _ai_detect_item_value(self, item_id: str, combined_text: str, weight_logs=None, height=None, resident_data=None) -> Dict:
+        """AI detection for specific form items"""
+        
+        detection_rules = {
+            'falls_history': {
+                'keywords': ['fall', 'fell', 'trip', 'stumble', 'slip', 'tumble'],
+                'score_if_found': 1,
+                'score_if_not_found': None  # Require manager input
+            },
+            'medications': {
+                'keywords': ['tablet', 'mg', 'medication', 'drug', 'pill', 'capsule'],
+                'count_based': True,
+                'threshold': 4,
+                'score_if_above': 1,
+                'score_if_below': None  # Require manager verification
+            },
+            'diagnosis': {
+                'keywords': ['dementia', 'stroke', 'parkinson', 'alzheimer'],
+                'score_if_found': 1,
+                'score_if_not_found': None
+            },
+            'balance': {
+                'keywords': ['balance', 'unsteady', 'dizzy', 'vertigo', 'unstable', 'wobble'],
+                'score_if_found': 1,
+                'score_if_not_found': None
+            },
+            'chair_rise': {
+                'keywords': ['difficulty standing', 'cannot stand', 'unable to rise', 'help standing'],
+                'score_if_found': 1,
+                'score_if_not_found': None
+            },
+            'bmi': {
+                'calculation': True,
+                'requires_weight_height': True
+            },
+            'vocalisation': {
+                'keywords': ['crying', 'moaning', 'groaning', 'shouting', 'calling out'],
+                'score_scale': [0, 1, 2, 3],  # Absent, Mild, Moderate, Severe
+                'default': None
+            }
+        }
+        
+        rule = detection_rules.get(item_id, {})
+        
+        if not rule:
+            return {'value': None, 'confidence': 'low', 'evidence': 'No detection rule defined'}
+        
+        # Handle BMI calculation
+        if rule.get('calculation') and rule.get('requires_weight_height'):
+            if weight_logs and height and len(weight_logs) > 0:
+                latest_weight = weight_logs[-1]
+                bmi = latest_weight / (height/100)**2
+                if bmi < 18.5:
+                    return {'value': 2, 'confidence': 'high', 'evidence': f'BMI calculated as {bmi:.1f} from weight {latest_weight}kg and height {height}cm'}
+                elif 18.5 <= bmi <= 20:
+                    return {'value': 1, 'confidence': 'high', 'evidence': f'BMI calculated as {bmi:.1f}'}
+                else:
+                    return {'value': 0, 'confidence': 'high', 'evidence': f'BMI calculated as {bmi:.1f}'}
+            return {'value': None, 'confidence': 'low', 'evidence': 'Missing weight or height data for BMI calculation'}
+        
+        # Handle keyword-based detection
+        if 'keywords' in rule:
+            keywords_found = [kw for kw in rule['keywords'] if kw in combined_text]
+            
+            if rule.get('count_based'):
+                count = sum(combined_text.count(kw) for kw in rule['keywords'])
+                if count >= rule.get('threshold', 1):
+                    return {
+                        'value': rule.get('score_if_above'),
+                        'confidence': 'medium',
+                        'evidence': f'Found {count} medication references: {keywords_found}'
+                    }
+                else:
+                    return {
+                        'value': rule.get('score_if_below'),
+                        'confidence': 'low',
+                        'evidence': f'Only found {count} medication references (threshold: {rule.get("threshold", 1)})'
+                    }
+            
+            if keywords_found:
+                return {
+                    'value': rule.get('score_if_found'),
+                    'confidence': 'medium',
+                    'evidence': f'Keywords found: {", ".join(keywords_found)}'
+                }
+            else:
+                return {
+                    'value': rule.get('score_if_not_found'),
+                    'confidence': 'low',
+                    'evidence': 'No relevant keywords found in care plan/logs'
+                }
+        
+        return {'value': None, 'confidence': 'low', 'evidence': 'No detection method available'}
+    
+    def _calculate_score_from_form(self, tool_name: str, form: Dict) -> Dict[str, int]:
+        """Calculate total score from filled form"""
+        
+        total_score = 0
+        ai_filled_count = 0
+        missing_count = 0
+        
+        for item in form['items']:
+            if item['ai_value'] is not None:
+                total_score += item['ai_value']
+                ai_filled_count += 1
+            else:
+                missing_count += 1
+        
+        return {
+            'total_score': total_score,
+            'ai_filled_count': ai_filled_count,
+            'missing_count': missing_count
+        }
+    
+    def _determine_risk_level(self, tool_name: str, score: int) -> str:
+        """Determine risk level based on tool and score"""
+        
+        risk_levels = {
+            'falls_screening': {
+                0: 'Low Risk',
+                1: 'Low Risk', 
+                2: 'Medium Risk',
+                3: 'High Risk',
+                4: 'High Risk',
+                5: 'High Risk',
+                6: 'High Risk'
+            },
+            'must_nutrition': {
+                0: 'Low Risk',
+                1: 'Medium Risk',
+                2: 'High Risk',
+                3: 'High Risk',
+                4: 'High Risk',
+                5: 'High Risk',
+                6: 'High Risk'
+            },
+            'abbey_pain': {
+                0: 'No Pain',
+                1: 'No Pain', 
+                2: 'No Pain',
+                3: 'Mild Pain',
+                4: 'Mild Pain',
+                5: 'Mild Pain',
+                6: 'Mild Pain',
+                7: 'Mild Pain',
+                8: 'Moderate Pain',
+                9: 'Moderate Pain',
+                10: 'Moderate Pain',
+                11: 'Moderate Pain',
+                12: 'Moderate Pain',
+                13: 'Moderate Pain',
+                14: 'Severe Pain',
+                15: 'Severe Pain',
+                16: 'Severe Pain',
+                17: 'Severe Pain',
+                18: 'Severe Pain'
+            }
+        }
+        
+        if tool_name in risk_levels:
+            return risk_levels[tool_name].get(score, 'Medium Risk')
+        
+        # Generic risk level for other tools
+        if score == 0:
+            return 'Low Risk'
+        elif score <= 2:
+            return 'Medium Risk'
+        else:
+            return 'High Risk'
+    
+    def _get_review_interval(self, tool_name: str) -> int:
+        """Get review interval in weeks for each tool"""
+        intervals = {
+            'falls_screening': 1,
+            'must_nutrition': 1,
+            'waterlow': 4,
+            'abbey_pain': 4,
+            'cornell_depression': 12,
+            'moving_handling': 24,
+            'peep': 24
+        }
+        return intervals.get(tool_name, 4)
 
 def format_risk_assessment_for_care_plan(assessment_results: Dict[str, Any]) -> str:
     """Format risk assessment results for inclusion in care plan"""
