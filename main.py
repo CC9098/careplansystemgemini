@@ -7,7 +7,7 @@ import io
 import json
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, send_file
-import openai
+import anthropic
 from werkzeug.utils import secure_filename
 import markdown
 import re
@@ -15,7 +15,6 @@ from collections import defaultdict
 from data_validation_config import *
 from structure_analyzer import analyze_csv_structure, smart_compress_csv, is_large_file
 from risk_assessment import RiskAssessmentCalculator, format_risk_assessment_for_care_plan
-from text_optimizer import TextOptimizer
 
 app = Flask(__name__, template_folder='templates')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB file limit
@@ -24,17 +23,17 @@ app.config['UPLOAD_FOLDER'] = 'temp_uploads'
 # Create temp folder
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Initialize OpenAI API
-api_key = os.environ.get('OPENAI_API_KEY')
+# Initialize Claude API
+api_key = os.environ.get('CLAUDE')
 if not api_key:
-    print("Warning: OPENAI_API_KEY not found in environment variables")
+    print("Warning: CLAUDE API key not found in environment variables")
     client = None
 else:
     try:
-        client = openai.OpenAI(api_key=api_key)
-        print("OpenAI API client initialized successfully")
+        client = anthropic.Anthropic(api_key=api_key)
+        print("Claude API client initialized successfully")
     except Exception as e:
-        print(f"OpenAI initialization error: {e}")
+        print(f"Anthropic initialization error: {e}")
         client = None
 
 import PyPDF2
@@ -120,15 +119,19 @@ def extract_daily_data(daily_log_content):
 def analyze_and_suggest_changes(daily_log, current_care_plan, resident_name):
     """Step 1: Analyze and suggest changes with gap detection"""
 
-    prompt = f"""Analyze care data for {resident_name} and identify issues.
+    prompt = f"""You are a care home management assistant. Your task is to analyze the resident's care log and current care plan, then identify specific behavioral or care issues that need attention.
 
-CARE LOG:
+RESIDENT: {resident_name}
+
+CARE LOG (this month):
 {daily_log}
 
-CARE PLAN:
+CURRENT CARE PLAN:
 {current_care_plan}
 
-Return JSON with this structure:
+Please analyze the care log and identify specific, concrete issues that need to be addressed. Also identify gaps between the care log and current care plan.
+
+Format your response as a JSON object with this structure:
 {{
     "analysis_summary": "Brief summary of key findings from the care log",
     "care_plan_gaps": {{
@@ -178,14 +181,14 @@ Guidelines:
 - For care_plan_gaps, identify significant patterns/events in logs that are completely missing from the current care plan"""
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            max_tokens=2000,
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=3000,
             temperature=0.7,
             messages=[{"role": "user", "content": prompt}]
         )
 
-        response_text = response.choices[0].message.content
+        response_text = message.content[0].text
         # Try to extract JSON from the response
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
         if json_match:
@@ -299,13 +302,13 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
 Generate the complete updated care plan with natural integration."""
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            max_tokens=3000,
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=4000,
             temperature=0.7,
             messages=[{"role": "user", "content": prompt}]
         )
-        return response.choices[0].message.content
+        return message.content[0].text
     except Exception as e:
         return f"Error generating care plan: {str(e)}"
 
@@ -571,13 +574,8 @@ def analyze():
         else:
             processing_steps.append("🧠 Generating analysis...")
 
-        # Optimize text to reduce token usage
-        optimizer = TextOptimizer()
-        optimized_daily_log = optimizer.compress_log_content(processed_daily_log, 8000)
-        optimized_care_plan = optimizer.summarize_care_plan(care_plan_content, 5000)
-        
-        # Get suggestions using optimized content
-        analysis_result = analyze_and_suggest_changes(optimized_daily_log, optimized_care_plan, resident_name)
+        # Get suggestions using processed content
+        analysis_result = analyze_and_suggest_changes(processed_daily_log, care_plan_content, resident_name)
 
         # Calculate risk assessments
         processing_steps.append("🛡️ Calculating risk assessments...")

@@ -60,14 +60,14 @@ Guidelines:
 - Recommended compression ratio: how much to compress (0.1 = keep 10%, 1.0 = keep all)"""
 
     try:
-        response = structure_client.chat.completions.create(
-            model="gpt-4o-mini",
+        message = structure_client.messages.create(
+            model="claude-sonnet-4-20250514",
             max_tokens=2000,
             temperature=0.3,
             messages=[{"role": "user", "content": prompt}]
         )
         
-        response_text = response.choices[0].message.content
+        response_text = message.content[0].text
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
         
         if json_match:
