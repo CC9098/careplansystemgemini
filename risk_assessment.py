@@ -708,6 +708,21 @@ def format_risk_assessment_for_care_plan(assessment_results: Dict[str, Any]) -> 
     
     output = ["# 🛡️ RISK ASSESSMENT SUMMARY"]
     output.append(f"**Assessment Date:** {assessment_results['assessment_date']}")
+    
+    # Check for manual adjustments
+    manual_adjustments = assessment_results.get('manual_adjustments', {})
+    if manual_adjustments:
+        output.append("")
+        output.append("## ✏️ MANAGER ADJUSTMENTS APPLIED")
+        output.append("*The following scores have been manually reviewed and adjusted by care manager based on actual resident observations:*")
+        output.append("")
+        for tool_name, adjustment in manual_adjustments.items():
+            tool_display_name = assessment_results['assessments'][tool_name]['tool_name']
+            output.append(f"- **{tool_display_name}:** Score adjusted from {adjustment['original_score']} to {adjustment['adjusted_score']}")
+            if adjustment.get('reason'):
+                output.append(f"  - *Manager's reasoning:* {adjustment['reason']}")
+        output.append("")
+    
     output.append("")
     
     # Summary overview

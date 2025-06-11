@@ -107,11 +107,16 @@
                 <!-- Risk Assessment Section -->
                 <div id="risk-assessment-section" class="risk-assessment-section" style="display: none;">
                     <h3>🛡️ Risk Assessment Results</h3>
+                    <div class="risk-assessment-notice">
+                        <p><strong>⚠️ Important:</strong> AI calculations are preliminary estimates. Manager review and adjustment based on actual resident observations is required.</p>
+                    </div>
                     <div id="risk-summary" class="risk-summary"></div>
                     <div class="risk-details-toggle">
-                        <button onclick="toggleRiskDetails()" class="action-btn">📊 View Detailed Calculations</button>
+                        <button onclick="toggleRiskDetails()" class="action-btn">📊 View Detailed Calculations & Evidence</button>
+                        <button onclick="toggleManualAdjustment()" class="action-btn">✏️ Manual Score Adjustment</button>
                     </div>
                     <div id="risk-details" class="risk-details" style="display: none;"></div>
+                    <div id="manual-adjustment" class="manual-adjustment-section" style="display: none;"></div>
                 </div>
 
                 <div class="suggestions-container">
@@ -1206,6 +1211,22 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             }
         }
 
+        // Manual adjustment toggle
+        function toggleManualAdjustment() {
+            const adjustmentDiv = document.getElementById('manual-adjustment');
+            const isVisible = adjustmentDiv.style.display === 'block';
+            
+            if (isVisible) {
+                adjustmentDiv.style.display = 'none';
+            } else {
+                adjustmentDiv.style.display = 'block';
+                // Load manual adjustment interface if not already loaded
+                if (!adjustmentDiv.innerHTML.trim()) {
+                    loadManualAdjustmentInterface();
+                }
+            }
+        }
+
         async function loadRiskCalculationDetails() {
             if (!currentData.risk_assessment) return;
             
@@ -1238,12 +1259,13 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             let html = '<div class="calculation-breakdown">';
             
             if (details.calculation_process) {
-                html += '<h4>📊 Calculation Breakdown</h4>';
+                html += '<h4>📊 AI Calculation Breakdown</h4>';
+                html += '<div class="disagreement-alert"><h5>⚠️ Manager Review Required</h5><p>Please verify these AI calculations against actual resident observations and care plan records.</p></div>';
                 
                 Object.entries(details.calculation_process).forEach(([toolName, process]) => {
                     html += `<div class="calculation-tool">
                         <h5>${toolName.replace('_', ' ').toUpperCase()}</h5>
-                        <p><strong>Total Score:</strong> ${process.total_score}</p>
+                        <p><strong>AI Calculated Score:</strong> ${process.total_score}</p>
                         <div class="calculation-steps">`;
                     
                     process.steps.forEach(step => {
@@ -1256,10 +1278,214 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                     
                     html += '</div></div>';
                 });
+
+                html += `
+                    <div class="evidence-validation">
+                        <h5>🔍 Evidence Validation</h5>
+                        <p><strong>Instructions:</strong> Review each piece of AI-identified evidence against actual care plan records:</p>
+                        <ul>
+                            <li>✅ <strong>Confirmed:</strong> Evidence found in current care plan/logs</li>
+                            <li>❌ <strong>Not Found:</strong> No evidence in current records</li>
+                            <li>❓ <strong>Questionable:</strong> Evidence outdated or unclear</li>
+                        </ul>
+                    </div>
+                `;
             }
             
             html += '</div>';
             detailsDiv.innerHTML = html;
+        }
+
+        function loadManualAdjustmentInterface() {
+            if (!currentData.risk_assessment || !currentData.risk_assessment.assessments) {
+                document.getElementById('manual-adjustment').innerHTML = '<p>No risk assessment data available.</p>';
+                return;
+            }
+
+            const adjustmentDiv = document.getElementById('manual-adjustment');
+            let html = `
+                <h4>✏️ Manual Risk Score Adjustment</h4>
+                <p><strong>Instructions:</strong> Review AI calculations against actual resident care plan and adjust scores based on your professional judgment.</p>
+                <div class="adjustment-grid">
+            `;
+
+            Object.entries(currentData.risk_assessment.assessments).forEach(([toolName, assessment]) => {
+                if (assessment.error) return;
+
+                html += `
+                    <div class="adjustment-item" data-tool="${toolName}">
+                        <div class="adjustment-header">
+                            <h5>${assessment.tool_name}</h5>
+                            <span class="risk-level ${assessment.risk_level.toLowerCase().replace(' ', '-')}">${assessment.risk_level}</span>
+                        </div>
+
+                        <div class="ai-vs-manual">
+                            <div class="ai-score">
+                                <h6>🤖 AI Calculated</h6>
+                                <div style="font-size: 18px; font-weight: bold;">${assessment.score}/${assessment.max_score}</div>
+                            </div>
+                            <div class="manual-score">
+                                <h6>👨‍⚕️ Manager Adjusted</h6>
+                                <input type="number" class="score-input" id="manual-score-${toolName}" 
+                                       value="${assessment.score}" min="0" max="${assessment.max_score}" 
+                                       onchange="updateRiskLevel('${toolName}', this.value, '${assessment.max_score}')">
+                                <div>/${assessment.max_score}</div>
+                                <div id="manual-risk-level-${toolName}" class="risk-level" style="margin-top: 5px; font-size: 12px;"></div>
+                            </div>
+                        </div>
+
+                        <div class="evidence-comparison">
+                            <h6>📋 Evidence Review</h6>
+                            <div class="evidence-section">
+                                <h5>AI Found Evidence:</h5>
+                                ${assessment.evidence && assessment.evidence.length > 0 ? 
+                                    assessment.evidence.map((evidence, index) => `
+                                        <div class="evidence-item" id="evidence-${toolName}-${index}">
+                                            <span>${evidence}</span>
+                                            <div style="float: right;">
+                                                <button onclick="markEvidence('${toolName}', ${index}, 'found')" class="btn-evidence">✅</button>
+                                                <button onclick="markEvidence('${toolName}', ${index}, 'questionable')" class="btn-evidence">❓</button>
+                                                <button onclick="markEvidence('${toolName}', ${index}, 'not-found')" class="btn-evidence">❌</button>
+                                            </div>
+                                        </div>
+                                    `).join('') : 
+                                    '<p>No evidence provided by AI</p>'
+                                }
+                            </div>
+                        </div>
+
+                        <div class="adjustment-reason">
+                            <label><strong>Adjustment Reason:</strong></label>
+                            <textarea id="reason-${toolName}" placeholder="Explain why you adjusted this score based on actual resident observations, care plan records, or your professional judgment..."></textarea>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                </div>
+                <div class="save-adjustment">
+                    <button onclick="saveAllAdjustments()" class="action-btn primary">💾 Save All Adjustments</button>
+                </div>
+            `;
+
+            adjustmentDiv.innerHTML = html;
+
+            // Initialize manual risk levels
+            Object.keys(currentData.risk_assessment.assessments).forEach(toolName => {
+                const assessment = currentData.risk_assessment.assessments[toolName];
+                if (!assessment.error) {
+                    updateRiskLevel(toolName, assessment.score, assessment.max_score);
+                }
+            });
+        }
+
+        function updateRiskLevel(toolName, score, maxScore) {
+            const riskLevelDiv = document.getElementById(`manual-risk-level-${toolName}`);
+            const scoreNum = parseInt(score);
+            const maxScoreNum = parseInt(maxScore);
+            
+            let riskLevel = '';
+            let riskClass = '';
+
+            // Risk level calculation based on tool type
+            if (toolName === 'falls_screening') {
+                if (scoreNum >= 3) { riskLevel = 'High Risk'; riskClass = 'high-risk'; }
+                else if (scoreNum >= 2) { riskLevel = 'Medium Risk'; riskClass = 'medium-risk'; }
+                else { riskLevel = 'Low Risk'; riskClass = 'low-risk'; }
+            } else if (toolName === 'waterlow') {
+                if (scoreNum >= 20) { riskLevel = 'Very High Risk'; riskClass = 'high-risk'; }
+                else if (scoreNum >= 15) { riskLevel = 'High Risk'; riskClass = 'high-risk'; }
+                else if (scoreNum >= 10) { riskLevel = 'Medium Risk'; riskClass = 'medium-risk'; }
+                else { riskLevel = 'Low Risk'; riskClass = 'low-risk'; }
+            } else if (toolName === 'abbey_pain') {
+                if (scoreNum >= 14) { riskLevel = 'Severe Pain'; riskClass = 'high-risk'; }
+                else if (scoreNum >= 8) { riskLevel = 'Moderate Pain'; riskClass = 'medium-risk'; }
+                else if (scoreNum >= 3) { riskLevel = 'Mild Pain'; riskClass = 'low-risk'; }
+                else { riskLevel = 'No Pain to Mild Pain'; riskClass = 'low-risk'; }
+            } else {
+                // Generic calculation for other tools
+                const percentage = scoreNum / maxScoreNum;
+                if (percentage >= 0.7) { riskLevel = 'High Risk'; riskClass = 'high-risk'; }
+                else if (percentage >= 0.4) { riskLevel = 'Medium Risk'; riskClass = 'medium-risk'; }
+                else { riskLevel = 'Low Risk'; riskClass = 'low-risk'; }
+            }
+
+            riskLevelDiv.textContent = riskLevel;
+            riskLevelDiv.className = `risk-level ${riskClass}`;
+
+            // Mark as changed if different from AI score
+            const originalScore = currentData.risk_assessment.assessments[toolName].score;
+            const adjustmentItem = document.querySelector(`[data-tool="${toolName}"]`);
+            if (scoreNum !== originalScore) {
+                adjustmentItem.classList.add('score-changed');
+            } else {
+                adjustmentItem.classList.remove('score-changed');
+            }
+        }
+
+        function markEvidence(toolName, evidenceIndex, status) {
+            const evidenceDiv = document.getElementById(`evidence-${toolName}-${evidenceIndex}`);
+            evidenceDiv.className = `evidence-item ${status}`;
+        }
+
+        function saveAllAdjustments() {
+            const adjustments = {};
+            let hasChanges = false;
+
+            Object.keys(currentData.risk_assessment.assessments).forEach(toolName => {
+                const assessment = currentData.risk_assessment.assessments[toolName];
+                if (assessment.error) return;
+
+                const manualScore = parseInt(document.getElementById(`manual-score-${toolName}`).value);
+                const reason = document.getElementById(`reason-${toolName}`).value;
+                const originalScore = assessment.score;
+
+                if (manualScore !== originalScore) {
+                    hasChanges = true;
+                    adjustments[toolName] = {
+                        original_score: originalScore,
+                        adjusted_score: manualScore,
+                        reason: reason,
+                        adjusted_by: 'Manager',
+                        adjusted_date: new Date().toISOString()
+                    };
+                }
+            });
+
+            if (!hasChanges) {
+                alert('No changes detected.');
+                return;
+            }
+
+            // Update current data with adjustments
+            currentData.risk_assessment.manual_adjustments = adjustments;
+
+            // Show confirmation
+            const changedCount = Object.keys(adjustments).length;
+            const confirmMessage = `${changedCount} risk assessment(s) have been manually adjusted.\n\nThese adjustments will be included in the final care plan.\n\nSave changes?`;
+
+            if (confirm(confirmMessage)) {
+                alert('Risk assessment adjustments saved successfully!');
+                // Update the display
+                updateRiskAssessmentDisplay();
+            }
+        }
+
+        function updateRiskAssessmentDisplay() {
+            // Update the risk summary with manual adjustments
+            if (currentData.risk_assessment.manual_adjustments) {
+                const summaryDiv = document.getElementById('risk-summary');
+                let adjustmentNotice = '<div class="disagreement-alert"><h5>✏️ Manual Adjustments Applied</h5><ul>';
+
+                Object.entries(currentData.risk_assessment.manual_adjustments).forEach(([toolName, adjustment]) => {
+                    const toolDisplayName = currentData.risk_assessment.assessments[toolName].tool_name;
+                    adjustmentNotice += `<li><strong>${toolDisplayName}:</strong> Score changed from ${adjustment.original_score} to ${adjustment.adjusted_score}</li>`;
+                });
+
+                adjustmentNotice += '</ul></div>';
+                summaryDiv.innerHTML = adjustmentNotice + summaryDiv.innerHTML;
+            }
         }
     </script>
 </body>

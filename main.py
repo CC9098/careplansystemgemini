@@ -1191,6 +1191,11 @@ def generate_care_plan():
 
         # Include risk assessment in care plan generation
         risk_assessment_data = data.get('risk_assessment', {})
+        
+        # Include manual adjustments if present
+        manual_adjustments = risk_assessment_data.get('manual_adjustments', {})
+        if manual_adjustments:
+            print(f"Manual risk adjustments found: {len(manual_adjustments)} tools adjusted")
 
         # Generate final care plan
         final_care_plan = generate_final_care_plan(
