@@ -1426,15 +1426,25 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
         }
 
         function markEvidence(toolName, evidenceIndex, status) {
+            // Get the evidence div
             const evidenceDiv = document.getElementById(`evidence-${toolName}-${evidenceIndex}`);
+            if (!evidenceDiv) {
+                console.error('Evidence div not found:', `evidence-${toolName}-${evidenceIndex}`);
+                return;
+            }
+            
+            // Update the visual state
             evidenceDiv.className = `evidence-item ${status}`;
             
             // Remove active state from all buttons in this evidence item
             const buttons = evidenceDiv.querySelectorAll('.btn-evidence');
             buttons.forEach(btn => btn.classList.remove('active'));
             
-            // Add active state to clicked button
-            event.target.classList.add('active');
+            // Find which button was clicked and mark it as active
+            const clickedButton = event.target;
+            if (clickedButton) {
+                clickedButton.classList.add('active');
+            }
             
             // Store the evidence validation status
             if (!window.evidenceValidation) {
@@ -1445,10 +1455,46 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             }
             window.evidenceValidation[toolName][evidenceIndex] = {
                 status: status,
-                validated: true
+                validated: true,
+                timestamp: new Date().toISOString()
             };
             
-            console.log('Evidence marked:', toolName, evidenceIndex, status);
+            // Show visual feedback
+            const statusText = status === 'found' ? '✅ Found' : 
+                             status === 'questionable' ? '❓ Unclear' : 
+                             '❌ Not Found';
+            
+            console.log(`Evidence ${evidenceIndex} for ${toolName} marked as: ${statusText}`);
+            
+            // Optional: Show a brief success message
+            showSuccessMessage(`Evidence marked as: ${statusText}`);
+        }
+        
+        function showSuccessMessage(message) {
+            // Create a temporary success message
+            const successDiv = document.createElement('div');
+            successDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #d4edda;
+                color: #155724;
+                padding: 10px 15px;
+                border-radius: 5px;
+                border: 1px solid #c3e6cb;
+                z-index: 1000;
+                font-size: 14px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            `;
+            successDiv.textContent = message;
+            document.body.appendChild(successDiv);
+            
+            // Remove after 2 seconds
+            setTimeout(() => {
+                if (successDiv.parentNode) {
+                    successDiv.parentNode.removeChild(successDiv);
+                }
+            }, 2000);
         }
 
         function saveAllAdjustments() {

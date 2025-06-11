@@ -120,26 +120,26 @@ def extract_evidence_with_timestamps(log_content, keywords):
     """Extract evidence from logs with timestamps"""
     evidence_items = []
     lines = log_content.split('\n')
-    
+
     for line in lines:
         line_stripped = line.strip()
         if not line_stripped:
             continue
-            
+
         # Look for timestamp patterns
         timestamp_patterns = [
             r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?',  # DD/MM/YYYY HH:MM
             r'\d{4}[/-]\d{1,2}[/-]\d{1,2}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?',    # YYYY-MM-DD HH:MM
             r'\d{1,2}:\d{2}(?::\d{2})?',                                         # HH:MM or HH:MM:SS
         ]
-        
+
         timestamp = None
         for pattern in timestamp_patterns:
             match = re.search(pattern, line_stripped)
             if match:
                 timestamp = match.group()
                 break
-        
+
         # Check if line contains any of the keywords
         line_lower = line_stripped.lower()
         for keyword in keywords:
@@ -150,22 +150,22 @@ def extract_evidence_with_timestamps(log_content, keywords):
                 else:
                     evidence_items.append(evidence_text)
                 break
-    
+
     return evidence_items
 
 def create_fallback_analysis(response_text):
     """Create a fallback analysis when JSON parsing fails"""
-    
+
     # Extract key information from the response text for better fallback
     text_lower = response_text.lower()
-    
+
     suggestions = []
-    
+
     # Create specific suggestions based on common care issues
     if "nighttime" in text_lower or "sleep" in text_lower or "agitation" in text_lower:
         sleep_evidence = extract_evidence_with_timestamps(response_text, 
             ["nighttime", "sleep", "agitation", "awake", "restless", "night check"])
-        
+
         suggestions.append({
             "id": 1,
             "category": "Behavior",
@@ -190,7 +190,7 @@ def create_fallback_analysis(response_text):
                 "Environmental modifications to reduce stimulation"
             ]
         })
-    
+
     if "self-harm" in text_lower or "tea" in text_lower or "dangerous" in text_lower:
         suggestions.append({
             "id": 2,
@@ -216,7 +216,7 @@ def create_fallback_analysis(response_text):
                 "Assess for underlying pain or medical issues"
             ]
         })
-    
+
     if "undressing" in text_lower or "personal care" in text_lower:
         suggestions.append({
             "id": 3,
@@ -242,7 +242,7 @@ def create_fallback_analysis(response_text):
                 "Consider underlying medical causes for discomfort"
             ]
         })
-    
+
     if "eating" in text_lower or "food" in text_lower or "meal" in text_lower:
         suggestions.append({
             "id": 4,
@@ -268,7 +268,7 @@ def create_fallback_analysis(response_text):
                 "Monitor weight and nutritional intake closely"
             ]
         })
-    
+
     if "other residents" in text_lower or "entering" in text_lower or "space" in text_lower:
         suggestions.append({
             "id": 5,
@@ -294,7 +294,7 @@ def create_fallback_analysis(response_text):
                 "Train staff in person-centered redirection approaches"
             ]
         })
-    
+
     # If no specific suggestions found, add generic ones
     if not suggestions:
         suggestions.append({
@@ -321,7 +321,7 @@ def create_fallback_analysis(response_text):
                 "Provide more structured daily activities"
             ]
         })
-    
+
     return {
         "analysis_summary": "Jean's care log reveals significant behavioral challenges including frequent nighttime agitation, undressing behaviors, self-harm incidents, and inconsistent eating patterns. Notable incidents include pouring tea over her head, entering other residents' spaces, shouting and banging doors, and tearful episodes. Sleep disturbances are frequent with multiple night checks showing her awake and unsettled.",
         "care_plan_gaps": {
@@ -510,35 +510,35 @@ Guidelines:
 
         response_text = message.content[0].text
         print(f"Raw AI response length: {len(response_text)}")
-        
+
         # Clean the response text more thoroughly
         response_text = response_text.strip()
-        
+
         # Remove any markdown code blocks
         response_text = re.sub(r'```json\s*', '', response_text)
         response_text = re.sub(r'```\s*$', '', response_text)
-        
+
         # Try to extract JSON from the response
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
         if json_match:
             json_str = json_match.group()
-            
+
             try:
                 parsed_result = json.loads(json_str)
-                
+
                 # Validate the structure
                 if not isinstance(parsed_result.get('suggestions'), list):
                     print("Invalid suggestions structure, using fallback")
                     return create_fallback_analysis(response_text)
-                
+
                 # Ensure we have suggestions
                 if len(parsed_result.get('suggestions', [])) == 0:
                     print("No suggestions found, creating fallback")
                     return create_fallback_analysis(response_text)
-                
+
                 print(f"Successfully parsed {len(parsed_result.get('suggestions', []))} suggestions")
                 return parsed_result
-                
+
             except json.JSONDecodeError as json_error:
                 print(f"JSON decode error: {json_error}")
                 print(f"JSON around error: {json_str[max(0, json_error.pos-100):json_error.pos+100]}")
@@ -815,7 +815,7 @@ def read_csv_flexible(file_path):
                 dialect = csv.Sniffer().sniff(file.read(1024))
                 file.seek(0)
                 reader = csv.reader(file, dialect)
-                rows = list(reader)
+                rowss = list(reader)
 
                 if rows:
                     headers = rows[0] if len(rows) > 0 else []
@@ -940,11 +940,11 @@ def analyze():
             height, 
             resident_data
         )
-        
+
         # Add risk assessment summary to analysis result
         if risk_assessment_results and 'summary' in risk_assessment_results:
             analysis_result['risk_assessment_summary'] = risk_assessment_results['summary']
-        
+
         # Ensure risk assessment is included in response
         if not risk_assessment_results:
             risk_assessment_results = {
@@ -1191,7 +1191,7 @@ def generate_care_plan():
 
         # Include risk assessment in care plan generation
         risk_assessment_data = data.get('risk_assessment', {})
-        
+
         # Include manual adjustments if present
         manual_adjustments = risk_assessment_data.get('manual_adjustments', {})
         if manual_adjustments:
