@@ -1618,13 +1618,6 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             }
         }
 
-        // Store original scores before any adjustments
-            Object.keys(riskData.assessments).forEach(toolName => {
-                const assessment = riskData.assessments[toolName];
-                if (!assessment.error && assessment.original_score === undefined) {
-                    assessment.original_score = assessment.score;
-                }
-            });
-    </script>
+        </script>
 </body>
 </html>
