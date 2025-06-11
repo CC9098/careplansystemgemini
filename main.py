@@ -15,6 +15,7 @@ from collections import defaultdict
 from data_validation_config import *
 from structure_analyzer import analyze_csv_structure, smart_compress_csv, is_large_file
 from risk_assessment import RiskAssessmentCalculator, format_risk_assessment_for_care_plan
+from text_optimizer import TextOptimizer
 
 app = Flask(__name__, template_folder='templates')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB file limit
@@ -119,19 +120,15 @@ def extract_daily_data(daily_log_content):
 def analyze_and_suggest_changes(daily_log, current_care_plan, resident_name):
     """Step 1: Analyze and suggest changes with gap detection"""
 
-    prompt = f"""You are a care home management assistant. Your task is to analyze the resident's care log and current care plan, then identify specific behavioral or care issues that need attention.
+    prompt = f"""Analyze care data for {resident_name} and identify issues.
 
-RESIDENT: {resident_name}
-
-CARE LOG (this month):
+CARE LOG:
 {daily_log}
 
-CURRENT CARE PLAN:
+CARE PLAN:
 {current_care_plan}
 
-Please analyze the care log and identify specific, concrete issues that need to be addressed. Also identify gaps between the care log and current care plan.
-
-Format your response as a JSON object with this structure:
+Return JSON with this structure:
 {{
     "analysis_summary": "Brief summary of key findings from the care log",
     "care_plan_gaps": {{
@@ -182,8 +179,8 @@ Guidelines:
 
     try:
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=3000,
+            model="claude-3-haiku-20240307",
+            max_tokens=2000,
             temperature=0.7,
             messages=[{"role": "user", "content": prompt}]
         )
@@ -303,8 +300,8 @@ Generate the complete updated care plan with natural integration."""
 
     try:
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=4000,
+            model="claude-3-haiku-20240307",
+            max_tokens=3000,
             temperature=0.7,
             messages=[{"role": "user", "content": prompt}]
         )
@@ -574,8 +571,13 @@ def analyze():
         else:
             processing_steps.append("🧠 Generating analysis...")
 
-        # Get suggestions using processed content
-        analysis_result = analyze_and_suggest_changes(processed_daily_log, care_plan_content, resident_name)
+        # Optimize text to reduce token usage
+        optimizer = TextOptimizer()
+        optimized_daily_log = optimizer.compress_log_content(processed_daily_log, 8000)
+        optimized_care_plan = optimizer.summarize_care_plan(care_plan_content, 5000)
+        
+        # Get suggestions using optimized content
+        analysis_result = analyze_and_suggest_changes(optimized_daily_log, optimized_care_plan, resident_name)
 
         # Calculate risk assessments
         processing_steps.append("🛡️ Calculating risk assessments...")
