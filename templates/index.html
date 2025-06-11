@@ -413,7 +413,7 @@
             const finalPlan = document.getElementById('finalPlan');
 
             loading.style.display = 'block';
-            
+
             // Start report generation progress animation
             startReportGenerationProgress();
 
@@ -1016,10 +1016,10 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             const progressText = document.getElementById('progress-text');
             const loadingText = document.getElementById('loading-text');
             const progressSteps = document.getElementById('progress-steps');
-            
+
             // Clear previous steps
             progressSteps.innerHTML = '';
-            
+
             const steps = [
                 { text: "📄 Reading uploaded files...", progress: 10 },
                 { text: "🔍 Analyzing care log structure...", progress: 20 },
@@ -1030,16 +1030,16 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                 { text: "⚡ Finalizing recommendations...", progress: 90 },
                 { text: "✅ Analysis complete!", progress: 100 }
             ];
-            
+
             let currentStep = 0;
-            
+
             function updateProgress() {
                 if (currentStep < steps.length) {
                     const step = steps[currentStep];
                     progressFill.style.width = step.progress + '%';
                     progressText.textContent = step.progress + '%';
                     loadingText.textContent = step.text;
-                    
+
                     // Add step to progress steps
                     const stepDiv = document.createElement('div');
                     stepDiv.className = 'progress-step';
@@ -1048,15 +1048,15 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                     stepDiv.style.transition = 'all 0.3s ease';
                     stepDiv.textContent = step.text;
                     progressSteps.appendChild(stepDiv);
-                    
+
                     // Animate step appearance
                     setTimeout(() => {
                         stepDiv.style.opacity = '1';
                         stepDiv.style.transform = 'translateX(0)';
                     }, 100);
-                    
+
                     currentStep++;
-                    
+
                     // Slower, more realistic timing
                     let delay;
                     if (currentStep <= 2) {
@@ -1068,13 +1068,13 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                     } else {
                         delay = Math.random() * 1000 + 800;  // 0.8-1.8s for final steps
                     }
-                    
+
                     setTimeout(updateProgress, delay);
                 } else {
                     // Keep animation running until response comes back
                 }
             }
-            
+
             updateProgress();
         }
 
@@ -1084,10 +1084,10 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             const progressText = document.getElementById('progress-text');
             const loadingText = document.getElementById('loading-text');
             const progressSteps = document.getElementById('progress-steps');
-            
+
             // Clear previous steps
             progressSteps.innerHTML = '';
-            
+
             const steps = [
                 { text: "📝 Preparing care plan template...", progress: 15 },
                 { text: "🔄 Integrating selected suggestions...", progress: 30 },
@@ -1097,16 +1097,16 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                 { text: "🎨 Generating final report...", progress: 90 },
                 { text: "✅ Care plan ready!", progress: 100 }
             ];
-            
+
             let currentStep = 0;
-            
+
             function updateProgress() {
                 if (currentStep < steps.length) {
                     const step = steps[currentStep];
                     progressFill.style.width = step.progress + '%';
                     progressText.textContent = step.progress + '%';
                     loadingText.textContent = step.text;
-                    
+
                     // Add step to progress steps
                     const stepDiv = document.createElement('div');
                     stepDiv.className = 'progress-step';
@@ -1115,22 +1115,22 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                     stepDiv.style.transition = 'all 0.3s ease';
                     stepDiv.textContent = step.text;
                     progressSteps.appendChild(stepDiv);
-                    
+
                     // Animate step appearance
                     setTimeout(() => {
                         stepDiv.style.opacity = '1';
                         stepDiv.style.transform = 'translateX(0)';
                     }, 100);
-                    
+
                     currentStep++;
-                    
+
                     // Slower timing for report generation
                     let delay = Math.random() * 1500 + 1200; // 1.2-2.7s per step
-                    
+
                     setTimeout(updateProgress, delay);
                 }
             }
-            
+
             updateProgress();
         }
 
@@ -1199,7 +1199,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
         function toggleRiskDetails() {
             const detailsDiv = document.getElementById('risk-details');
             const isVisible = detailsDiv.style.display === 'block';
-            
+
             if (isVisible) {
                 detailsDiv.style.display = 'none';
             } else {
@@ -1215,7 +1215,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
         function toggleManualAdjustment() {
             const adjustmentDiv = document.getElementById('manual-adjustment');
             const isVisible = adjustmentDiv.style.display === 'block';
-            
+
             if (isVisible) {
                 adjustmentDiv.style.display = 'none';
             } else {
@@ -1229,7 +1229,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
 
         async function loadRiskCalculationDetails() {
             if (!currentData.risk_assessment) return;
-            
+
             try {
                 const response = await fetch('/risk_assessment_details', {
                     method: 'POST',
@@ -1257,17 +1257,17 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
         function displayRiskCalculationDetails(details) {
             const detailsDiv = document.getElementById('risk-details');
             let html = '<div class="calculation-breakdown">';
-            
+
             if (details.calculation_process) {
                 html += '<h4>📊 AI Calculation Breakdown</h4>';
                 html += '<div class="disagreement-alert"><h5>⚠️ Manager Review Required</h5><p>Please verify these AI calculations against actual resident observations and care plan records.</p></div>';
-                
+
                 Object.entries(details.calculation_process).forEach(([toolName, process]) => {
                     html += `<div class="calculation-tool">
                         <h5>${toolName.replace('_', ' ').toUpperCase()}</h5>
                         <p><strong>AI Calculated Score:</strong> ${process.total_score}</p>
                         <div class="calculation-steps">`;
-                    
+
                     process.steps.forEach(step => {
                         html += `<div class="calculation-step">
                             <span class="step-item">${step.item}:</span>
@@ -1275,7 +1275,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                             <span class="step-reason">${step.reason}</span>
                         </div>`;
                     });
-                    
+
                     html += '</div></div>';
                 });
 
@@ -1291,7 +1291,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                     </div>
                 `;
             }
-            
+
             html += '</div>';
             detailsDiv.innerHTML = html;
         }
@@ -1319,13 +1319,24 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                             <span class="risk-level ${assessment.risk_level.toLowerCase().replace(' ', '-')}">${assessment.risk_level}</span>
                         </div>
 
+                        <div class="scoring-breakdown">
+                            <h5>📊 詳細計分公式 (Detailed Scoring Formula)</h5>
+                            <div id="formula-${toolName}" class="formula-display">
+                                ${getDetailedFormula(toolName, assessment)}
+                            </div>
+                        </div>
+
                         <div class="ai-vs-manual">
                             <div class="ai-score">
-                                <h6>🤖 AI Calculated</h6>
-                                <div style="font-size: 18px; font-weight: bold;">${assessment.score}/${assessment.max_score}</div>
+                                <h5>🤖 AI 自動計算 (AI Calculated)</h5>
+                                <div class="score-display">${assessment.score}/${assessment.max_score}</div>
+                                <div class="risk-level">${assessment.risk_level}</div>
+                                <div class="score-components">
+                                    ${getScoreComponents(toolName, assessment)}
+                                </div>
                             </div>
                             <div class="manual-score">
-                                <h6>👨‍⚕️ Manager Adjusted</h6>
+                                <h5>✏️ 經理手動調整 (Manager Override)</h5>
                                 <input type="number" class="score-input" id="manual-score-${toolName}" 
                                        value="${assessment.score}" min="0" max="${assessment.max_score}" 
                                        onchange="updateRiskLevel('${toolName}', this.value, '${assessment.max_score}')">
@@ -1333,6 +1344,8 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                                 <div id="manual-risk-level-${toolName}" class="risk-level" style="margin-top: 5px; font-size: 12px;"></div>
                             </div>
                         </div>
+
+                        <div id="evidence-impact-${toolName}" class="evidence-impact"></div>
 
                         <div class="evidence-comparison">
                             <h6>📋 Evidence Review</h6>
@@ -1383,69 +1396,128 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
 
         function updateRiskLevel(toolName, score, maxScore) {
             const riskLevelDiv = document.getElementById(`manual-risk-level-${toolName}`);
-            const scoreNum = parseInt(score);
-            const maxScoreNum = parseInt(maxScore);
-            
-            let riskLevel = '';
-            let riskClass = '';
+            const scoreInput = document.getElementById(`manual-score-${toolName}`);
 
-            // Risk level calculation based on tool type
+            let riskLevel = '';
+            let className = '';
+
+            // Determine risk level based on tool and score
             if (toolName === 'falls_screening') {
-                if (scoreNum >= 3) { riskLevel = 'High Risk'; riskClass = 'high-risk'; }
-                else if (scoreNum >= 2) { riskLevel = 'Medium Risk'; riskClass = 'medium-risk'; }
-                else { riskLevel = 'Low Risk'; riskClass = 'low-risk'; }
+                if (score >= 3) { riskLevel = 'High Risk'; className = 'high'; }
+                else if (score >= 2) { riskLevel = 'Medium Risk'; className = 'medium'; }
+                else { riskLevel = 'Low Risk'; className = 'low'; }
+            } else if (toolName === 'must_nutrition') {
+                if (score >= 2) { riskLevel = 'High Risk'; className = 'high'; }
+                else if (score == 1) { riskLevel = 'Medium Risk'; className = 'medium'; }
+                else { riskLevel = 'Low Risk'; className = 'low'; }
             } else if (toolName === 'waterlow') {
-                if (scoreNum >= 20) { riskLevel = 'Very High Risk'; riskClass = 'high-risk'; }
-                else if (scoreNum >= 15) { riskLevel = 'High Risk'; riskClass = 'high-risk'; }
-                else if (scoreNum >= 10) { riskLevel = 'Medium Risk'; riskClass = 'medium-risk'; }
-                else { riskLevel = 'Low Risk'; riskClass = 'low-risk'; }
+                if (score >= 20) { riskLevel = 'Very High Risk'; className = 'high'; }
+                else if (score >= 15) { riskLevel = 'High Risk'; className = 'high'; }
+                else if (score >= 10) { riskLevel = 'Medium Risk'; className = 'medium'; }
+                else { riskLevel = 'Low Risk'; className = 'low'; }
             } else if (toolName === 'abbey_pain') {
-                if (scoreNum >= 14) { riskLevel = 'Severe Pain'; riskClass = 'high-risk'; }
-                else if (scoreNum >= 8) { riskLevel = 'Moderate Pain'; riskClass = 'medium-risk'; }
-                else if (scoreNum >= 3) { riskLevel = 'Mild Pain'; riskClass = 'low-risk'; }
-                else { riskLevel = 'No Pain to Mild Pain'; riskClass = 'low-risk'; }
+                if (score >= 14) { riskLevel = 'Severe Pain'; className = 'high'; }
+                else if (score >= 8) { riskLevel = 'Moderate Pain'; className = 'medium'; }
+                else if (score >= 3) { riskLevel = 'Mild Pain'; className = 'medium'; }
+                else { riskLevel = 'No Pain to Mild Pain'; className = 'low'; }
+            } else if (toolName === 'cornell_depression') {
+                if (score >= 18) { riskLevel = 'Definite Depression'; className = 'high'; }
+                else if (score >= 10) { riskLevel = 'Probable Depression'; className = 'high'; }
+                else { riskLevel = 'Low Risk'; className = 'low'; }
+            } else if (toolName === 'peep') {
+                if (score == 4) { riskLevel = 'Severe Risk'; className = 'high'; }
+                else if (score == 3) { riskLevel = 'High Risk'; className = 'high'; }
+                else if (score == 2) { riskLevel = 'Medium Risk'; className = 'medium'; }
+                else { riskLevel = 'Low Risk'; className = 'low'; }
             } else {
-                // Generic calculation for other tools
-                const percentage = scoreNum / maxScoreNum;
-                if (percentage >= 0.7) { riskLevel = 'High Risk'; riskClass = 'high-risk'; }
-                else if (percentage >= 0.4) { riskLevel = 'Medium Risk'; riskClass = 'medium-risk'; }
-                else { riskLevel = 'Low Risk'; riskClass = 'low-risk'; }
+                // Generic risk level calculation
+                const percentage = (score / maxScore) * 100;
+                if (percentage >= 70) { riskLevel = 'High Risk'; className = 'high'; }
+                else if (percentage >= 40) { riskLevel = 'Medium Risk'; className = 'medium'; }
+                else { riskLevel = 'Low Risk'; className = 'low'; }
             }
 
             riskLevelDiv.textContent = riskLevel;
-            riskLevelDiv.className = `risk-level ${riskClass}`;
+            riskLevelDiv.className = `risk-level ${className}`;
 
-            // Mark as changed if different from AI score
-            const originalScore = currentData.risk_assessment.assessments[toolName].score;
-            const adjustmentItem = document.querySelector(`[data-tool="${toolName}"]`);
-            if (scoreNum !== originalScore) {
-                adjustmentItem.classList.add('score-changed');
+            // Visual feedback for changed score
+            const originalScore = currentData.risk_assessment.assessments[toolName].original_score || currentData.risk_assessment.assessments[toolName].score;
+            if (parseInt(score) !== originalScore) {
+                scoreInput.classList.add('score-changed');
             } else {
-                adjustmentItem.classList.remove('score-changed');
+                scoreInput.classList.remove('score-changed');
             }
         }
 
+        function getDetailedFormula(toolName, assessment) {
+            const formulas = {
+                'falls_screening': `
+                    <div class="formula">
+                        <strong>跌倒風險評估公式 (Falls Risk Formula):</strong><br>
+                        總分 = 跌倒史(0-1) + 藥物數量(0-1) + 診斷疾病(0-1) + 平衡問題(0-1) + 起立困難(0-1) + 姿勢性低血壓(0-1)<br>
+                        <em>Total = Falls History(0-1) + Medications≥4(0-1) + Diagnosis(0-1) + Balance Issues(0-1) + Chair Rise(0-1) + Postural Hypotension(0-1)</em><br>
+                        <strong>風險等級:</strong> 0-1=低風險, 2=中風險, 3+=高風險
+                    </div>`,
+                'must_nutrition': `
+                    <div class="formula">
+                        <strong>營養風險評估公式 (MUST Formula):</strong><br>
+                        總分 = BMI分數(0-2) + 體重減輕(0-2) + 急性疾病禁食(0-2)<br>
+                        <em>Total = BMI Score(0-2) + Weight Loss(0-2) + Acute Illness Fasting(0-2)</em><br>
+                        BMI: &lt;18.5=2分, 18.5-20=1分, &gt;20=0分<br>
+                        體重減輕: &gt;10%=2分, 5-10%=1分, &lt;5%=0分<br>
+                        <strong>風險等級:</strong> 0=低風險, 1=中風險, 2+=高風險
+                    </div>`,
+                'waterlow': `
+                    <div class="formula">
+                        <strong>壓瘡風險評估公式 (Waterlow Formula):</strong><br>
+                        總分 = 年齡(1-5) + 性別(1-2) + BMI(0-3) + 皮膚狀況(0-2) + 活動能力(0-4) + 營養(0-1) + 失禁(0-3)<br>
+                        <em>Total = Age + Gender + BMI + Skin + Mobility + Nutrition + Continence</em><br>
+                        <strong>風險等級:</strong> &lt;10=低風險, 10-15=中風險, 15-20=高風險, 20+=極高風險
+                    </div>`,
+                'abbey_pain': `
+                    <div class="formula">
+                        <strong>疼痛評估公式 (Abbey Pain Formula):</strong><br>
+                        總分 = 發聲(0-3) + 面部表情(0-3) + 身體語言(0-3) + 行為改變(0-3) + 生理變化(0-3) + 身體變化(0-3)<br>
+                        <em>Total = Vocalisation + Facial + Body Language + Behavioural + Physiological + Physical Changes</em><br>
+                        每項: 0=無, 1=輕微, 2=中度, 3=嚴重<br>
+                        <strong>風險等級:</strong> 0-2=無至輕微, 3-7=輕微, 8-13=中度, 14-18=嚴重疼痛
+                    </div>`
+            };
+
+            return formulas[toolName] || `
+                <div class="formula">
+                    <strong>評估公式 (Assessment Formula):</strong><br>
+                    總分範圍: 0-${assessment.max_score}<br>
+                    當前計算: ${assessment.score}/${assessment.max_score}
+                </div>`;
+        }
+
+        function getScoreComponents(toolName, assessment) {
+            if (!assessment.evidence) return '';
+
+            let components = '<div class="score-breakdown"><strong>計分組成:</strong><ul>';
+            assessment.evidence.forEach((evidence, index) => {
+                // Estimate score contribution (simplified)
+                const contribution = Math.floor(assessment.score / assessment.evidence.length);
+                components += `<li>${evidence} <span class="score-contribution">(約 +${contribution}分)</span></li>`;
+            });
+            components += '</ul></div>';
+
+            return components;
+        }
+
+        
         function markEvidence(toolName, evidenceIndex, status) {
-            // Get the evidence div
             const evidenceDiv = document.getElementById(`evidence-${toolName}-${evidenceIndex}`);
-            if (!evidenceDiv) {
-                console.error('Evidence div not found:', `evidence-${toolName}-${evidenceIndex}`);
-                return;
-            }
-            
-            // Update the visual state
             evidenceDiv.className = `evidence-item ${status}`;
-            
+
             // Remove active state from all buttons in this evidence item
             const buttons = evidenceDiv.querySelectorAll('.btn-evidence');
             buttons.forEach(btn => btn.classList.remove('active'));
-            
-            // Find which button was clicked and mark it as active
-            const clickedButton = event.target;
-            if (clickedButton) {
-                clickedButton.classList.add('active');
-            }
-            
+
+            // Add active state to clicked button
+            event.target.classList.add('active');
+
             // Store the evidence validation status
             if (!window.evidenceValidation) {
                 window.evidenceValidation = {};
@@ -1458,103 +1530,95 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                 validated: true,
                 timestamp: new Date().toISOString()
             };
-            
-            // Show visual feedback
-            const statusText = status === 'found' ? '✅ Found' : 
-                             status === 'questionable' ? '❓ Unclear' : 
-                             '❌ Not Found';
-            
-            console.log(`Evidence ${evidenceIndex} for ${toolName} marked as: ${statusText}`);
-            
-            // Optional: Show a brief success message
-            showSuccessMessage(`Evidence marked as: ${statusText}`);
+
+            // Recalculate score based on evidence validation
+            recalculateScoreBasedOnEvidence(toolName);
+
+            console.log('Evidence marked:', toolName, evidenceIndex, status);
         }
-        
-        function showSuccessMessage(message) {
-            // Create a temporary success message
-            const successDiv = document.createElement('div');
-            successDiv.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #d4edda;
-                color: #155724;
-                padding: 10px 15px;
-                border-radius: 5px;
-                border: 1px solid #c3e6cb;
-                z-index: 1000;
-                font-size: 14px;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            `;
-            successDiv.textContent = message;
-            document.body.appendChild(successDiv);
-            
-            // Remove after 2 seconds
-            setTimeout(() => {
-                if (successDiv.parentNode) {
-                    successDiv.parentNode.removeChild(successDiv);
+
+        function recalculateScoreBasedOnEvidence(toolName) {
+            const assessment = currentData.risk_assessment.assessments[toolName];
+            if (!assessment || !assessment.evidence) return;
+
+            let originalScore = assessment.original_score || assessment.score;
+            let adjustedScore = originalScore;
+
+            // Count evidence validation results
+            let foundCount = 0;
+            let notFoundCount = 0;
+            let questionableCount = 0;
+            let totalValidated = 0;
+
+            if (window.evidenceValidation && window.evidenceValidation[toolName]) {
+                Object.values(window.evidenceValidation[toolName]).forEach(validation => {
+                    if (validation.validated) {
+                        totalValidated++;
+                        switch(validation.status) {
+                            case 'found': foundCount++; break;
+                            case 'not-found': notFoundCount++; break;
+                            case 'questionable': questionableCount++; break;
+                        }
+                    }
+                });
+            }
+
+            // Adjust score based on evidence validation (only if some evidence validated)
+            if (totalValidated > 0) {
+                const notFoundRatio = notFoundCount / totalValidated;
+                const questionableRatio = questionableCount / totalValidated;
+
+                // Reduce score based on not-found evidence
+                if (notFoundRatio > 0.5) {
+                    adjustedScore = Math.max(0, Math.floor(originalScore * 0.3)); // Reduce by 70%
+                } else if (notFoundRatio > 0.3) {
+                    adjustedScore = Math.max(0, Math.floor(originalScore * 0.6)); // Reduce by 40%
+                } else if (questionableRatio > 0.5) {
+                    adjustedScore = Math.max(0, Math.floor(originalScore * 0.7)); // Reduce by 30%
                 }
-            }, 2000);
+            }
+
+            // Update the manual score input with the evidence-adjusted score
+            const manualScoreInput = document.getElementById(`manual-score-${toolName}`);
+            if (manualScoreInput) {
+                manualScoreInput.value = adjustedScore;
+                updateRiskLevel(toolName, adjustedScore, assessment.max_score);
+
+                // Add visual indicator that score was adjusted by evidence
+                manualScoreInput.classList.add('evidence-adjusted');
+
+                // Show evidence impact summary
+                updateEvidenceImpactSummary(toolName, foundCount, notFoundCount, questionableCount, originalScore, adjustedScore);
+            }
         }
 
-        function saveAllAdjustments() {
-            const adjustments = {};
-            let hasChanges = false;
+        function updateEvidenceImpactSummary(toolName, found, notFound, questionable, originalScore, adjustedScore) {
+            const summaryDiv = document.getElementById(`evidence-impact-${toolName}`);
+            if (summaryDiv) {
+                const total = found + notFound + questionable;
+                const impactText = adjustedScore !== originalScore ? 
+                    `<span class="score-change">Score adjusted: ${originalScore} → ${adjustedScore}</span>` :
+                    `<span class="no-score-change">Score unchanged: ${originalScore}</span>`;
 
-            Object.keys(currentData.risk_assessment.assessments).forEach(toolName => {
-                const assessment = currentData.risk_assessment.assessments[toolName];
-                if (assessment.error) return;
+                summaryDiv.innerHTML = `
+                    <div class="evidence-summary">
+                        <h6>Evidence Validation Impact:</h6>
+                        <div class="validation-counts">
+                            ✅ Found: ${found} | ❌ Not Found: ${notFound} | ❓ Questionable: ${questionable}
+                        </div>
+                        ${impactText}
+                    </div>
+                `;
+            }
+        }
 
-                const manualScore = parseInt(document.getElementById(`manual-score-${toolName}`).value);
-                const reason = document.getElementById(`reason-${toolName}`).value;
-                const originalScore = assessment.score;
-
-                if (manualScore !== originalScore) {
-                    hasChanges = true;
-                    adjustments[toolName] = {
-                        original_score: originalScore,
-                        adjusted_score: manualScore,
-                        reason: reason,
-                        adjusted_by: 'Manager',
-                        adjusted_date: new Date().toISOString()
-                    };
+        // Store original scores before any adjustments
+            Object.keys(riskData.assessments).forEach(toolName => {
+                const assessment = riskData.assessments[toolName];
+                if (!assessment.error && assessment.original_score === undefined) {
+                    assessment.original_score = assessment.score;
                 }
             });
-
-            if (!hasChanges) {
-                alert('No changes detected.');
-                return;
-            }
-
-            // Update current data with adjustments
-            currentData.risk_assessment.manual_adjustments = adjustments;
-
-            // Show confirmation
-            const changedCount = Object.keys(adjustments).length;
-            const confirmMessage = `${changedCount} risk assessment(s) have been manually adjusted.\n\nThese adjustments will be included in the final care plan.\n\nSave changes?`;
-
-            if (confirm(confirmMessage)) {
-                alert('Risk assessment adjustments saved successfully!');
-                // Update the display
-                updateRiskAssessmentDisplay();
-            }
-        }
-
-        function updateRiskAssessmentDisplay() {
-            // Update the risk summary with manual adjustments
-            if (currentData.risk_assessment.manual_adjustments) {
-                const summaryDiv = document.getElementById('risk-summary');
-                let adjustmentNotice = '<div class="disagreement-alert"><h5>✏️ Manual Adjustments Applied</h5><ul>';
-
-                Object.entries(currentData.risk_assessment.manual_adjustments).forEach(([toolName, adjustment]) => {
-                    const toolDisplayName = currentData.risk_assessment.assessments[toolName].tool_name;
-                    adjustmentNotice += `<li><strong>${toolDisplayName}:</strong> Score changed from ${adjustment.original_score} to ${adjustment.adjusted_score}</li>`;
-                });
-
-                adjustmentNotice += '</ul></div>';
-                summaryDiv.innerHTML = adjustmentNotice + summaryDiv.innerHTML;
-            }
-        }
     </script>
 </body>
 </html>
