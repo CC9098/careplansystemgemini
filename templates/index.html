@@ -1337,15 +1337,16 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                         <div class="evidence-comparison">
                             <h6>📋 Evidence Review</h6>
                             <div class="evidence-section">
-                                <h5>AI Found Evidence:</h5>
+                                <h5>📋 AI Found Evidence - Manager Validation:</h5>
+                                <p><small><strong>Instructions:</strong> Review each piece of evidence against actual care records. Click ✅ if found, ❓ if questionable, ❌ if not found.</small></p>
                                 ${assessment.evidence && assessment.evidence.length > 0 ? 
                                     assessment.evidence.map((evidence, index) => `
-                                        <div class="evidence-item" id="evidence-${toolName}-${index}">
-                                            <span>${evidence}</span>
-                                            <div style="float: right;">
-                                                <button onclick="markEvidence('${toolName}', ${index}, 'found')" class="btn-evidence">✅</button>
-                                                <button onclick="markEvidence('${toolName}', ${index}, 'questionable')" class="btn-evidence">❓</button>
-                                                <button onclick="markEvidence('${toolName}', ${index}, 'not-found')" class="btn-evidence">❌</button>
+                                        <div class="evidence-item" id="evidence-${toolName}-${index}" style="margin: 8px 0; padding: 10px; border: 1px solid #dee2e6; border-radius: 4px;">
+                                            <div style="margin-bottom: 8px;"><strong>Evidence:</strong> ${evidence}</div>
+                                            <div style="text-align: right;">
+                                                <button onclick="markEvidence('${toolName}', ${index}, 'found')" class="btn-evidence" title="Evidence found in records">✅ Found</button>
+                                                <button onclick="markEvidence('${toolName}', ${index}, 'questionable')" class="btn-evidence" title="Evidence unclear or outdated">❓ Unclear</button>
+                                                <button onclick="markEvidence('${toolName}', ${index}, 'not-found')" class="btn-evidence" title="Evidence not found in records">❌ Not Found</button>
                                             </div>
                                         </div>
                                     `).join('') : 
@@ -1427,6 +1428,27 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
         function markEvidence(toolName, evidenceIndex, status) {
             const evidenceDiv = document.getElementById(`evidence-${toolName}-${evidenceIndex}`);
             evidenceDiv.className = `evidence-item ${status}`;
+            
+            // Remove active state from all buttons in this evidence item
+            const buttons = evidenceDiv.querySelectorAll('.btn-evidence');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active state to clicked button
+            event.target.classList.add('active');
+            
+            // Store the evidence validation status
+            if (!window.evidenceValidation) {
+                window.evidenceValidation = {};
+            }
+            if (!window.evidenceValidation[toolName]) {
+                window.evidenceValidation[toolName] = {};
+            }
+            window.evidenceValidation[toolName][evidenceIndex] = {
+                status: status,
+                validated: true
+            };
+            
+            console.log('Evidence marked:', toolName, evidenceIndex, status);
         }
 
         function saveAllAdjustments() {
