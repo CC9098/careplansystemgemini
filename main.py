@@ -598,6 +598,23 @@ def analyze():
 
         # File cleanup is handled in processing logic above
 
+        return jsonify({
+            'success': True,
+            'step': 'suggestions',
+            'analysis_summary': analysis_result.get('analysis_summary', ''),
+            'suggestions': analysis_result.get('suggestions', []),
+            'resident_name': resident_name,
+            'original_care_plan': care_plan_content,
+            'processing_steps': processing_steps,
+            'was_compressed': is_large_file(daily_log_content),
+            'risk_assessment': risk_assessment_results
+        })
+
+    except Exception as e:
+        print(f"Error in analyze endpoint: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/risk_assessment_details', methods=['POST'])
 def risk_assessment_details():
