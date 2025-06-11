@@ -149,6 +149,7 @@ Format your response as a JSON object with this structure:
             "category": "Personal Care|Eating & Drinking|Continence|Mobility|Health & Medication|Daily Routine|Skin Care|Choice & Communication|Behavior|Other",
             "specific_issue": "Specific concrete issue (e.g., 'Aggressive Behavior During Meal Times', 'Refusing Personal Care', 'Frequent Night-time Wandering')",
             "description": "Detailed description of the issue based on log evidence",
+            "evidence": "Specific evidence from care logs (dates, times, what exactly happened)",
             "priority": "High|Medium|Low",
             "icon": "😡|😰|😴|🚶|💊|🍽️|🚿|🗣️|⚠️|📋",
             "flagged": false,
@@ -177,6 +178,7 @@ Guidelines:
 - Generate 5 specific interventions for each issue
 - Choose appropriate icons that match the issue type
 - Base all suggestions on evidence found in the care log
+- Include specific evidence (dates/times/what happened) in the "evidence" field for each suggestion
 - Make issues specific enough that care staff can understand exactly what to address
 - For care_plan_gaps, identify significant patterns/events in logs that are completely missing from the current care plan"""
 

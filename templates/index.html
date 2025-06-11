@@ -83,7 +83,14 @@
             <!-- Loading -->
             <div id="loading" class="loading" style="display: none;">
                 <div class="spinner"></div>
-                <p>AI is analyzing files, please wait...</p>
+                <p id="loading-text">AI is analyzing files, please wait...</p>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text">0%</div>
+                </div>
+                <div class="progress-steps" id="progress-steps"></div>
             </div>
 
             <!-- Step 2: Suggestion Selection -->
@@ -91,6 +98,11 @@
                 <h2>📋 Care Plan Update Suggestions</h2>
 
                 <div id="analysisSummary" class="analysis-summary"></div>
+
+                <div class="manager-comments-early">
+                    <h4>💬 Manager's Initial Comments:</h4>
+                    <textarea id="managerCommentsEarly" placeholder="Add your observations about this resident before reviewing suggestions..."></textarea>
+                </div>
 
                 <div class="suggestions-container">
                     <h3>📋 Select suggestions to implement:</h3>
@@ -207,6 +219,9 @@
             finalPlan.style.display = 'none';
             loading.style.display = 'block';
 
+            // Start progress simulation
+            startProgressAnimation();
+
             try {
                 const formData = new FormData(this);
                 const response = await fetch('/analyze', {
@@ -289,6 +304,7 @@
                             <span class="priority priority-${suggestion.priority ? suggestion.priority.toLowerCase() : 'medium'}">${suggestion.priority || 'Medium'}</span>
                             <strong>${issueIcon} ${specificIssue}</strong>
                             <p class="problem-statement">${description}</p>
+                            ${suggestion.evidence ? `<div class="evidence-preview"><strong>📋 Evidence from logs:</strong> ${suggestion.evidence}</div>` : ''}
                         </div>
                         <span class="expand-icon">▼</span>
                     </div>
@@ -430,6 +446,8 @@
                 });
 
                 const managerComments = document.getElementById('managerComments').value || '';
+                const managerCommentsEarly = document.getElementById('managerCommentsEarly').value || '';
+                const combinedComments = [managerCommentsEarly, managerComments].filter(c => c.trim()).join('\n\n');
 
                 console.log('Sending data:', {
                     original_care_plan: currentData.original_care_plan,
@@ -446,7 +464,7 @@
                     body: JSON.stringify({
                         original_care_plan: currentData.original_care_plan,
                         selected_suggestions: selectedSuggestions,
-                        manager_comments: managerComments,
+                        manager_comments: combinedComments,
                         resident_name: currentData.resident_name
                     })
                 });
@@ -967,6 +985,54 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             updateFileLabel(document.getElementById('care_plan'), 'Click to select care plan');
             window.currentReport = null;
             currentData = {};
+        }
+
+        // Progress bar animation
+        function startProgressAnimation() {
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            const loadingText = document.getElementById('loading-text');
+            const progressSteps = document.getElementById('progress-steps');
+            
+            const steps = [
+                { text: "📄 Reading uploaded files...", progress: 15 },
+                { text: "🔍 Analyzing care log data...", progress: 30 },
+                { text: "🧠 Processing with AI...", progress: 50 },
+                { text: "🛡️ Calculating risk assessments...", progress: 70 },
+                { text: "📋 Generating suggestions...", progress: 85 },
+                { text: "✅ Finalizing analysis...", progress: 100 }
+            ];
+            
+            let currentStep = 0;
+            
+            function updateProgress() {
+                if (currentStep < steps.length) {
+                    const step = steps[currentStep];
+                    progressFill.style.width = step.progress + '%';
+                    progressText.textContent = step.progress + '%';
+                    loadingText.textContent = step.text;
+                    
+                    // Add step to progress steps
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'progress-step';
+                    stepDiv.textContent = step.text;
+                    progressSteps.appendChild(stepDiv);
+                    
+                    // Animate step appearance
+                    setTimeout(() => {
+                        stepDiv.style.opacity = '1';
+                        stepDiv.style.transform = 'translateX(0)';
+                    }, 100);
+                    
+                    currentStep++;
+                    
+                    // Random delay between 800ms to 2000ms for realistic feel
+                    const delay = Math.random() * 1200 + 800;
+                    setTimeout(updateProgress, delay);
+                }
+            }
+            
+            updateProgress();
         }
 
         // Risk assessment
