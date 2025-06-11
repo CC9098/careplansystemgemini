@@ -116,6 +116,43 @@ def extract_daily_data(daily_log_content):
 
     return data
 
+def extract_evidence_with_timestamps(log_content, keywords):
+    """Extract evidence from logs with timestamps"""
+    evidence_items = []
+    lines = log_content.split('\n')
+    
+    for line in lines:
+        line_stripped = line.strip()
+        if not line_stripped:
+            continue
+            
+        # Look for timestamp patterns
+        timestamp_patterns = [
+            r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?',  # DD/MM/YYYY HH:MM
+            r'\d{4}[/-]\d{1,2}[/-]\d{1,2}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?',    # YYYY-MM-DD HH:MM
+            r'\d{1,2}:\d{2}(?::\d{2})?',                                         # HH:MM or HH:MM:SS
+        ]
+        
+        timestamp = None
+        for pattern in timestamp_patterns:
+            match = re.search(pattern, line_stripped)
+            if match:
+                timestamp = match.group()
+                break
+        
+        # Check if line contains any of the keywords
+        line_lower = line_stripped.lower()
+        for keyword in keywords:
+            if keyword.lower() in line_lower:
+                evidence_text = line_stripped
+                if timestamp:
+                    evidence_items.append(f"[{timestamp}] {evidence_text}")
+                else:
+                    evidence_items.append(evidence_text)
+                break
+    
+    return evidence_items
+
 def create_fallback_analysis(response_text):
     """Create a fallback analysis when JSON parsing fails"""
     
@@ -126,12 +163,15 @@ def create_fallback_analysis(response_text):
     
     # Create specific suggestions based on common care issues
     if "nighttime" in text_lower or "sleep" in text_lower or "agitation" in text_lower:
+        sleep_evidence = extract_evidence_with_timestamps(response_text, 
+            ["nighttime", "sleep", "agitation", "awake", "restless", "night check"])
+        
         suggestions.append({
             "id": 1,
             "category": "Behavior",
             "specific_issue": "Nighttime Agitation and Sleep Disturbances",
             "description": "Frequent nighttime wandering, shouting, and disruptive behaviors affecting sleep patterns based on care log analysis.",
-            "evidence": "Multiple night checks showing resident awake and unsettled, documented sleep disturbances",
+            "evidence": "; ".join(sleep_evidence[:3]) if sleep_evidence else "Multiple night checks showing resident awake and unsettled, documented sleep disturbances",
             "priority": "High",
             "icon": "😴",
             "flagged": False,
@@ -904,6 +944,19 @@ def analyze():
         # Add risk assessment summary to analysis result
         if risk_assessment_results and 'summary' in risk_assessment_results:
             analysis_result['risk_assessment_summary'] = risk_assessment_results['summary']
+        
+        # Ensure risk assessment is included in response
+        if not risk_assessment_results:
+            risk_assessment_results = {
+                'assessment_date': datetime.now().strftime('%Y-%m-%d'),
+                'summary': {
+                    'high_risk_count': 0,
+                    'medium_risk_count': 0,
+                    'low_risk_count': 0,
+                    'priority_alerts': []
+                },
+                'assessments': {}
+            }
 
         # File cleanup is handled in processing logic above
 

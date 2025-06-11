@@ -104,6 +104,16 @@
                     <textarea id="managerCommentsEarly" placeholder="Add your observations about this resident before reviewing suggestions..."></textarea>
                 </div>
 
+                <!-- Risk Assessment Section -->
+                <div id="risk-assessment-section" class="risk-assessment-section" style="display: none;">
+                    <h3>🛡️ Risk Assessment Results</h3>
+                    <div id="risk-summary" class="risk-summary"></div>
+                    <div class="risk-details-toggle">
+                        <button onclick="toggleRiskDetails()" class="action-btn">📊 View Detailed Calculations</button>
+                    </div>
+                    <div id="risk-details" class="risk-details" style="display: none;"></div>
+                </div>
+
                 <div class="suggestions-container">
                     <h3>📋 Select suggestions to implement:</h3>
                     <div id="suggestionsList"></div>
@@ -282,6 +292,11 @@
 
             document.getElementById('analysisSummary').innerHTML = summaryHtml;
 
+            // Display risk assessment if available
+            if (data.risk_assessment && data.risk_assessment.summary) {
+                displayRiskAssessment(data.risk_assessment);
+            }
+
             // Display suggestions with specific issues and dynamic options
             const suggestionsList = document.getElementById('suggestionsList');
             suggestionsList.innerHTML = '';
@@ -393,6 +408,9 @@
             const finalPlan = document.getElementById('finalPlan');
 
             loading.style.display = 'block';
+            
+            // Start report generation progress animation
+            startReportGenerationProgress();
 
             try {
                 // Collect selected suggestions with WHAT-WHY-HOW data and flag status
@@ -987,7 +1005,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             currentData = {};
         }
 
-        // Progress bar animation
+        // Progress bar animation for analysis
         function startProgressAnimation() {
             const progressFill = document.getElementById('progress-fill');
             const progressText = document.getElementById('progress-text');
@@ -998,16 +1016,17 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             progressSteps.innerHTML = '';
             
             const steps = [
-                { text: "📄 Reading uploaded files...", progress: 15 },
-                { text: "🔍 Analyzing care log data...", progress: 30 },
-                { text: "🧠 Processing with AI...", progress: 50 },
-                { text: "🛡️ Calculating risk assessments...", progress: 70 },
-                { text: "📋 Generating suggestions...", progress: 85 },
-                { text: "✅ Finalizing analysis...", progress: 100 }
+                { text: "📄 Reading uploaded files...", progress: 10 },
+                { text: "🔍 Analyzing care log structure...", progress: 20 },
+                { text: "📊 Processing data patterns...", progress: 30 },
+                { text: "🧠 Deep AI analysis in progress...", progress: 45 },
+                { text: "🛡️ Calculating risk assessments...", progress: 60 },
+                { text: "📋 Generating care suggestions...", progress: 75 },
+                { text: "⚡ Finalizing recommendations...", progress: 90 },
+                { text: "✅ Analysis complete!", progress: 100 }
             ];
             
             let currentStep = 0;
-            let progressInterval;
             
             function updateProgress() {
                 if (currentStep < steps.length) {
@@ -1033,20 +1052,77 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                     
                     currentStep++;
                     
-                    // Realistic timing - first steps faster, AI processing slower
+                    // Slower, more realistic timing
                     let delay;
                     if (currentStep <= 2) {
-                        delay = Math.random() * 800 + 600;  // 600-1400ms for file operations
-                    } else if (currentStep === 3) {
-                        delay = Math.random() * 2000 + 2000; // 2-4s for AI processing
+                        delay = Math.random() * 1200 + 1000;  // 1-2.2s for file operations
+                    } else if (currentStep <= 4) {
+                        delay = Math.random() * 3000 + 2500; // 2.5-5.5s for AI processing
+                    } else if (currentStep <= 6) {
+                        delay = Math.random() * 2000 + 1500; // 1.5-3.5s for calculations
                     } else {
-                        delay = Math.random() * 1000 + 800;  // 800-1800ms for final steps
+                        delay = Math.random() * 1000 + 800;  // 0.8-1.8s for final steps
                     }
                     
                     setTimeout(updateProgress, delay);
                 } else {
                     // Keep animation running until response comes back
-                    clearInterval(progressInterval);
+                }
+            }
+            
+            updateProgress();
+        }
+
+        // Progress bar animation for report generation
+        function startReportGenerationProgress() {
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            const loadingText = document.getElementById('loading-text');
+            const progressSteps = document.getElementById('progress-steps');
+            
+            // Clear previous steps
+            progressSteps.innerHTML = '';
+            
+            const steps = [
+                { text: "📝 Preparing care plan template...", progress: 15 },
+                { text: "🔄 Integrating selected suggestions...", progress: 30 },
+                { text: "🛡️ Adding risk assessment data...", progress: 45 },
+                { text: "📋 Structuring care plan sections...", progress: 60 },
+                { text: "✏️ Formatting care plan content...", progress: 75 },
+                { text: "🎨 Generating final report...", progress: 90 },
+                { text: "✅ Care plan ready!", progress: 100 }
+            ];
+            
+            let currentStep = 0;
+            
+            function updateProgress() {
+                if (currentStep < steps.length) {
+                    const step = steps[currentStep];
+                    progressFill.style.width = step.progress + '%';
+                    progressText.textContent = step.progress + '%';
+                    loadingText.textContent = step.text;
+                    
+                    // Add step to progress steps
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'progress-step';
+                    stepDiv.style.opacity = '0';
+                    stepDiv.style.transform = 'translateX(-20px)';
+                    stepDiv.style.transition = 'all 0.3s ease';
+                    stepDiv.textContent = step.text;
+                    progressSteps.appendChild(stepDiv);
+                    
+                    // Animate step appearance
+                    setTimeout(() => {
+                        stepDiv.style.opacity = '1';
+                        stepDiv.style.transform = 'translateX(0)';
+                    }, 100);
+                    
+                    currentStep++;
+                    
+                    // Slower timing for report generation
+                    let delay = Math.random() * 1500 + 1200; // 1.2-2.7s per step
+                    
+                    setTimeout(updateProgress, delay);
                 }
             }
             
@@ -1114,9 +1190,76 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             }
         }
 
-        // Risk details view
-        function viewRiskDetails() {
-            alert('Detailed risk calculation process will be displayed here.');
+        // Risk details toggle
+        function toggleRiskDetails() {
+            const detailsDiv = document.getElementById('risk-details');
+            const isVisible = detailsDiv.style.display === 'block';
+            
+            if (isVisible) {
+                detailsDiv.style.display = 'none';
+            } else {
+                detailsDiv.style.display = 'block';
+                // Load detailed calculation if not already loaded
+                if (!detailsDiv.innerHTML.trim()) {
+                    loadRiskCalculationDetails();
+                }
+            }
+        }
+
+        async function loadRiskCalculationDetails() {
+            if (!currentData.risk_assessment) return;
+            
+            try {
+                const response = await fetch('/risk_assessment_details', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        care_plan_content: currentData.original_care_plan,
+                        daily_log_content: currentData.daily_log_content || '',
+                        resident_name: currentData.resident_name
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success && data.calculation_details) {
+                    displayRiskCalculationDetails(data.calculation_details);
+                }
+            } catch (error) {
+                console.error('Error loading risk calculation details:', error);
+                document.getElementById('risk-details').innerHTML = 
+                    '<p>Error loading detailed calculations.</p>';
+            }
+        }
+
+        function displayRiskCalculationDetails(details) {
+            const detailsDiv = document.getElementById('risk-details');
+            let html = '<div class="calculation-breakdown">';
+            
+            if (details.calculation_process) {
+                html += '<h4>📊 Calculation Breakdown</h4>';
+                
+                Object.entries(details.calculation_process).forEach(([toolName, process]) => {
+                    html += `<div class="calculation-tool">
+                        <h5>${toolName.replace('_', ' ').toUpperCase()}</h5>
+                        <p><strong>Total Score:</strong> ${process.total_score}</p>
+                        <div class="calculation-steps">`;
+                    
+                    process.steps.forEach(step => {
+                        html += `<div class="calculation-step">
+                            <span class="step-item">${step.item}:</span>
+                            <span class="step-score">+${step.score}</span>
+                            <span class="step-reason">${step.reason}</span>
+                        </div>`;
+                    });
+                    
+                    html += '</div></div>';
+                });
+            }
+            
+            html += '</div>';
+            detailsDiv.innerHTML = html;
         }
     </script>
 </body>
