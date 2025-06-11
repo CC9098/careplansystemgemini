@@ -75,48 +75,72 @@ class RiskAssessmentCalculator:
     
     def calculate_falls_screening(self, care_plan_text: str, log_entries: str, 
                                 resident_data: Dict = None) -> Dict[str, Any]:
-        """Calculate Falls Screening (FS) risk score"""
+        """Calculate Falls Screening (FS) risk score following exact formula"""
         
         score = 0
         evidence = []
+        missing_data = []
         combined_text = (care_plan_text + " " + log_entries).lower()
         
-        # Check falls history
+        # 1. Falls history in past year (0-1 points)
         fall_keywords = ["fall", "fell", "trip", "stumble", "slip", "tumble"]
-        if any(keyword in combined_text for keyword in fall_keywords):
+        falls_found = [kw for kw in fall_keywords if kw in combined_text]
+        if falls_found:
             score += 1
-            evidence.append("Fall history identified in records")
+            evidence.append(f"Fall history: Found keywords - {', '.join(falls_found)}")
+        else:
+            missing_data.append("Falls history in past year - Manager must verify if resident has fallen in last 12 months")
         
-        # Check medication count
+        # 2. Daily medications ≥4 (0-1 points)
         medication_count = self._count_medications(care_plan_text)
         if medication_count >= 4:
             score += 1
-            evidence.append(f"{medication_count} medications prescribed (≥4)")
+            evidence.append(f"Medications: {medication_count} prescribed (≥4 threshold met)")
+        elif medication_count > 0:
+            evidence.append(f"Medications: Only {medication_count} identified (<4)")
+        else:
+            missing_data.append("Complete medication list - Manager must provide current medication count")
         
-        # Check diagnosed conditions
+        # 3. Diagnosed conditions: Dementia/Stroke/Parkinson's (0-1 points)
         disease_keywords = ["dementia", "stroke", "parkinson", "alzheimer"]
-        for keyword in disease_keywords:
-            if keyword in combined_text:
-                score += 1
-                evidence.append(f"Diagnosed condition: {keyword.title()}")
-                break
+        diseases_found = [kw for kw in disease_keywords if kw in combined_text]
+        if diseases_found:
+            score += 1
+            evidence.append(f"Diagnosed condition: {', '.join(diseases_found).title()}")
+        else:
+            missing_data.append("Medical diagnosis confirmation - Manager must verify if resident has Dementia, Stroke, or Parkinson's")
         
-        # Check balance problems
+        # 4. Balance problems (0-1 points)
         balance_keywords = ["balance", "unsteady", "dizzy", "vertigo", "unstable", "wobble"]
-        if any(keyword in combined_text for keyword in balance_keywords):
+        balance_found = [kw for kw in balance_keywords if kw in combined_text]
+        if balance_found:
             score += 1
-            evidence.append("Balance problems identified")
+            evidence.append(f"Balance problems: {', '.join(balance_found)}")
+        else:
+            missing_data.append("Balance assessment - Manager must confirm if resident has balance issues")
         
-        # Check standing difficulty
+        # 5. Chair rise test (0-1 points)
         mobility_keywords = ["difficulty standing", "cannot stand", "unable to rise", "help standing"]
-        if any(keyword in combined_text for keyword in mobility_keywords):
+        mobility_found = [kw for kw in mobility_keywords if kw in combined_text]
+        if mobility_found:
             score += 1
-            evidence.append("Standing difficulty identified")
+            evidence.append(f"Standing difficulty: {', '.join(mobility_found)}")
+        else:
+            missing_data.append("Chair rise test - Manager must perform test: Can resident rise from knee-height chair without assistance?")
         
-        # Determine risk level
+        # 6. Postural hypotension (optional, 0-1 points)
+        bp_keywords = ["blood pressure", "hypotension", "bp drop", "dizzy standing"]
+        bp_found = [kw for kw in bp_keywords if kw in combined_text]
+        if bp_found:
+            # Would need actual BP measurements to score this properly
+            missing_data.append("Postural hypotension test - Manager must measure BP lying and standing (>20mmHg systolic or >10mmHg diastolic drop)")
+        else:
+            missing_data.append("Postural hypotension assessment - Manager must conduct blood pressure measurements")
+        
+        # Determine risk level based on actual formula
         if score >= 3:
             risk_level = "High Risk"
-        elif score >= 2:
+        elif score == 2:
             risk_level = "Medium Risk"
         else:
             risk_level = "Low Risk"
@@ -127,8 +151,10 @@ class RiskAssessmentCalculator:
             'max_score': 6,
             'risk_level': risk_level,
             'evidence': evidence,
+            'missing_data': missing_data,
             'recommendations': self._get_falls_recommendations(score),
-            'next_review_date': (datetime.now() + timedelta(weeks=1)).strftime('%Y-%m-%d')
+            'next_review_date': (datetime.now() + timedelta(weeks=1)).strftime('%Y-%m-%d'),
+            'calculation_note': f"Score calculated from available evidence only. {len(missing_data)} items require manager verification for complete assessment."
         }
     
     def calculate_ppu(self, care_plan_text: str, log_entries: str, 
@@ -177,45 +203,58 @@ class RiskAssessmentCalculator:
     
     def calculate_must(self, care_plan_text: str, log_entries: str, 
                       weight_logs: List[float] = None, height: float = None) -> Dict[str, Any]:
-        """Calculate MUST (Malnutrition Universal Screening Tool) score"""
+        """Calculate MUST (Malnutrition Universal Screening Tool) score following exact formula"""
         
         score = 0
         evidence = []
+        missing_data = []
         combined_text = (care_plan_text + " " + log_entries).lower()
         
-        # BMI calculation
+        # 1. BMI calculation (0-2 points)
         if weight_logs and height and len(weight_logs) > 0:
             latest_weight = weight_logs[-1]
             bmi = latest_weight / (height/100)**2
             if bmi < 18.5:
                 score += 2
-                evidence.append(f"BMI {bmi:.1f} - Underweight (<18.5)")
+                evidence.append(f"BMI: {bmi:.1f} (<18.5) = 2 points")
             elif 18.5 <= bmi <= 20:
                 score += 1
-                evidence.append(f"BMI {bmi:.1f} - Below average (18.5-20)")
+                evidence.append(f"BMI: {bmi:.1f} (18.5-20) = 1 point")
             else:
-                evidence.append(f"BMI {bmi:.1f} - Normal (>20)")
+                evidence.append(f"BMI: {bmi:.1f} (>20) = 0 points")
+        else:
+            missing_data.append("BMI calculation - Manager must provide current weight (kg) and height (cm)")
         
-        # Weight loss calculation
+        # 2. Unplanned weight loss in 3-6 months (0-2 points)
         if weight_logs and len(weight_logs) >= 2:
             weight_change = (weight_logs[0] - weight_logs[-1]) / weight_logs[0] * 100
             if weight_change > 10:
                 score += 2
-                evidence.append(f"Weight loss >10% ({weight_change:.1f}%)")
+                evidence.append(f"Weight loss: {weight_change:.1f}% (>10%) = 2 points")
             elif 5 <= weight_change <= 10:
                 score += 1
-                evidence.append(f"Weight loss 5-10% ({weight_change:.1f}%)")
+                evidence.append(f"Weight loss: {weight_change:.1f}% (5-10%) = 1 point")
+            else:
+                evidence.append(f"Weight loss: {weight_change:.1f}% (<5%) = 0 points")
+        else:
+            missing_data.append("Weight loss calculation - Manager must provide weight records from 3-6 months ago")
         
-        # Acute illness and fasting
-        fasting_keywords = ["nil by mouth", "nbm", "fasting", "no oral intake", "tube feeding only"]
+        # 3. Acute illness and no nutritional intake for 5+ days (0 or 2 points)
+        fasting_keywords = ["nil by mouth", "nbm", "fasting", "no oral intake"]
         illness_keywords = ["acute", "unwell", "hospital", "infection", "fever"]
         
-        if (any(keyword in combined_text for keyword in fasting_keywords) and 
-            any(keyword in combined_text for keyword in illness_keywords)):
-            score += 2
-            evidence.append("Acutely ill with reduced nutritional intake")
+        fasting_found = any(keyword in combined_text for keyword in fasting_keywords)
+        illness_found = any(keyword in combined_text for keyword in illness_keywords)
         
-        # Determine risk level
+        if fasting_found and illness_found:
+            score += 2
+            evidence.append("Acute illness with no nutritional intake = 2 points")
+        elif fasting_found or illness_found:
+            missing_data.append("Acute illness assessment - Manager must confirm if resident is acutely ill AND has had no nutritional intake for 5+ days")
+        else:
+            missing_data.append("Acute illness and fasting status - Manager must assess current illness status and nutritional intake")
+        
+        # Determine risk level based on exact MUST criteria
         if score >= 2:
             risk_level = "High Risk"
         elif score == 1:
@@ -229,8 +268,10 @@ class RiskAssessmentCalculator:
             'max_score': 6,
             'risk_level': risk_level,
             'evidence': evidence,
+            'missing_data': missing_data,
             'recommendations': self._get_must_recommendations(score),
-            'next_review_date': (datetime.now() + timedelta(weeks=1)).strftime('%Y-%m-%d')
+            'next_review_date': (datetime.now() + timedelta(weeks=1)).strftime('%Y-%m-%d'),
+            'calculation_note': f"MUST score based on available data only. {len(missing_data)} components require manager input for complete assessment."
         }
     
     def calculate_waterlow(self, care_plan_text: str, log_entries: str, 

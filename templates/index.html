@@ -1180,11 +1180,17 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                                 <span class="risk-level ${assessment.risk_level.toLowerCase().replace(' ', '-')}">${assessment.risk_level}</span>
                             </div>
                             ${assessment.evidence && assessment.evidence.length > 0 ?
-                                `<div class="evidence">
-                                    <strong>Evidence:</strong>
-                                    <ul>${assessment.evidence.map(e => `<li>${e}</li>`).join('')}</ul>
-                                </div>` : ''
-                            }
+                        `<div class="evidence">
+                            <strong>Evidence Found:</strong>
+                            <ul>${assessment.evidence.map(e => `<li>✅ ${e}</li>`).join('')}</ul>
+                        </div>` : ''
+                    }
+                    ${assessment.missing_data && assessment.missing_data.length > 0 ?
+                        `<div class="missing-data-alert">
+                            <strong>⚠️ Manager Input Required:</strong>
+                            <ul>${assessment.missing_data.map(m => `<li>❌ ${m}</li>`).join('')}</ul>
+                        </div>` : ''
+                    }
                             <div class="next-review">Next Review: ${assessment.next_review_date}</div>
                         </div>
                     `;
@@ -1320,7 +1326,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                         </div>
 
                         <div class="scoring-breakdown">
-                            <h5>📊 詳細計分公式 (Detailed Scoring Formula)</h5>
+                            <h5>📊 Detailed Scoring Formula</h5>
                             <div id="formula-${toolName}" class="formula-display">
                                 ${getDetailedFormula(toolName, assessment)}
                             </div>
@@ -1328,7 +1334,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
 
                         <div class="ai-vs-manual">
                             <div class="ai-score">
-                                <h5>🤖 AI 自動計算 (AI Calculated)</h5>
+                                <h5>🤖 AI Calculated</h5>
                                 <div class="score-display">${assessment.score}/${assessment.max_score}</div>
                                 <div class="risk-level">${assessment.risk_level}</div>
                                 <div class="score-components">
@@ -1336,7 +1342,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                                 </div>
                             </div>
                             <div class="manual-score">
-                                <h5>✏️ 經理手動調整 (Manager Override)</h5>
+                                <h5>✏️ Manager Override</h5>
                                 <input type="number" class="score-input" id="manual-score-${toolName}" 
                                        value="${assessment.score}" min="0" max="${assessment.max_score}" 
                                        onchange="updateRiskLevel('${toolName}', this.value, '${assessment.max_score}')">
@@ -1453,60 +1459,60 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             const formulas = {
                 'falls_screening': `
                     <div class="formula">
-                        <strong>跌倒風險評估公式 (Falls Risk Formula):</strong><br>
-                        總分 = 跌倒史(0-1) + 藥物數量(0-1) + 診斷疾病(0-1) + 平衡問題(0-1) + 起立困難(0-1) + 姿勢性低血壓(0-1)<br>
+                        <strong>Falls Risk Formula:</strong><br>
+                        Total = Falls History(0-1) + Medications≥4(0-1) + Diagnosis(0-1) + Balance Issues(0-1) + Chair Rise(0-1) + Postural Hypotension(0-1)<br>
                         <em>Total = Falls History(0-1) + Medications≥4(0-1) + Diagnosis(0-1) + Balance Issues(0-1) + Chair Rise(0-1) + Postural Hypotension(0-1)</em><br>
-                        <strong>風險等級:</strong> 0-1=低風險, 2=中風險, 3+=高風險
+                        <strong>Risk Level:</strong> 0-1=Low Risk, 2=Medium Risk, 3+=High Risk
                     </div>`,
                 'must_nutrition': `
                     <div class="formula">
-                        <strong>營養風險評估公式 (MUST Formula):</strong><br>
-                        總分 = BMI分數(0-2) + 體重減輕(0-2) + 急性疾病禁食(0-2)<br>
+                        <strong>MUST Formula:</strong><br>
+                        Total = BMI Score(0-2) + Weight Loss(0-2) + Acute Illness Fasting(0-2)<br>
                         <em>Total = BMI Score(0-2) + Weight Loss(0-2) + Acute Illness Fasting(0-2)</em><br>
-                        BMI: &lt;18.5=2分, 18.5-20=1分, &gt;20=0分<br>
-                        體重減輕: &gt;10%=2分, 5-10%=1分, &lt;5%=0分<br>
-                        <strong>風險等級:</strong> 0=低風險, 1=中風險, 2+=高風險
+                        BMI: <18.5=2 points, 18.5-20=1 point, >20=0 points<br>
+                        Weight Loss: >10%=2 points, 5-10%=1 point, <5%=0 points<br>
+                        <strong>Risk Level:</strong> 0=Low Risk, 1=Medium Risk, 2+=High Risk
                     </div>`,
                 'waterlow': `
                     <div class="formula">
-                        <strong>壓瘡風險評估公式 (Waterlow Formula):</strong><br>
-                        總分 = 年齡(1-5) + 性別(1-2) + BMI(0-3) + 皮膚狀況(0-2) + 活動能力(0-4) + 營養(0-1) + 失禁(0-3)<br>
+                        <strong>Waterlow Formula:</strong><br>
+                        Total = Age + Gender + BMI + Skin + Mobility + Nutrition + Continence<br>
                         <em>Total = Age + Gender + BMI + Skin + Mobility + Nutrition + Continence</em><br>
-                        <strong>風險等級:</strong> &lt;10=低風險, 10-15=中風險, 15-20=高風險, 20+=極高風險
+                        <strong>Risk Level:</strong> <10=Low Risk, 10-15=Medium Risk, 15-20=High Risk, 20+=Very High Risk
                     </div>`,
                 'abbey_pain': `
                     <div class="formula">
-                        <strong>疼痛評估公式 (Abbey Pain Formula):</strong><br>
-                        總分 = 發聲(0-3) + 面部表情(0-3) + 身體語言(0-3) + 行為改變(0-3) + 生理變化(0-3) + 身體變化(0-3)<br>
+                        <strong>Abbey Pain Formula:</strong><br>
+                        Total = Vocalisation + Facial + Body Language + Behavioural + Physiological + Physical Changes<br>
                         <em>Total = Vocalisation + Facial + Body Language + Behavioural + Physiological + Physical Changes</em><br>
-                        每項: 0=無, 1=輕微, 2=中度, 3=嚴重<br>
-                        <strong>風險等級:</strong> 0-2=無至輕微, 3-7=輕微, 8-13=中度, 14-18=嚴重疼痛
+                        Each item: 0=None, 1=Mild, 2=Moderate, 3=Severe<br>
+                        <strong>Risk Level:</strong> 0-2=None to Mild, 3-7=Mild, 8-13=Moderate, 14-18=Severe Pain
                     </div>`
             };
 
             return formulas[toolName] || `
                 <div class="formula">
-                    <strong>評估公式 (Assessment Formula):</strong><br>
-                    總分範圍: 0-${assessment.max_score}<br>
-                    當前計算: ${assessment.score}/${assessment.max_score}
+                    <strong>Assessment Formula:</strong><br>
+                    Total Range: 0-${assessment.max_score}<br>
+                    Current Calculation: ${assessment.score}/${assessment.max_score}
                 </div>`;
         }
 
         function getScoreComponents(toolName, assessment) {
             if (!assessment.evidence) return '';
 
-            let components = '<div class="score-breakdown"><strong>計分組成:</strong><ul>';
+            let components = '<div class="score-breakdown"><strong>Scoring Components:</strong><ul>';
             assessment.evidence.forEach((evidence, index) => {
                 // Estimate score contribution (simplified)
                 const contribution = Math.floor(assessment.score / assessment.evidence.length);
-                components += `<li>${evidence} <span class="score-contribution">(約 +${contribution}分)</span></li>`;
+                components += `<li>${evidence} <span class="score-contribution">(~ +${contribution} points)</span></li>`;
             });
             components += '</ul></div>';
 
             return components;
         }
 
-        
+
         function markEvidence(toolName, evidenceIndex, status) {
             const evidenceDiv = document.getElementById(`evidence-${toolName}-${evidenceIndex}`);
             evidenceDiv.className = `evidence-item ${status}`;
