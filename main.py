@@ -338,6 +338,78 @@ def create_fallback_analysis(response_text):
         "suggestions": suggestions
     }
 
+def extract_log_highlights(daily_log_content, resident_name):
+    """Extract significant log entries for highlighting"""
+    
+    prompt = f"""You are a care log analyzer. Extract the most significant entries from this month's care log that deserve special attention.
+
+RESIDENT: {resident_name}
+
+CARE LOG CONTENT:
+{daily_log_content}
+
+Extract 5-8 of the most significant log entries that staff should pay special attention to. For each entry:
+1. Keep the EXACT original text from the log (preserve original wording)
+2. Explain why it's significant
+3. Categorize the type of incident
+4. Assess priority level
+
+Respond with ONLY a valid JSON array like this:
+
+[
+    {{
+        "original_text": "Exact text from the log entry - preserve original wording completely",
+        "significance": "Why this entry is significant and what it indicates",
+        "category": "Behavior/Safety/Health/Personal Care/Nutrition/Social/Mobility/Sleep/Other",
+        "priority": "High/Medium/Low",
+        "date": "Date if found in text, or 'This month'"
+    }}
+]
+
+Guidelines:
+- Preserve original log text EXACTLY as written
+- Focus on incidents that show patterns or concerning behaviors
+- Include both positive and concerning entries
+- Prioritize entries that require follow-up action
+- Look for entries showing changes in condition or behavior
+"""
+
+    try:
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=2000,
+            temperature=0.3,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        response_text = message.content[0].text.strip()
+        
+        # Clean response and extract JSON
+        response_text = re.sub(r'```json\s*', '', response_text)
+        response_text = re.sub(r'```\s*$', '', response_text)
+        
+        try:
+            highlights = json.loads(response_text)
+            if isinstance(highlights, list) and len(highlights) > 0:
+                return highlights
+        except json.JSONDecodeError:
+            pass
+            
+        # Fallback highlights if parsing fails
+        return [
+            {
+                "original_text": "Multiple behavioral incidents documented throughout the month",
+                "significance": "Pattern of behaviors requiring ongoing monitoring and intervention strategies",
+                "category": "Behavior",
+                "priority": "Medium",
+                "date": "This month"
+            }
+        ]
+
+    except Exception as e:
+        print(f"Error extracting log highlights: {str(e)}")
+        return []
+
 def analyze_and_suggest_changes(daily_log, current_care_plan, resident_name):
     """Step 1: Analyze and suggest changes with gap detection"""
 
@@ -849,24 +921,40 @@ def index():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     if not client:
-        return jsonify({'error': 'OpenAI API not available. Please check your OPENAI_API_KEY environment variable.'}), 500
+        return jsonify({'error': 'API not available. Please check your API key environment variable.'}), 500
 
     try:
         # Get form data
         resident_name = request.form.get('resident_name', 'Unnamed Resident')
+        
+        # Get selected analysis options
+        analysis_options = request.form.getlist('analysis_options')
+        if not analysis_options:
+            return jsonify({'error': 'Please select at least one analysis option'}), 400
 
         # Check files
-        if 'daily_log' not in request.files or 'care_plan' not in request.files:
-            return jsonify({'error': 'Please upload both files'}), 400
+        if 'daily_log' not in request.files:
+            return jsonify({'error': 'Please upload daily log file'}), 400
 
         daily_log_file = request.files['daily_log']
-        care_plan_file = request.files['care_plan']
+        if not daily_log_file or daily_log_file.filename == '':
+            return jsonify({'error': 'Please select a daily log file'}), 400
 
-        if not daily_log_file or daily_log_file.filename == '' or not care_plan_file or care_plan_file.filename == '':
-            return jsonify({'error': 'Please select files'}), 400
+        # Care plan file is only required for care plan analysis
+        care_plan_file = None
+        if 'care_plan' in analysis_options:
+            if 'care_plan' not in request.files:
+                return jsonify({'error': 'Please upload care plan file for care plan analysis'}), 400
+            care_plan_file = request.files['care_plan']
+            if not care_plan_file or care_plan_file.filename == '':
+                return jsonify({'error': 'Please select a care plan file for care plan analysis'}), 400
 
-        if not allowed_file(daily_log_file.filename) or not allowed_file(care_plan_file.filename):
-            return jsonify({'error': 'Only CSV, TXT, and PDF files are allowed'}), 400
+        # Validate file types
+        if not allowed_file(daily_log_file.filename):
+            return jsonify({'error': 'Daily log file must be CSV, TXT, or PDF'}), 400
+        
+        if care_plan_file and not allowed_file(care_plan_file.filename):
+            return jsonify({'error': 'Care plan file must be CSV, TXT, or PDF'}), 400
 
         # Process daily log file
         daily_log_content = ""
@@ -885,22 +973,23 @@ def analyze():
         if daily_log_error:
             return jsonify({'error': daily_log_error}), 400
 
-        # Process care plan file
+        # Process care plan file (if provided)
         care_plan_content = ""
         care_plan_error = None
 
-        if care_plan_file.filename.lower().endswith('.pdf'):
-            care_plan_content, care_plan_error = extract_pdf_text(care_plan_file)
-        else:
-            # Save and read CSV/TXT files
-            care_plan_path = os.path.join(app.config['UPLOAD_FOLDER'], 
-                                          secure_filename(f"care_{datetime.now().timestamp()}.csv"))
-            care_plan_file.save(care_plan_path)
-            care_plan_content = read_csv_flexible(care_plan_path)
-            os.remove(care_plan_path)
+        if care_plan_file:
+            if care_plan_file.filename.lower().endswith('.pdf'):
+                care_plan_content, care_plan_error = extract_pdf_text(care_plan_file)
+            else:
+                # Save and read CSV/TXT files
+                care_plan_path = os.path.join(app.config['UPLOAD_FOLDER'], 
+                                              secure_filename(f"care_{datetime.now().timestamp()}.csv"))
+                care_plan_file.save(care_plan_path)
+                care_plan_content = read_csv_flexible(care_plan_path)
+                os.remove(care_plan_path)
 
-        if care_plan_error:
-            return jsonify({'error': care_plan_error}), 400
+            if care_plan_error:
+                return jsonify({'error': care_plan_error}), 400
 
         # Dual AI System Implementation
         processed_daily_log = daily_log_content
@@ -921,32 +1010,45 @@ def analyze():
         else:
             processing_steps.append("🧠 Generating analysis...")
 
-        # Get suggestions using processed content
-        analysis_result = analyze_and_suggest_changes(processed_daily_log, care_plan_content, resident_name)
+        # Initialize results
+        analysis_result = None
+        risk_assessment_results = None
+        log_highlights = None
 
-        # Calculate risk assessments
-        processing_steps.append("🛡️ Calculating risk assessments...")
-        risk_calculator = RiskAssessmentCalculator()
+        # Process based on selected options
+        if 'care_plan' in analysis_options:
+            processing_steps.append("🧠 Generating care plan analysis...")
+            analysis_result = analyze_and_suggest_changes(processed_daily_log, care_plan_content, resident_name)
 
-        # Extract weight data from logs if available
-        weight_logs = extract_weight_data(processed_daily_log)
-        height = extract_height_data(care_plan_content)
-        resident_data = extract_resident_data(care_plan_content, resident_name)
+        if 'risk_assessment' in analysis_options:
+            processing_steps.append("🛡️ Calculating risk assessments...")
+            risk_calculator = RiskAssessmentCalculator()
 
-        risk_assessment_results = risk_calculator.calculate_all_assessments(
-            care_plan_content, 
-            processed_daily_log, 
-            weight_logs, 
-            height, 
-            resident_data
-        )
+            # Extract weight data from logs if available
+            weight_logs = extract_weight_data(processed_daily_log)
+            height = extract_height_data(care_plan_content) if care_plan_content else None
+            resident_data = extract_resident_data(care_plan_content, resident_name) if care_plan_content else {'name': resident_name}
 
-        # Add risk assessment summary to analysis result
-        if risk_assessment_results and 'summary' in risk_assessment_results:
-            analysis_result['risk_assessment_summary'] = risk_assessment_results['summary']
+            risk_assessment_results = risk_calculator.calculate_all_assessments(
+                care_plan_content or "", 
+                processed_daily_log, 
+                weight_logs, 
+                height, 
+                resident_data
+            )
 
-        # Ensure risk assessment is included in response
-        if not risk_assessment_results:
+        if 'log_highlights' in analysis_options:
+            processing_steps.append("🔍 Extracting log highlights...")
+            log_highlights = extract_log_highlights(processed_daily_log, resident_name)
+
+        # Ensure we have at least minimal data structure
+        if not analysis_result and 'care_plan' not in analysis_options:
+            analysis_result = {
+                'analysis_summary': 'Care plan analysis not selected',
+                'suggestions': []
+            }
+
+        if not risk_assessment_results and 'risk_assessment' not in analysis_options:
             risk_assessment_results = {
                 'assessment_date': datetime.now().strftime('%Y-%m-%d'),
                 'summary': {
@@ -958,18 +1060,27 @@ def analyze():
                 'assessments': {}
             }
 
+        # Add components to analysis result
+        if analysis_result and risk_assessment_results and 'summary' in risk_assessment_results:
+            analysis_result['risk_assessment_summary'] = risk_assessment_results['summary']
+
+        if analysis_result and log_highlights:
+            analysis_result['log_highlights'] = log_highlights
+
         # File cleanup is handled in processing logic above
 
         return jsonify({
             'success': True,
             'step': 'suggestions',
-            'analysis_summary': analysis_result.get('analysis_summary', ''),
-            'suggestions': analysis_result.get('suggestions', []),
+            'analysis_summary': analysis_result.get('analysis_summary', '') if analysis_result else '',
+            'suggestions': analysis_result.get('suggestions', []) if analysis_result else [],
+            'log_highlights': analysis_result.get('log_highlights', []) if analysis_result else log_highlights or [],
             'resident_name': resident_name,
             'original_care_plan': care_plan_content,
             'processing_steps': processing_steps,
             'was_compressed': is_large_file(daily_log_content),
-            'risk_assessment': risk_assessment_results
+            'risk_assessment': risk_assessment_results,
+            'analysis_options': analysis_options
         })
 
     except Exception as e:

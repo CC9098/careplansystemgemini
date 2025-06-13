@@ -57,6 +57,15 @@
                     <input type="text" id="resident_name" name="resident_name" placeholder="Enter resident name" required oninvalid="this.setCustomValidity('Please enter resident name')" oninput="this.setCustomValidity('')">
                 </div>
 
+                <!-- Analysis Options -->
+                <div class="form-group">
+                    <label>Analysis Options:</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="analysis_options" value="care_plan" checked> Care Plan Analysis</label>
+                        <label><input type="checkbox" name="analysis_options" value="risk_assessment" checked> Risk Assessment</label>
+                    </div>
+                </div>
+
                 <div class="upload-grid">
                     <div class="upload-box">
                         <h3>Monthly Care Log</h3>
@@ -69,11 +78,11 @@
 
                     <div class="upload-box">
                         <h3>Current Care Plan</h3>
-                        <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt,.pdf" required oninvalid="this.setCustomValidity('Please select a care plan file')" oninput="this.setCustomValidity('')">
+                        <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt,.pdf">
                         <label for="care_plan" class="file-label">
                             <span>Click to select care plan</span>
                         </label>
-                        <p class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables.</small></p>
+                        <p class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables. Required for Care Plan Analysis.</small></p>
                     </div>
                 </div>
 
@@ -117,6 +126,12 @@
                     </div>
                     <div id="risk-details" class="risk-details" style="display: none;"></div>
                     <div id="manual-adjustment" class="manual-adjustment-section" style="display: none;"></div>
+                </div>
+
+                <!-- Highlighted Log Entries -->
+                <div id="highlightedLogs" class="highlighted-logs" style="display: none;">
+                    <h3>📝 Highlighted Log Entries</h3>
+                    <div id="logHighlights"></div>
                 </div>
 
                 <div class="suggestions-container">
@@ -189,6 +204,31 @@
             label.textContent = input.files.length > 0 ? input.files[0].name : defaultText;
         }
 
+        // Analysis options change handlers
+        document.addEventListener('change', function(e) {
+            if (e.target.name === 'analysis_options') {
+                updateAnalysisOptionsDisplay();
+            }
+        });
+
+        function updateAnalysisOptionsDisplay() {
+            const selectedOptions = Array.from(document.querySelectorAll('input[name="analysis_options"]:checked')).map(cb => cb.value);
+            const carePlanInput = document.getElementById('care_plan');
+            const carePlanBox = carePlanInput.closest('.upload-box');
+
+            // Update care plan requirement based on selected options
+            if (selectedOptions.includes('care_plan')) {
+                carePlanInput.required = true;
+                carePlanBox.querySelector('.file-info').innerHTML = 'Supports CSV, TXT, and PDF files<br><small>Required for Care Plan Analysis. For best results, use CSV format.</small>';
+            } else {
+                carePlanInput.required = false;
+                carePlanBox.querySelector('.file-info').innerHTML = 'Supports CSV, TXT, and PDF files<br><small>Optional for Risk Assessment only.</small>';
+            }
+        }
+
+        // Initialize display
+        updateAnalysisOptionsDisplay();
+
         // Step 1: Upload and analyze
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -197,6 +237,8 @@
             const residentName = document.getElementById('resident_name').value.trim();
             const dailyLogFile = document.getElementById('daily_log').files[0];
             const carePlanFile = document.getElementById('care_plan').files[0];
+            const selectedOptions = Array.from(document.querySelectorAll('input[name="analysis_options"]:checked')).map(cb => cb.value);
+
 
             if (!residentName) {
                 alert('Please enter resident name');
@@ -208,10 +250,11 @@
                 return;
             }
 
-            if (!carePlanFile) {
+            if (selectedOptions.includes('care_plan') && !carePlanFile) {
                 alert('Please select a care plan file');
                 return;
             }
+
 
             const analyzeBtn = document.querySelector('.analyze-btn');
             const originalBtnText = analyzeBtn.innerHTML;
@@ -253,6 +296,7 @@
                 if (data.success && data.step === 'suggestions') {
                     currentData = data;
                     displaySuggestions(data);
+                    displayHighlightedLogs(data.highlighted_logs); // Display highlighted logs
                     suggestions.style.display = 'block';
                 } else {
                     alert('Analysis failed: ' + (data.error || 'Unknown error'));
@@ -393,6 +437,27 @@
                 details.style.display = 'none';
                 icon.textContent = '▼';
             }
+        }
+
+        function displayHighlightedLogs(logs) {
+            const highlightedLogsDiv = document.getElementById('logHighlights');
+            const highlightedLogsSection = document.getElementById('highlightedLogs');
+            highlightedLogsDiv.innerHTML = ''; // Clear existing content
+
+            if (!logs || logs.length === 0) {
+                highlightedLogsDiv.innerHTML = '<p>No significant log entries highlighted.</p>';
+                highlightedLogsSection.style.display = 'none';
+                return;
+            }
+
+            logs.forEach(log => {
+                const logEntryDiv = document.createElement('div');
+                logEntryDiv.className = 'log-entry';
+                logEntryDiv.innerHTML = `<p>${log}</p>`;
+                highlightedLogsDiv.appendChild(logEntryDiv);
+            });
+
+            highlightedLogsSection.style.display = 'block'; // Show the section
         }
 
         // Generate care plan functionality
@@ -1502,193 +1567,4 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             if (!assessment.evidence) return '';
 
             let components = '<div class="score-breakdown"><strong>Scoring Components:</strong><ul>';
-            assessment.evidence.forEach((evidence, index) => {
-                // Estimate score contribution (simplified)
-                const contribution = Math.floor(assessment.score / assessment.evidence.length);
-                components += `<li>${evidence} <span class="score-contribution">(~ +${contribution} points)</span></li>`;
-            });
-            components += '</ul></div>';
-
-            return components;
-        }
-
-
-        function markEvidence(toolName, evidenceIndex, status) {
-            const evidenceDiv = document.getElementById(`evidence-${toolName}-${evidenceIndex}`);
-            evidenceDiv.className = `evidence-item ${status}`;
-
-            // Remove active state from all buttons in this evidence item
-            const buttons = evidenceDiv.querySelectorAll('.btn-evidence');
-            buttons.forEach(btn => btn.classList.remove('active'));
-
-            // Add active state to clicked button
-            event.target.classList.add('active');
-
-            // Store the evidence validation status
-            if (!window.evidenceValidation) {
-                window.evidenceValidation = {};
-            }
-            if (!window.evidenceValidation[toolName]) {
-                window.evidenceValidation[toolName] = {};
-            }
-            window.evidenceValidation[toolName][evidenceIndex] = {
-                status: status,
-                validated: true,
-                timestamp: new Date().toISOString()
-            };
-
-            // Recalculate score based on evidence validation
-            recalculateScoreBasedOnEvidence(toolName);
-
-            console.log('Evidence marked:', toolName, evidenceIndex, status);
-        }
-
-        function recalculateScoreBasedOnEvidence(toolName) {
-            const assessment = currentData.risk_assessment.assessments[toolName];
-            if (!assessment || !assessment.evidence) return;
-
-            let originalScore = assessment.original_score || assessment.score;
-            let adjustedScore = originalScore;
-
-            // Count evidence validation results
-            let foundCount = 0;
-            let notFoundCount = 0;
-            let questionableCount = 0;
-            let totalValidated = 0;
-
-            if (window.evidenceValidation && window.evidenceValidation[toolName]) {
-                Object.values(window.evidenceValidation[toolName]).forEach(validation => {
-                    if (validation.validated) {
-                        totalValidated++;
-                        switch(validation.status) {
-                            case 'found': foundCount++; break;
-                            case 'not-found': notFoundCount++; break;
-                            case 'questionable': questionableCount++; break;
-                        }
-                    }
-                });
-            }
-
-            // Adjust score based on evidence validation (only if some evidence validated)
-            if (totalValidated > 0) {
-                const notFoundRatio = notFoundCount / totalValidated;
-                const questionableRatio = questionableCount / totalValidated;
-
-                // Reduce score based on not-found evidence
-                if (notFoundRatio > 0.5) {
-                    adjustedScore = Math.max(0, Math.floor(originalScore * 0.3)); // Reduce by 70%
-                } else if (notFoundRatio > 0.3) {
-                    adjustedScore = Math.max(0, Math.floor(originalScore * 0.6)); // Reduce by 40%
-                } else if (questionableRatio > 0.5) {
-                    adjustedScore = Math.max(0, Math.floor(originalScore * 0.7)); // Reduce by 30%
-                }
-            }
-
-            // Update the manual score input with the evidence-adjusted score
-            const manualScoreInput = document.getElementById(`manual-score-${toolName}`);
-            if (manualScoreInput) {
-                manualScoreInput.value = adjustedScore;
-                updateRiskLevel(toolName, adjustedScore, assessment.max_score);
-
-                // Add visual indicator that score was adjusted by evidence
-                manualScoreInput.classList.add('evidence-adjusted');
-
-                // Show evidence impact summary
-                updateEvidenceImpactSummary(toolName, foundCount, notFoundCount, questionableCount, originalScore, adjustedScore);
-            }
-        }
-
-        function updateEvidenceImpactSummary(toolName, found, notFound, questionable, originalScore, adjustedScore) {
-            const summaryDiv = document.getElementById(`evidence-impact-${toolName}`);
-            if (summaryDiv) {
-                const total = found + notFound + questionable;
-                const impactText = adjustedScore !== originalScore ? 
-                    `<span class="score-change">Score adjusted: ${originalScore} → ${adjustedScore}</span>` :
-                    `<span class="no-score-change">Score unchanged: ${originalScore}</span>`;
-
-                summaryDiv.innerHTML = `
-                    <div class="evidence-summary">
-                        <h6>Evidence Validation Impact:</h6>
-                        <div class="validation-counts">
-                            ✅ Found: ${found} | ❌ Not Found: ${notFound} | ❓ Questionable: ${questionable}
-                        </div>
-                        ${impactText}
-                    </div>
-                `;
-            }
-        }
-
-        function saveAllAdjustments() {
-            if (!currentData.risk_assessment) return;
-
-            const adjustments = {};
-            
-            Object.keys(currentData.risk_assessment.assessments).forEach(toolName => {
-                const assessment = currentData.risk_assessment.assessments[toolName];
-                if (assessment.error) return;
-
-                const manualScoreInput = document.getElementById(`manual-score-${toolName}`);
-                const reasonTextarea = document.getElementById(`reason-${toolName}`);
-                
-                if (manualScoreInput) {
-                    const originalScore = assessment.original_score || assessment.score;
-                    const adjustedScore = parseInt(manualScoreInput.value);
-                    const reason = reasonTextarea ? reasonTextarea.value : '';
-                    
-                    if (adjustedScore !== originalScore) {
-                        adjustments[toolName] = {
-                            original_score: originalScore,
-                            adjusted_score: adjustedScore,
-                            reason: reason,
-                            timestamp: new Date().toISOString()
-                        };
-                        
-                        // Update the assessment in currentData
-                        assessment.score = adjustedScore;
-                        assessment.original_score = originalScore;
-                        assessment.risk_level = calculateRiskLevel(toolName, adjustedScore, assessment.max_score);
-                    }
-                }
-            });
-
-            // Store adjustments in currentData
-            currentData.risk_assessment.manual_adjustments = adjustments;
-            
-            // Update the display
-            displayRiskAssessment(currentData.risk_assessment);
-            
-            // Show success message
-            if (Object.keys(adjustments).length > 0) {
-                alert(`Successfully saved ${Object.keys(adjustments).length} risk score adjustments.`);
-            } else {
-                alert('No score changes detected to save.');
-            }
-        }
-
-        function calculateRiskLevel(toolName, score, maxScore) {
-            // Implement risk level calculation based on tool and score
-            if (toolName === 'falls_screening') {
-                if (score >= 3) return 'High Risk';
-                else if (score >= 2) return 'Medium Risk';
-                else return 'Low Risk';
-            } else if (toolName === 'must_nutrition') {
-                if (score >= 2) return 'High Risk';
-                else if (score == 1) return 'Medium Risk';
-                else return 'Low Risk';
-            } else if (toolName === 'abbey_pain') {
-                if (score >= 14) return 'Severe Pain';
-                else if (score >= 8) return 'Moderate Pain';
-                else if (score >= 3) return 'Mild Pain';
-                else return 'No Pain to Mild Pain';
-            }
-            
-            // Generic calculation for other tools
-            const percentage = (score / maxScore) * 100;
-            if (percentage >= 70) return 'High Risk';
-            else if (percentage >= 40) return 'Medium Risk';
-            else return 'Low Risk';
-        }
-
-        </script>
-</body>
-</html>
+            assessment
