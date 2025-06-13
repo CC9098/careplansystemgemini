@@ -63,24 +63,33 @@
                     <div class="checkbox-group">
                         <label><input type="checkbox" name="analysis_options" value="care_plan" checked> Care Plan Analysis</label>
                         <label><input type="checkbox" name="analysis_options" value="risk_assessment" checked> Risk Assessment</label>
+                        <label><input type="checkbox" name="analysis_options" value="combo_mode" checked> 🔄 Combo Mode (Care Plan + Risk Assessment)</label>
                     </div>
                 </div>
 
                 <div class="upload-grid">
-                    <div class="upload-box">
+                    <div class="upload-box" id="daily-log-box">
                         <h3>Monthly Care Log</h3>
                         <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt,.pdf" required oninvalid="this.setCustomValidity('Please select a care log file')" oninput="this.setCustomValidity('')">
                         <label for="daily_log" class="file-label">
-                            <span>Click to select log file</span>
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 10px; opacity: 0.5;">
+                                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>Click to select log file or drag & drop here</span>
                         </label>
                         <p class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables.</small></p>
                     </div>
 
-                    <div class="upload-box">
+                    <div class="upload-box" id="care-plan-box">
                         <h3>Current Care Plan</h3>
                         <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt,.pdf">
                         <label for="care_plan" class="file-label">
-                            <span>Click to select care plan</span>
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 10px; opacity: 0.5;">
+                                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>Click to select care plan or drag & drop here</span>
                         </label>
                         <p class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables. Required for Care Plan Analysis.</small></p>
                     </div>
@@ -203,11 +212,11 @@
 
         // File upload handlers
         document.getElementById('daily_log').addEventListener('change', function(e) {
-            updateFileLabel(this, 'Click to select log file');
+            updateFileLabel(this, 'Click to select log file or drag & drop here');
         });
 
         document.getElementById('care_plan').addEventListener('change', function(e) {
-            updateFileLabel(this, 'Click to select care plan');
+            updateFileLabel(this, 'Click to select care plan or drag & drop here');
         });
 
         function updateFileLabel(input, defaultText) {
@@ -215,12 +224,83 @@
             label.textContent = input.files.length > 0 ? input.files[0].name : defaultText;
         }
 
+        // Drag and drop functionality
+        function setupDragAndDrop(boxId, inputId, defaultText) {
+            const box = document.getElementById(boxId);
+            const input = document.getElementById(inputId);
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                box.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                box.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                box.addEventListener(eventName, unhighlight, false);
+            });
+
+            box.addEventListener('drop', handleDrop, false);
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight(e) {
+                box.classList.add('drag-over');
+            }
+
+            function unhighlight(e) {
+                box.classList.remove('drag-over');
+            }
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files.length > 0) {
+                    input.files = files;
+                    updateFileLabel(input, defaultText);
+                }
+            }
+        }
+
+        // Initialize drag and drop for both upload boxes
+        setupDragAndDrop('daily-log-box', 'daily_log', 'Click to select log file or drag & drop here');
+        setupDragAndDrop('care-plan-box', 'care_plan', 'Click to select care plan or drag & drop here');
+
         // Analysis options change handlers
         document.addEventListener('change', function(e) {
             if (e.target.name === 'analysis_options') {
+                handleAnalysisOptionChange(e.target);
                 updateAnalysisOptionsDisplay();
             }
         });
+
+        function handleAnalysisOptionChange(checkbox) {
+            if (checkbox.value === 'combo_mode' && checkbox.checked) {
+                // When combo mode is selected, automatically select both individual options
+                document.querySelector('input[value="care_plan"]').checked = true;
+                document.querySelector('input[value="risk_assessment"]').checked = true;
+            } else if (checkbox.value === 'combo_mode' && !checkbox.checked) {
+                // When combo mode is deselected, keep individual options as they are
+                // User can manually adjust them
+            } else if ((checkbox.value === 'care_plan' || checkbox.value === 'risk_assessment') && !checkbox.checked) {
+                // If either individual option is unchecked, uncheck combo mode
+                document.querySelector('input[value="combo_mode"]').checked = false;
+            } else if (checkbox.value === 'care_plan' || checkbox.value === 'risk_assessment') {
+                // Check if both individual options are now selected
+                const carePlanChecked = document.querySelector('input[value="care_plan"]').checked;
+                const riskAssessmentChecked = document.querySelector('input[value="risk_assessment"]').checked;
+                
+                if (carePlanChecked && riskAssessmentChecked) {
+                    document.querySelector('input[value="combo_mode"]').checked = true;
+                }
+            }
+        }
 
         function updateAnalysisOptionsDisplay() {
             const selectedOptions = Array.from(document.querySelectorAll('input[name="analysis_options"]:checked')).map(cb => cb.value);
@@ -228,12 +308,19 @@
             const carePlanBox = carePlanInput.closest('.upload-box');
 
             // Update care plan requirement based on selected options
-            if (selectedOptions.includes('care_plan')) {
+            if (selectedOptions.includes('care_plan') || selectedOptions.includes('combo_mode')) {
                 carePlanInput.required = true;
-                carePlanBox.querySelector('.file-info').innerHTML = 'Supports CSV, TXT, and PDF files<br><small>Required for Care Plan Analysis. For best results, use CSV format.</small>';
+                carePlanBox.querySelector('.file-info').innerHTML = 'Supports CSV, TXT, and PDF files<br><small>Required for Care Plan Analysis and Combo Mode. For best results, use CSV format.</small>';
             } else {
                 carePlanInput.required = false;
                 carePlanBox.querySelector('.file-info').innerHTML = 'Supports CSV, TXT, and PDF files<br><small>Optional for Risk Assessment only.</small>';
+            }
+
+            // Handle combo mode selection
+            if (selectedOptions.includes('combo_mode')) {
+                // Auto-check both individual options when combo is selected
+                document.querySelector('input[value="care_plan"]').checked = true;
+                document.querySelector('input[value="risk_assessment"]').checked = true;
             }
         }
 
@@ -261,8 +348,8 @@
                 return;
             }
 
-            if (selectedOptions.includes('care_plan') && !carePlanFile) {
-                alert('Please select a care plan file');
+            if ((selectedOptions.includes('care_plan') || selectedOptions.includes('combo_mode')) && !carePlanFile) {
+                alert('Please select a care plan file for care plan analysis or combo mode');
                 return;
             }
 

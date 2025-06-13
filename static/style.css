@@ -185,6 +185,28 @@ header h1, header p {
 .upload-box.drag-over {
   border-color: var(--primary-color);
   background-color: var(--primary-light);
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(240, 128, 128, 0.2);
+}
+
+.file-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background-color: var(--primary-light);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+  border: 2px dashed rgba(240, 128, 128, 0.3);
+}
+
+.file-label:hover {
+  background-color: var(--primary-color);
+  color: var(--white);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
 }
 
 .upload-box h3 {
@@ -1713,6 +1735,13 @@ footer::before {
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
+}
+
+.checkbox-group label:has(input[value="combo_mode"]) {
+    background: linear-gradient(135deg, #e8f5e9, #f3e5f5);
+    border: 2px solid #4caf50;
+    font-weight: 600;
+    color: #2e7d32;
 }
 
 .checkbox-group label:hover {

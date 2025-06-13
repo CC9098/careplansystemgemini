@@ -1100,14 +1100,14 @@ def analyze():
         if not daily_log_file or daily_log_file.filename == '':
             return jsonify({'error': 'Please select a daily log file'}), 400
 
-        # Care plan file is only required for care plan analysis
+        # Care plan file is required for care plan analysis or combo mode
         care_plan_file = None
-        if 'care_plan' in analysis_options:
+        if 'care_plan' in analysis_options or 'combo_mode' in analysis_options:
             if 'care_plan' not in request.files:
-                return jsonify({'error': 'Please upload care plan file for care plan analysis'}), 400
+                return jsonify({'error': 'Please upload care plan file for care plan analysis or combo mode'}), 400
             care_plan_file = request.files['care_plan']
             if not care_plan_file or care_plan_file.filename == '':
-                return jsonify({'error': 'Please select a care plan file for care plan analysis'}), 400
+                return jsonify({'error': 'Please select a care plan file for care plan analysis or combo mode'}), 400
 
         # Validate file types
         if not allowed_file(daily_log_file.filename):
@@ -1176,11 +1176,11 @@ def analyze():
         log_highlights = None
 
         # Process based on selected options
-        if 'care_plan' in analysis_options:
+        if 'care_plan' in analysis_options or 'combo_mode' in analysis_options:
             processing_steps.append("🧠 Generating care plan analysis...")
             analysis_result = analyze_and_suggest_changes(processed_daily_log, care_plan_content, resident_name)
 
-        if 'risk_assessment' in analysis_options:
+        if 'risk_assessment' in analysis_options or 'combo_mode' in analysis_options:
             processing_steps.append("🛡️ Calculating risk assessments...")
             risk_calculator = RiskAssessmentCalculator()
 
@@ -1206,13 +1206,13 @@ def analyze():
         data_quality_analysis = analyze_data_quality(processed_daily_log, resident_name)
 
         # Ensure we have at least minimal data structure
-        if not analysis_result and 'care_plan' not in analysis_options:
+        if not analysis_result and 'care_plan' not in analysis_options and 'combo_mode' not in analysis_options:
             analysis_result = {
                 'analysis_summary': 'Care plan analysis not selected',
                 'suggestions': []
             }
 
-        if not risk_assessment_results and 'risk_assessment' not in analysis_options:
+        if not risk_assessment_results and 'risk_assessment' not in analysis_options and 'combo_mode' not in analysis_options:
             risk_assessment_results = {
                 'assessment_date': datetime.now().strftime('%Y-%m-%d'),
                 'summary': {
