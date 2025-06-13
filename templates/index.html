@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CarePlanSync - AI Care Plan Analysis</title>
+    <title>Care Plan - AI Care Plan Analysis</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
 </head>
@@ -12,46 +12,26 @@
         <header>
             <div class="brand-container">
                 <div class="brand-logo">
-                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Main circle background -->
-                        <circle cx="32" cy="32" r="30" fill="url(#gradient1)" stroke="#F08080" stroke-width="2"/>
-
-                        <!-- Heart symbol for care -->
-                        <path d="M32 45c-1.5-1.5-12-10.5-12-18 0-4.5 3.5-8 8-8 2.5 0 4.5 1 6 2.5C35.5 19 37.5 18 40 18c4.5 0 8 3.5 8 8 0 7.5-10.5 16.5-12 18z" fill="white" stroke="#F08080" stroke-width="1.5"/>
-
-                        <!-- Medical cross -->
-                        <rect x="29" y="24" width="6" height="16" rx="1" fill="#F08080"/>
-                        <rect x="24" y="29" width="16" height="6" rx="1" fill="#F08080"/>
-
-                        <!-- Sync arrows -->
-                        <path d="M18 15 L22 11 L22 13 L28 13 L28 17 L22 17 L22 19 Z" fill="#FFC07F" opacity="0.8"/>
-                        <path d="M46 49 L42 53 L42 51 L36 51 L36 47 L42 47 L42 45 Z" fill="#FFC07F" opacity="0.8"/>
-
-                        <!-- Data dots -->
-                        <circle cx="12" cy="32" r="2" fill="#A5CBAF"/>
-                        <circle cx="52" cy="32" r="2" fill="#A5CBAF"/>
-                        <circle cx="32" cy="12" r="2" fill="#A5CBAF"/>
-                        <circle cx="32" cy="52" r="2" fill="#A5CBAF"/>
-
-                        <defs>
-                            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:#FEF2F3;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#FADADD;stop-opacity:1" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
+                    <img src="/attached_assets/91466FAE-E9B1-4B20-841F-34A1CE44BB12_1749828044834.png" alt="Care Plan Logo" class="logo-image">
                 </div>
-                <div class="brand-text">
-                    <h1>CarePlanSync</h1>
-                    <div class="brand-accent"></div>
+                <div class="hero-illustration">
+                    <img src="/attached_assets/CAE885F4-EF60-47E1-BB94-15665A987D5C_1749828044834.png" alt="Healthcare Success" class="hero-image">
                 </div>
             </div>
-            <p>Upload resident logs and current care plan. AI will analyze and provide optimization suggestions.</p>
+            <div class="header-content">
+                <h1>AI-Powered Care Plan Analysis</h1>
+                <p>Upload resident logs and current care plans. Our AI will analyze patterns and provide personalized optimization suggestions for better care outcomes.</p>
+            </div>
         </header>
 
         <main>
             <!-- Step 1: File Upload -->
             <form id="uploadForm" class="upload-section">
+                <div class="form-header">
+                    <h2>📋 Start Your Analysis</h2>
+                    <p>Begin by entering resident information and selecting your analysis preferences</p>
+                </div>
+
                 <div class="form-group">
                     <label for="resident_name">Resident Name:</label>
                     <input type="text" id="resident_name" name="resident_name" placeholder="Enter resident name" required oninvalid="this.setCustomValidity('Please enter resident name')" oninput="this.setCustomValidity('')">
@@ -61,44 +41,59 @@
                 <div class="form-group">
                     <label>Analysis Options:</label>
                     <div class="checkbox-group">
-                        <label><input type="checkbox" name="analysis_options" value="care_plan" checked> Care Plan Analysis</label>
-                        <label><input type="checkbox" name="analysis_options" value="risk_assessment" checked> Risk Assessment</label>
-                        <label><input type="checkbox" name="analysis_options" value="combo_mode" checked> 🔄 Combo Mode (Care Plan + Risk Assessment)</label>
+                        <label class="analysis-option">
+                            <input type="checkbox" name="analysis_options" value="care_plan" checked>
+                            <div class="option-content">
+                                <strong>📋 Care Plan Analysis</strong>
+                                <p>Analyze existing care plans and suggest improvements based on log patterns</p>
+                            </div>
+                        </label>
+                        <label class="analysis-option">
+                            <input type="checkbox" name="analysis_options" value="risk_assessment" checked>
+                            <div class="option-content">
+                                <strong>🛡️ Risk Assessment</strong>
+                                <p>Calculate risk scores using validated assessment tools (Falls, Nutrition, etc.)</p>
+                            </div>
+                        </label>
+                        <label class="analysis-option combo-option">
+                            <input type="checkbox" name="analysis_options" value="combo_mode" checked>
+                            <div class="option-content">
+                                <strong>🔄 Comprehensive Analysis</strong>
+                                <p>Complete care optimization combining both care plan analysis and risk assessments</p>
+                            </div>
+                        </label>
                     </div>
                 </div>
 
                 <div class="upload-grid">
                     <div class="upload-box" id="daily-log-box">
-                    <h3>Monthly Care Log</h3>
-                    <div class="file-upload-wrapper">
-                        <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt,.pdf" required>
-                        <label for="daily_log" class="file-label">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 10px; opacity: 0.5;">
-                                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            <span class="file-label-text">Click to select log file or drag & drop here</span>
-                        </label>
-                        <div class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables.</small></div>
+                        <h3>📊 Monthly Care Log</h3>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt,.pdf" required>
+                            <label for="daily_log" class="file-label">
+                                <div class="upload-icon">📄</div>
+                                <span class="file-label-text">Click to select log file or drag & drop here</span>
+                            </label>
+                            <div class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables.</small></div>
+                        </div>
+                    </div>
+
+                    <div class="upload-box" id="care-plan-box">
+                        <h3>📋 Current Care Plan</h3>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt,.pdf">
+                            <label for="care_plan" class="file-label">
+                                <div class="upload-icon">📋</div>
+                                <span class="file-label-text">Click to select care plan or drag & drop here</span>
+                            </label>
+                            <div class="file-info">Supports CSV, TXT, and PDF files<br><small>Required for Care Plan Analysis and Comprehensive mode.</small></div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="upload-box" id="care-plan-box">
-                    <h3>Current Care Plan</h3>
-                    <div class="file-upload-wrapper">
-                        <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt,.pdf">
-                        <label for="care_plan" class="file-label">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 10px; opacity: 0.5;">
-                                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            <span class="file-label-text">Click to select care plan or drag & drop here</span>
-                        </label>
-                        <div class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables. Required for Care Plan Analysis.</small></div>
-                    </div>
-                </div>
-
-                <button type="submit" class="analyze-btn">📊 Analyze & Get Suggestions</button>
+                <button type="submit" class="analyze-btn">
+                    <span>🚀 Analyze & Get Suggestions</span>
+                </button>
             </form>
 
             <!-- Loading -->
@@ -116,7 +111,12 @@
 
             <!-- Step 2: Suggestion Selection -->
             <div id="suggestions" class="results-section" style="display: none;">
-                <h2>📋 Care Plan Update Suggestions</h2>
+                <div class="section-header">
+                    <h2>📋 Care Plan Update Suggestions</h2>
+                    <div class="analysis-illustration">
+                        <img src="/attached_assets/D21773F1-8DB7-4FC0-9382-F4D808573493_1749828044834.png" alt="Care Team Analysis" class="section-image">
+                    </div>
+                </div>
 
                 <div id="analysisSummary" class="analysis-summary"></div>
 
@@ -166,7 +166,9 @@
                         <textarea id="managerComments" placeholder="Add your own observations or modifications..."></textarea>
                     </div>
 
-                    <button id="generatePlanBtn" class="analyze-btn">✅ Generate Updated Care Plan</button>
+                    <button id="generatePlanBtn" class="analyze-btn">
+                        <span>✅ Generate Updated Care Plan</span>
+                    </button>
                 </div>
             </div>
 
@@ -191,7 +193,7 @@
                 <div id="carePlanContent" class="content"></div>
 
                 <!-- Bottom Action Buttons -->
-                <div class="action-buttons bottom-actions" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee;">
+                <div class="action-buttons bottom-actions">
                     <button id="copyContentBtnBottom" class="action-btn">📋 Copy Content</button>
                     <button id="editBtnBottom" class="action-btn">✏️ Edit Plan</button>
                     <div class="email-dropdown">
@@ -205,8 +207,6 @@
                     <button id="startOverBtnBottom" class="action-btn">🔄 Start Over</button>
                 </div>
             </div>
-
-
         </main>
     </div>
 
@@ -285,17 +285,13 @@
 
         function handleAnalysisOptionChange(checkbox) {
             if (checkbox.value === 'combo_mode' && checkbox.checked) {
-                // When combo mode is selected, automatically select both individual options
                 document.querySelector('input[value="care_plan"]').checked = true;
                 document.querySelector('input[value="risk_assessment"]').checked = true;
             } else if (checkbox.value === 'combo_mode' && !checkbox.checked) {
-                // When combo mode is deselected, keep individual options as they are
-                // User can manually adjust them
+                // Keep individual options as they are
             } else if ((checkbox.value === 'care_plan' || checkbox.value === 'risk_assessment') && !checkbox.checked) {
-                // If either individual option is unchecked, uncheck combo mode
                 document.querySelector('input[value="combo_mode"]').checked = false;
             } else if (checkbox.value === 'care_plan' || checkbox.value === 'risk_assessment') {
-                // Check if both individual options are now selected
                 const carePlanChecked = document.querySelector('input[value="care_plan"]').checked;
                 const riskAssessmentChecked = document.querySelector('input[value="risk_assessment"]').checked;
 
@@ -310,36 +306,30 @@
             const carePlanInput = document.getElementById('care_plan');
             const carePlanBox = carePlanInput.closest('.upload-box');
 
-            // Update care plan requirement based on selected options
             if (selectedOptions.includes('care_plan') || selectedOptions.includes('combo_mode')) {
                 carePlanInput.required = true;
-                carePlanBox.querySelector('.file-info').innerHTML = 'Supports CSV, TXT, and PDF files<br><small>Required for Care Plan Analysis and Combo Mode. For best results, use CSV format.</small>';
+                carePlanBox.querySelector('.file-info').innerHTML = 'Supports CSV, TXT, and PDF files<br><small>Required for Care Plan Analysis and Comprehensive mode.</small>';
             } else {
                 carePlanInput.required = false;
                 carePlanBox.querySelector('.file-info').innerHTML = 'Supports CSV, TXT, and PDF files<br><small>Optional for Risk Assessment only.</small>';
             }
 
-            // Handle combo mode selection
             if (selectedOptions.includes('combo_mode')) {
-                // Auto-check both individual options when combo is selected
                 document.querySelector('input[value="care_plan"]').checked = true;
                 document.querySelector('input[value="risk_assessment"]').checked = true;
             }
         }
 
-        // Initialize display
         updateAnalysisOptionsDisplay();
 
         // Step 1: Upload and analyze
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            // Check if files are selected
             const residentName = document.getElementById('resident_name').value.trim();
             const dailyLogFile = document.getElementById('daily_log').files[0];
             const carePlanFile = document.getElementById('care_plan').files[0];
             const selectedOptions = Array.from(document.querySelectorAll('input[name="analysis_options"]:checked')).map(cb => cb.value);
-
 
             if (!residentName) {
                 alert('Please enter resident name');
@@ -356,11 +346,9 @@
                 return;
             }
 
-
             const analyzeBtn = document.querySelector('.analyze-btn');
             const originalBtnText = analyzeBtn.innerHTML;
 
-            // Show loading state immediately
             analyzeBtn.innerHTML = `
                 <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <div class="btn-spinner"></div>
@@ -373,12 +361,10 @@
             const suggestions = document.getElementById('suggestions');
             const finalPlan = document.getElementById('finalPlan');
 
-            // Hide all sections
             suggestions.style.display = 'none';
             finalPlan.style.display = 'none';
             loading.style.display = 'block';
 
-            // Start progress simulation
             startProgressAnimation();
 
             try {
@@ -397,7 +383,7 @@
                 if (data.success && data.step === 'suggestions') {
                     currentData = data;
                     displaySuggestions(data);
-                    displayHighlightedLogs(data.highlighted_logs); // Display highlighted logs
+                    displayHighlightedLogs(data.highlighted_logs);
                     suggestions.style.display = 'block';
                 } else {
                     alert('Analysis failed: ' + (data.error || 'Unknown error'));
@@ -407,20 +393,17 @@
                 alert('Error occurred: ' + error.message);
             } finally {
                 loading.style.display = 'none';
-                // Restore button state
                 analyzeBtn.innerHTML = originalBtnText;
                 analyzeBtn.disabled = false;
             }
         });
 
         function displaySuggestions(data) {
-            // Display analysis summary with icon
             let summaryHtml = `
                 <h4>🔍 Analysis Summary:</h4>
                 <p>${data.analysis_summary}</p>
             `;
 
-            // Add care plan gaps alert if present
             if (data.care_plan_gaps && data.care_plan_gaps.description) {
                 const alertClass = data.care_plan_gaps.alert_level === 'High' ? 'gap-alert-high' : 
                                  data.care_plan_gaps.alert_level === 'Medium' ? 'gap-alert-medium' : 'gap-alert-low';
@@ -442,17 +425,14 @@
 
             document.getElementById('analysisSummary').innerHTML = summaryHtml;
 
-            // Display risk assessment if available
             if (data.risk_assessment && data.risk_assessment.summary) {
                 displayRiskAssessment(data.risk_assessment);
             }
 
-            // Display data quality analysis if available
             if (data.data_quality_analysis) {
                 displayDataQuality(data.data_quality_analysis);
             }
 
-            // Display suggestions with specific issues and dynamic options
             const suggestionsList = document.getElementById('suggestionsList');
             suggestionsList.innerHTML = '';
 
@@ -548,7 +528,7 @@
         function displayHighlightedLogs(logs) {
             const highlightedLogsDiv = document.getElementById('logHighlights');
             const highlightedLogsSection = document.getElementById('highlightedLogs');
-            highlightedLogsDiv.innerHTML = ''; // Clear existing content
+            highlightedLogsDiv.innerHTML = '';
 
             if (!logs || logs.length === 0) {
                 highlightedLogsDiv.innerHTML = '<p>No significant log entries highlighted.</p>';
@@ -563,7 +543,7 @@
                 highlightedLogsDiv.appendChild(logEntryDiv);
             });
 
-            highlightedLogsSection.style.display = 'block'; // Show the section
+            highlightedLogsSection.style.display = 'block';
         }
 
         function displayDataQuality(qualityData) {
@@ -575,7 +555,6 @@
                 return;
             }
 
-            // Build the data quality content
             let html = `
                 <div class="quality-overview">
                     <div class="quality-score">
@@ -587,855 +566,12 @@
                         <p class="score-summary">${qualityData.overall_quality?.summary || 'No summary available'}</p>
                     </div>
                 </div>
-
-                <div class="completeness-grid">
-                    <div class="completeness-card present-data">
-                        <h4>✅ Present Data Types</h4>
-                        <ul>
-                            ${(qualityData.completeness_analysis?.present_data_types || []).map(item => `<li>${item}</li>`).join('')}
-                        </ul>
-                    </div>
-
-                    <div class="completeness-card missing-critical">
-                        <h4>🚨 Missing Critical Data</h4>
-                        <ul>
-                            ${(qualityData.completeness_analysis?.missing_critical_data || []).map(item => `<li>${item}</li>`).join('')}
-                        </ul>
-                    </div>
-
-                    <div class="completeness-card missing-recommended">
-                        <h4>💡 Recommended Additions</h4>
-                        <ul>
-                            ${(qualityData.completeness_analysis?.missing_recommended_data || []).map(item => `<li>${item}</li>`).join('')}
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="improvement-suggestions">
-                    <h4>🔧 Improvement Suggestions</h4>
-                    <div class="suggestions-list">
-                        ${(qualityData.improvement_suggestions || []).map(suggestion => `
-                            <div class="suggestion-item priority-${(suggestion.priority || 'medium').toLowerCase()}">
-                                <div class="suggestion-header">
-                                    <span class="category">${suggestion.category || 'General'}</span>
-                                    <span class="priority">${suggestion.priority || 'Medium'}</span>
-                                </div>
-                                <p class="suggestion-text">${suggestion.suggestion || ''}</p>
-                                <p class="suggestion-impact"><strong>Impact:</strong> ${suggestion.impact || ''}</p>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-
-                <div class="staff-performance">
-                    <h4>👥 Staff Performance Analysis</h4>
-                    <p class="general-feedback">${qualityData.staff_performance?.general_staff_feedback || 'No feedback available'}</p>
-
-                    <div class="staff-examples-grid">
-                        <div class="staff-examples best-examples">
-                            <h5>🌟 Best Logging Examples</h5>
-                            ${(qualityData.staff_performance?.best_staff_examples || []).map(example => `
-                                <div class="staff-example good">
-                                    <div class="staff-info">
-                                        <strong>Staff:</strong> ${example.staff_identifier || 'Unknown'}
-                                        ${example.date ? `<span class="date">${example.date}</span>` : ''}
-                                    </div>
-                                    <blockquote class="example-text">"${example.example_entry || ''}"</blockquote>
-                                    <p class="feedback-text"><strong>Why good:</strong> ${example.why_good || ''}</p>
-                                </div>
-                            `).join('') || '<p>No examples available</p>'}
-                        </div>
-
-                        <div class="staff-examples worst-examples">
-                            <h5>⚠️ Areas for Improvement</h5>
-                            ${(qualityData.staff_performance?.worst_staff_examples || []).map(example => `
-                                <div class="staff-example needs-improvement">
-                                    <div class="staff-info">
-                                        <strong>Staff:</strong> ${example.staff_identifier || 'Unknown'}
-                                        ${example.date ? `<span class="date">${example.date}</span>` : ''}
-                                    </div>
-                                    <blockquote class="example-text">"${example.example_entry || ''}"</blockquote>
-                                    <p class="feedback-text"><strong>Issue:</strong> ${example.why_poor || ''}</p>
-                                    <p class="improvement-text"><strong>Suggestion:</strong> ${example.improvement_needed || ''}</p>
-                                </div>
-                            `).join('') || '<p>No examples available</p>'}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="data-trends">
-                    <h4>📈 Data Trends</h4>
-                    <div class="trends-grid">
-                        <div class="trend-item">
-                            <strong>Consistency:</strong> ${qualityData.data_trends?.consistency || 'Unknown'}
-                        </div>
-                        <div class="trend-item">
-                            <strong>Frequency:</strong> ${qualityData.data_trends?.frequency || 'Unknown'}
-                        </div>
-                        <div class="trend-item">
-                            <strong>Detail Level:</strong> ${qualityData.data_trends?.detail_level || 'Unknown'}
-                        </div>
-                    </div>
-                </div>
             `;
 
             dataQualityDetails.innerHTML = html;
             dataQualitySection.style.display = 'block';
         }
 
-        function toggleDataQuality() {
-            const content = document.getElementById('dataQualityContent');
-            const button = document.querySelector('.dataQuality-header .toggle-btn');
-
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                button.textContent = '📉 Hide Quality Report';
-            } else {
-                content.style.display = 'none';
-                button.textContent = '📈 View Quality Report';
-            }
-        }
-
-        // Generate care plan functionality
-        document.getElementById('generatePlanBtn').addEventListener('click', async function() {
-            const generateBtn = this;
-            const originalBtnText = generateBtn.innerHTML;
-
-            // Show loading state immediately
-            generateBtn.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <div class="btn-spinner"></div>
-                    <span>✏️ Generating...</span>
-                </div>
-            `;
-            generateBtn.disabled = true;
-
-            const loading = document.getElementById('loading');
-            const finalPlan = document.getElementById('finalPlan');
-
-            loading.style.display = 'block';
-
-            // Start report generation progress animation
-            startReportGenerationProgress();
-
-            try {
-                // Collect selected suggestions with WHAT-WHY-HOW data and flag status
-                const selectedSuggestions = [];
-
-                document.querySelectorAll('input[name="include-suggestion"]:checked').forEach(checkbox => {
-                    const index = parseInt(checkbox.value);
-                    const suggestion = currentData.suggestions[index];
-
-                    if (!suggestion) return;
-
-                    // Check if this item is flagged
-                    const isFlagged = document.querySelector(`input[name="flag-suggestion"][value="${index}"]`).checked;
-
-                    // Collect WHY data (reasons)
-                    const reasons = [];
-                    const reasonCheckboxes = document.querySelectorAll(`input[name="reason-${index}"]:checked`);
-                    reasonCheckboxes.forEach(cb => {
-                        if (cb.value === 'custom') {
-                            const customReason = document.querySelector(`input[name="custom-reason-${index}"]`).value;
-                            if (customReason) reasons.push(customReason);
-                        } else {
-                            const reasonIndex = parseInt(cb.value);
-                            if (suggestion.possible_reasons && suggestion.possible_reasons[reasonIndex]) {
-                                reasons.push(suggestion.possible_reasons[reasonIndex]);
-                            }
-                        }
-                    });
-
-                    // Collect HOW data (interventions)
-                    const interventions = [];
-                    const interventionCheckboxes = document.querySelectorAll(`input[name="intervention-${index}"]:checked`);
-                    interventionCheckboxes.forEach(cb => {
-                        if (cb.value === 'custom') {
-                            const customIntervention = document.querySelector(`input[name="custom-intervention-${index}"]`).value;
-                            if (customIntervention) interventions.push(customIntervention);
-                        } else {
-                            const interventionIndex = parseInt(cb.value);
-                            if (suggestion.suggested_interventions && suggestion.suggested_interventions[interventionIndex]) {
-                                interventions.push(suggestion.suggested_interventions[interventionIndex]);
-                            }
-                        }
-                    });
-
-                    selectedSuggestions.push({
-                        ...suggestion,
-                        reasons: reasons,
-                        interventions: interventions,
-                        flagged: isFlagged
-                    });
-                });
-
-                const managerComments = document.getElementById('managerComments').value || '';
-                const managerCommentsEarly = document.getElementById('managerCommentsEarly').value || '';
-                const combinedComments = [managerCommentsEarly, managerComments].filter(c => c.trim()).join('\n\n');
-
-                console.log('Sending data:', {
-                    original_care_plan: currentData.original_care_plan,
-                    selected_suggestions: selectedSuggestions,
-                    manager_comments: managerComments,
-                    resident_name: currentData.resident_name
-                });
-
-                const response = await fetch('/generate_care_plan', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        original_care_plan: currentData.original_care_plan,
-                        selected_suggestions: selectedSuggestions,
-                        manager_comments: combinedComments,
-                        resident_name: currentData.resident_name
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log('Response data:', data);
-
-                if (data.success) {
-                    document.getElementById('carePlanContent').innerHTML = data.care_plan.html;
-                    finalPlan.style.display = 'block';
-
-                    // Store for download
-                    window.currentReport = {
-                        content: data.care_plan.markdown,
-                        resident_name: currentData.resident_name
-                    };
-
-                    // Scroll to results
-                    finalPlan.scrollIntoView({ behavior: 'smooth' });
-                } else {
-                    alert('Care plan generation failed: ' + (data.error || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error('Error in generate care plan:', error);
-                alert('Error occurred: ' + error.message);
-            } finally {
-                loading.style.display = 'none';
-                // Restore button state
-                generateBtn.innerHTML = originalBtnText;
-                generateBtn.disabled = false;
-            }
-        });
-
-        // Copy content functionality (copies HTML content)
-        document.getElementById('copyContentBtn').addEventListener('click', function() {
-            copyContent();
-        });
-
-        // Edit functionality
-        document.getElementById('editBtn').addEventListener('click', function() {
-            editContent();
-        });
-
-        // Email dropdown toggle
-        document.getElementById('emailBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            const dropdown = this.parentElement;
-            const options = dropdown.querySelector('.email-options');
-            const isVisible = options.style.display === 'block';
-
-            // Hide all other dropdowns first
-            document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
-
-            options.style.display = isVisible ? 'none' : 'block';
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.email-dropdown')) {
-                document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
-            }
-        });
-
-        // Email to Care Team functionality
-        document.getElementById('emailCareTeamBtn').addEventListener('click', function() {
-            sendCareTeamEmail();
-            document.querySelector('.email-options').style.display = 'none';
-        });
-
-        // Email to Family functionality
-        document.getElementById('emailFamilyBtn').addEventListener('click', function() {
-            sendFamilyEmail();
-            document.querySelector('.email-options').style.display = 'none';
-        });
-
-        // Add event listeners for bottom buttons
-        document.addEventListener('click', function(e) {
-            if (e.target && e.target.id === 'emailCareTeamBtnBottom') {
-                sendCareTeamEmail();
-                e.target.closest('.email-options').style.display = 'none';
-            }
-            if (e.target && e.target.id === 'emailFamilyBtnBottom') {
-                sendFamilyEmail();
-                e.target.closest('.email-options').style.display = 'none';
-            }
-            if (e.target && e.target.id === 'emailBtnBottom') {
-                e.preventDefault();
-                const dropdown = e.target.parentElement;
-                const options = dropdown.querySelector('.email-options');
-                const isVisible = options.style.display === 'block';
-
-                // Hide all other dropdowns first
-                document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
-
-                options.style.display = isVisible ? 'none' : 'block';
-            }
-        });
-
-        function sendCareTeamEmail() {
-            if (window.currentReport) {
-                const subject = encodeURIComponent(`URGENT: Care Plan Update - ${window.currentReport.resident_name}`);
-
-                // Extract sections dynamically from care plan
-                const content = window.currentReport.content;
-                let criticalUpdates = [];
-                let medicationChanges = [];
-                let behaviorConcerns = [];
-                let mobilityUpdates = [];
-                let priorityFlags = [];
-
-                // Parse care plan sections
-                const sections = content.split(/^## /m);
-
-                sections.forEach(section => {
-                    const lines = section.split('\n');
-                    const title = lines[0];
-
-                    // Look for priority flagged items
-                    if (title.includes('🚩 Priority Observation Areas') || title.includes('Priority') || title.includes('Flagged')) {
-                        lines.forEach(line => {
-                            if (line.includes('🚩') || line.includes('Priority:') || line.includes('Alert:')) {
-                                priorityFlags.push(line.replace(/🚩\s*/, '').trim());
-                            }
-                        });
-                    }
-
-                    // Extract medication updates
-                    if (title.toLowerCase().includes('medication') || title.toLowerCase().includes('health')) {
-                        const updates = extractUpdatedItems(lines);
-                        medicationChanges.push(...updates);
-                    }
-
-                    // Extract behavior updates
-                    if (title.toLowerCase().includes('behavior') || title.toLowerCase().includes('communication')) {
-                        const updates = extractUpdatedItems(lines);
-                        behaviorConcerns.push(...updates);
-                    }
-
-                    // Extract mobility updates
-                    if (title.toLowerCase().includes('mobility') || title.toLowerCase().includes('safety')) {
-                        const updates = extractUpdatedItems(lines);
-                        mobilityUpdates.push(...updates);
-                    }
-
-                    // Look for any items marked with ✏️ (recent updates)
-                    lines.forEach(line => {
-                        if (line.includes('✏️')) {
-                            criticalUpdates.push(line.replace('✏️', '').trim());
-                        }
-                    });
-                });
-
-                // Generate Care Team email body
-                let emailBody = `Dear Care Team,
-
-URGENT: Updated care plan for ${window.currentReport.resident_name} requires IMMEDIATE implementation.
-
-📋 RESIDENT: ${window.currentReport.resident_name}
-📅 Updated: ${new Date().toLocaleDateString()}
-⏰ IMPLEMENTATION DEADLINE: Next shift
-`;
-
-                // Add priority flags first
-                if (priorityFlags.length > 0) {
-                    emailBody += `\n🚩 CRITICAL PRIORITY ALERTS:
-`;
-                    priorityFlags.forEach((flag, index) => {
-                        emailBody += `${index + 1}. ${flag}\n`;
-                    });
-                }
-
-                // Add critical updates
-                if (criticalUpdates.length > 0) {
-                    emailBody += `\n🚨 KEY CHANGES REQUIRED:
-`;
-                    criticalUpdates.slice(0, 5).forEach((update, index) => {
-                        emailBody += `${index + 1}. ${update}\n`;
-                    });
-                }
-
-                // Add medication changes
-                if (medicationChanges.length > 0) {
-                    emailBody += `\n💊 MEDICATION/HEALTH UPDATES:
-`;
-                    medicationChanges.slice(0, 3).forEach((change, index) => {
-                        emailBody += `• ${change}\n`;
-                    });
-                }
-
-                // Add behavior concerns
-                if (behaviorConcerns.length > 0) {
-                    emailBody += `\n🗣️ BEHAVIOR/COMMUNICATION UPDATES:
-`;
-                    behaviorConcerns.slice(0, 3).forEach((concern, index) => {
-                        emailBody += `• ${concern}\n`;
-                    });
-                }
-
-                // Add mobility updates
-                if (mobilityUpdates.length > 0) {
-                    emailBody += `\n🚶 MOBILITY/SAFETY UPDATES:
-`;
-                    mobilityUpdates.slice(0, 3).forEach((update, index) => {
-                        emailBody += `• ${update}\n`;
-                    });
-                }
-
-                emailBody += `\n📋 IMMEDIATE ACTIONS REQUIRED:
-• Review ALL changes before next shift handover
-• Brief entire care team on new protocols
-• Implement changes during resident's next care session
-• Monitor resident response and document observations
-• Escalate any concerns to nursing supervisor immediately
-• Update family contact if necessary
-
-⚠️ COMPLIANCE REQUIREMENTS:
-• All staff must acknowledge receipt of this update
-• Changes must be implemented within 24 hours
-• Document all interventions in resident care log
-• Report any adverse reactions immediately
-
-📞 URGENT QUESTIONS: Contact Nursing Supervisor
-📋 DOCUMENTATION: Update resident care records
-📄 FULL PLAN: Complete care plan document attached
-
-Care Management Team
-Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
-
---- CONFIDENTIAL CARE INFORMATION ---`;
-
-                const body = encodeURIComponent(emailBody);
-                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
-                window.open(gmailUrl, '_blank');
-            }
-        }
-
-        function sendFamilyEmail() {
-            if (window.currentReport) {
-                const subject = encodeURIComponent(`Care Plan Update - ${window.currentReport.resident_name}`);
-
-                // Extract family-relevant information from care plan
-                const content = window.currentReport.content;
-                let personalCareUpdates = [];
-                let wellnessUpdates = [];
-                let socialUpdates = [];
-                let comfortUpdates = [];
-
-                // Parse care plan sections for family-friendly content
-                const sections = content.split(/^## /m);
-
-                sections.forEach(section => {
-                    const lines = section.split('\n');
-                    const title = lines[0];
-
-                    // Extract personal care updates
-                    if (title.toLowerCase().includes('personal care') || title.toLowerCase().includes('daily routine')) {
-                        const updates = extractFamilyFriendlyUpdates(lines);
-                        personalCareUpdates.push(...updates);
-                    }
-
-                    // Extract health and wellness updates
-                    if (title.toLowerCase().includes('health') || title.toLowerCase().includes('nutrition') || title.toLowerCase().includes('medication')) {
-                        const updates = extractFamilyFriendlyUpdates(lines);
-                        wellnessUpdates.push(...updates);
-                    }
-
-                    // Extract social and communication updates
-                    if (title.toLowerCase().includes('social') || title.toLowerCase().includes('communication') || title.toLowerCase().includes('behavior')) {
-                        const updates = extractFamilyFriendlyUpdates(lines);
-                        socialUpdates.push(...updates);
-                    }
-
-                    // Extract comfort and preference updates
-                    if (title.toLowerCase().includes('comfort') || title.toLowerCase().includes('preference') || title.toLowerCase().includes('environment')) {
-                        const updates = extractFamilyFriendlyUpdates(lines);
-                        comfortUpdates.push(...updates);
-                    }
-                });
-
-                // Generate Family email body
-                let emailBody = `Dear ${window.currentReport.resident_name}'s Family,
-
-We hope this message finds you well. We wanted to share some positive updates about ${window.currentReport.resident_name}'s care plan and how we're working to enhance their daily experience with us.
-
-👥 ABOUT ${window.currentReport.resident_name.toUpperCase()}:
-We've been closely observing ${window.currentReport.resident_name} and have identified some wonderful opportunities to better support their individual needs and preferences.
-`;
-
-                // Add personal care updates
-                if (personalCareUpdates.length > 0) {
-                    emailBody += `\n🛁 DAILY CARE ENHANCEMENTS:
-Our team has noticed some preferences that help ${window.currentReport.resident_name} feel more comfortable:
-`;
-                    personalCareUpdates.slice(0, 3).forEach((update, index) => {
-                        emailBody += `• ${update}\n`;
-                    });
-                }
-
-                // Add wellness updates
-                if (wellnessUpdates.length > 0) {
-                    emailBody += `\n💗 HEALTH & WELLNESS FOCUS:
-We're taking extra care to support ${window.currentReport.resident_name}'s wellbeing through:
-`;
-                    wellnessUpdates.slice(0, 3).forEach((update, index) => {
-                        emailBody += `• ${update}\n`;
-                    });
-                }
-
-                // Add social updates
-                if (socialUpdates.length > 0) {
-                    emailBody += `\n🗣️ COMMUNICATION & SOCIAL ENGAGEMENT:
-We've learned more about how ${window.currentReport.resident_name} likes to connect with others:
-`;
-                    socialUpdates.slice(0, 3).forEach((update, index) => {
-                        emailBody += `• ${update}\n`;
-                    });
-                }
-
-                // Add comfort updates
-                if (comfortUpdates.length > 0) {
-                    emailBody += `\n🏠 COMFORT & ENVIRONMENT:
-We're making these adjustments to help ${window.currentReport.resident_name} feel more at home:
-`;
-                    comfortUpdates.slice(0, 3).forEach((update, index) => {
-                        emailBody += `• ${update}\n`;
-                    });
-                }
-
-                emailBody += `\n💭 YOUR INSIGHTS MATTER:
-As ${window.currentReport.resident_name}'s family, your knowledge about their preferences, habits, and personality helps us provide the most personalized care possible. We would love to hear from you about:
-
-• Any observations about what makes ${window.currentReport.resident_name} most comfortable
-• Special preferences or routines from home that we should know about
-• How ${window.currentReport.resident_name} typically responds to changes
-• Family traditions or activities they particularly enjoy
-• Any concerns or questions you have about these updates
-
-🤝 PARTNERSHIP IN CARE:
-We believe the best care happens when families and care teams work together. Your input helps us create an environment where ${window.currentReport.resident_name} can thrive and feel truly at home.
-
-🌟 WHAT'S NEXT:
-• We'll continue monitoring ${window.currentReport.resident_name}'s response to these changes
-• Our team will document their preferences and reactions
-• We'll keep you updated on their progress and any new insights
-• Please feel free to visit and see how ${window.currentReport.resident_name} is doing
-
-📞 WE'RE HERE FOR YOU:
-• Call us anytime to discuss ${window.currentReport.resident_name}'s care: [PHONE NUMBER]
-• Email us your thoughts and suggestions
-• Schedule a meeting with our care team
-• Visit during care activities to see the updates in action
-
-Thank you for trusting us with ${window.currentReport.resident_name}'s care. We're honored to be part of their journey and yours.
-
-With warm regards and appreciation,
-The Care Team at [FACILITY NAME]
-${new Date().toLocaleDateString()}
-
-P.S. We've attached the complete care plan for your records. Please don't hesitate to reach out with any questions!
-
---- This communication contains confidential care information ---`;
-
-                const body = encodeURIComponent(emailBody);
-                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
-                window.open(gmailUrl, '_blank');
-            }
-        }
-
-        function extractUpdatedItems(lines) {
-            const updates = [];
-            lines.forEach(line => {
-                if (line.includes('✏️') || line.includes('Updated:') || line.includes('New:') || line.includes('Changed:')) {
-                    // Clean up the line and extract the meaningful content
-                    let cleaned = line.replace(/✏️/g, '').replace(/\*\*/g, '').trim();
-                    if (cleaned && cleaned.length > 10) {
-                        updates.push(cleaned);
-                    }
-                }
-            });
-            return updates;
-        }
-
-        function extractFamilyFriendlyUpdates(lines) {
-            const updates = [];
-            lines.forEach(line => {
-                if (line.includes('✏️') || line.includes('Updated:') || line.includes('New:') || line.includes('Enhanced:')) {
-                    // Convert clinical language to family-friendly language
-                    let cleaned = line.replace(/✏️/g, '').replace(/\*\*/g, '').trim();
-
-                    // Make language more family-friendly
-                    cleaned = cleaned.replace(/intervention/gi, 'support approach');
-                    cleaned = cleaned.replace(/protocol/gi, 'routine');
-                    cleaned = cleaned.replace(/assessment/gi, 'observation');
-                    cleaned = cleaned.replace(/monitor/gi, 'keep an eye on');
-                    cleaned = cleaned.replace(/implement/gi, 'try');
-                    cleaned = cleaned.replace(/compliance/gi, 'following along with');
-
-                    if (cleaned && cleaned.length > 10) {
-                        updates.push(cleaned);
-                    }
-                }
-            });
-            return updates;
-        }
-
-        // Download functionality (PDF)
-        document.getElementById('downloadBtn').addEventListener('click', async function() {
-            await downloadPDF();
-        });
-
-        // Start over functionality
-        document.getElementById('startOverBtn').addEventListener('click', function() {
-            startOver();
-        });
-
-        // Bottom action buttons event listeners
-        document.getElementById('copyContentBtnBottom').addEventListener('click', function() {
-            copyContent();
-        });
-
-        document.getElementById('editBtnBottom').addEventListener('click', function() {
-            editContent();
-        });
-
-        document.getElementById('downloadBtnBottom').addEventListener('click', function() {
-            downloadPDF();
-        });
-
-        document.getElementById('startOverBtnBottom').addEventListener('click', function() {
-            startOver();
-        });
-
-        // Extracted functions for reuse
-        function copyContent() {
-            const content = document.getElementById('carePlanContent');
-            if (content) {
-                const range = document.createRange();
-                range.selectNode(content);
-                window.getSelection().removeAllRanges();
-                window.getSelection().addRange(range);
-                document.execCommand('copy');
-                window.getSelection().removeAllRanges();
-                alert('Care plan content copied to clipboard!');
-            }
-        }
-
-        function editContent() {
-            if (window.currentReport) {
-                const content = document.getElementById('carePlanContent');
-                const currentHtml = content.innerHTML;
-
-                // Convert to editable
-                content.innerHTML = `
-                    <div class="edit-container">
-                        <textarea id="editableContent" style="width: 100%; min-height: 400px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 14px; line-height: 1.6;">${window.currentReport.content}</textarea>
-                        <div style="margin-top: 15px; text-align: right;">
-                            <button id="cancelEdit" class="action-btn" style="margin-right: 10px;">Cancel</button>
-                            <button id="saveEdit" class="action-btn primary">Save Changes</button>
-                        </div>
-                    </div>
-                `;
-
-                // Cancel edit
-                document.getElementById('cancelEdit').addEventListener('click', function() {
-                    content.innerHTML = currentHtml;
-                });
-
-                // Save edit
-                document.getElementById('saveEdit').addEventListener('click', function() {
-                    const newContent = document.getElementById('editableContent').value;
-                    window.currentReport.content = newContent;
-
-                    // Convert back to HTML display
-                    const converter = new showdown.Converter();
-                    content.innerHTML = converter.makeHtml(newContent);
-
-                    alert('Changes saved successfully!');
-                });
-            }
-        }
-
-        async function downloadPDF() {
-            if (window.currentReport) {
-                try {
-                    const response = await fetch('/download_pdf', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(window.currentReport)
-                    });
-
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = `Care_Plan_${window.currentReport.resident_name}_${new Date().getTime()}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                } catch (error) {
-                    alert('Download failed: ' + error.message);
-                }
-            }
-        }
-
-        function startOver() {
-            document.getElementById('suggestions').style.display = 'none';
-            document.getElementById('finalPlan').style.display = 'none';
-            document.getElementById('charts').style.display = 'none';
-            document.getElementById('uploadForm').reset();
-            updateFileLabel(document.getElementById('daily_log'), 'Click to select log file');
-            updateFileLabel(document.getElementById('care_plan'), 'Click to select care plan');
-            window.currentReport = null;
-            currentData = {};
-        }
-
-        // Progress bar animation for analysis
-        function startProgressAnimation() {
-            const progressFill = document.getElementById('progress-fill');
-            const progressText = document.getElementById('progress-text');
-            const loadingText = document.getElementById('loading-text');
-            const progressSteps = document.getElementById('progress-steps');
-
-            // Clear previous steps
-            progressSteps.innerHTML = '';
-
-            const steps = [
-                { text: "📄 Reading uploaded files...", progress: 10 },
-                { text: "🔍 Analyzing care log structure...", progress: 20 },
-                { text: "📊 Processing data patterns...", progress: 30 },
-                { text: "🧠 Deep AI analysis in progress...", progress: 45 },
-                { text: "🛡️ Calculating risk assessments...", progress: 60 },
-                { text: "📋 Generating care suggestions...", progress: 75 },
-                { text: "⚡ Finalizing recommendations...", progress: 90 },
-                { text: "✅ Analysis complete!", progress: 100 }
-            ];
-
-            let currentStep = 0;
-
-            function updateProgress() {
-                if (currentStep < steps.length) {
-                    const step = steps[currentStep];
-                    progressFill.style.width = step.progress + '%';
-                    progressText.textContent = step.progress + '%';
-                    loadingText.textContent = step.text;
-
-                    // Add step to progress steps
-                    const stepDiv = document.createElement('div');
-                    stepDiv.className = 'progress-step';
-                    stepDiv.style.opacity = '0';
-                    stepDiv.style.transform = 'translateX(-20px)';
-                    stepDiv.style.transition = 'all 0.3s ease';
-                    stepDiv.textContent = step.text;
-                    progressSteps.appendChild(stepDiv);
-
-                    // Animate step appearance
-                    setTimeout(() => {
-                        stepDiv.style.opacity = '1';
-                        stepDiv.style.transform = 'translateX(0)';
-                    }, 100);
-
-                    currentStep++;
-
-                    // Slower, more realistic timing
-                    let delay;
-                    if (currentStep <= 2) {
-                        delay = Math.random() * 1200 + 1000;  // 1-2.2s for file operations
-                    } else if (currentStep <= 4) {
-                        delay = Math.random() * 3000 + 2500; // 2.5-5.5s for AI processing
-                    } else if (currentStep <= 6) {
-                        delay = Math.random() * 2000 + 1500; // 1.5-3.5s for calculations
-                    } else {
-                        delay = Math.random() * 1000 + 800;  // 0.8-1.8s for final steps
-                    }
-
-                    setTimeout(updateProgress, delay);
-                } else {
-                    // Keep animation running until response comes back
-                }
-            }
-
-            updateProgress();
-        }
-
-        // Progress bar animation for report generation
-        function startReportGenerationProgress() {
-            const progressFill = document.getElementById('progress-fill');
-            const progressText = document.getElementById('progress-text');
-            const loadingText = document.getElementById('loading-text');
-            const progressSteps = document.getElementById('progress-steps');
-
-            // Clear previous steps
-            progressSteps.innerHTML = '';
-
-            const steps = [
-                { text: "📝 Preparing care plan template...", progress: 15 },
-                { text: "🔄 Integrating selected suggestions...", progress: 30 },
-                { text: "🛡️ Adding risk assessment data...", progress: 45 },
-                { text: "📋 Structuring care plan sections...", progress: 60 },
-                { text: "✏️ Formatting care plan content...", progress: 75 },
-                { text: "🎨 Generating final report...", progress: 90 },
-                { text: "✅ Care plan ready!", progress: 100 }
-            ];
-
-            let currentStep = 0;
-
-            function updateProgress() {
-                if (currentStep < steps.length) {
-                    const step = steps[currentStep];
-                    progressFill.style.width = step.progress + '%';
-                    progressText.textContent = step.progress + '%';
-                    loadingText.textContent = step.text;
-
-                    // Add step to progress steps
-                    const stepDiv = document.createElement('div');
-                    stepDiv.className = 'progress-step';
-                    stepDiv.style.opacity = '0';
-                    stepDiv.style.transform = 'translateX(-20px)';
-                    stepDiv.style.transition = 'all 0.3s ease';
-                    stepDiv.textContent = step.text;
-                    progressSteps.appendChild(stepDiv);
-
-                    // Animate step appearance
-                    setTimeout(() => {
-                        stepDiv.style.opacity = '1';
-                        stepDiv.style.transform = 'translateX(0)';
-                    }, 100);
-
-                    currentStep++;
-
-                    // Slower timing for report generation
-                    let delay = Math.random() * 1500 + 1200; // 1.2-2.7s per step
-
-                    setTimeout(updateProgress, delay);
-                }
-            }
-
-            updateProgress();
-        }
-
-        // Risk assessment
         function displayRiskAssessment(riskData) {
             const section = document.getElementById('risk-assessment-section');
             const summaryDiv = document.getElementById('risk-summary');
@@ -1448,7 +584,6 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
 
             section.style.display = 'block';
 
-            // Display summary
             const summary = riskData.summary;
             summaryDiv.innerHTML = `
                 <div class="risk-overview">
@@ -1465,8 +600,6 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                     }
                 </div>
             `;
-
-            // Display detailed assessments
             if (riskData.assessments) {
                 let detailsHTML = '<div class="risk-assessments">';
 
@@ -1502,7 +635,19 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             }
         }
 
-        // Risk details toggle
+        function toggleDataQuality() {
+            const content = document.getElementById('dataQualityContent');
+            const button = document.querySelector('.data-quality-header .toggle-btn');
+
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                button.textContent = '📉 Hide Quality Report';
+            } else {
+                content.style.display = 'none';
+                button.textContent = '📈 View Quality Report';
+            }
+        }
+
         function toggleRiskDetails() {
             const detailsDiv = document.getElementById('risk-details');
             const isVisible = detailsDiv.style.display === 'block';
@@ -1517,23 +662,6 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                 }
             }
         }
-
-        // Manual adjustment toggle
-        function toggleManualAdjustment() {
-            const adjustmentDiv = document.getElementById('manual-adjustment');
-            const isVisible = adjustmentDiv.style.display === 'block';
-
-            if (isVisible) {
-                adjustmentDiv.style.display = 'none';
-            } else {
-                adjustmentDiv.style.display = 'block';
-                // Load manual adjustment interface if not already loaded
-                if (!adjustmentDiv.innerHTML.trim()) {
-                    loadManualAdjustmentInterface();
-                }
-            }
-        }
-
         async function loadRiskCalculationDetails() {
             if (!currentData.risk_assessment) return;
 
@@ -1556,7 +684,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                 }
             } catch (error) {
                 console.error('Error loading risk calculation details:', error);
-                document.getElementById('risk-details').innerHTML = 
+                document.getElementById('risk-details').innerHTML =
                     '<p>Error loading detailed calculations.</p>';
             }
         }
@@ -1569,9 +697,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                 html += '<h4>📊 AI Calculation Breakdown</h4>';
                 html += '<div class="disagreement-alert"><h5>⚠️ Manager Review Required</h5><p>Please verify these AI calculations against actual resident observations and care plan records.</p></div>';
 
-                Object.entries(details.calculation_process).forEach(([toolName, processFile upload functionality in HTML and JavaScript has been addressed.
-```html
-) => {
+                Object.entries(details.calculation_process).forEach(([toolName, process]) => {
                     html += `<div class="calculation-tool">
                         <h5>${toolName.replace('_', ' ').toUpperCase()}</h5>
                         <p><strong>AI Calculated Score:</strong> ${process.total_score}</p>
@@ -1604,8 +730,21 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             html += '</div>';
             detailsDiv.innerHTML = html;
         }
+        function toggleManualAdjustment() {
+            const adjustmentDiv = document.getElementById('manual-adjustment');
+            const isVisible = adjustmentDiv.style.display === 'block';
 
-        function loadManualAdjustmentInterface() {
+            if (isVisible) {
+                adjustmentDiv.style.display = 'none';
+            } else {
+                adjustmentDiv.style.display = 'block';
+                // Load manual adjustment interface if not already loaded
+                if (!adjustmentDiv.innerHTML.trim()) {
+                    loadManualAdjustmentInterface();
+                }
+            }
+        }
+        async function loadManualAdjustmentInterface() {
             if (!currentData.risk_assessment || !currentData.risk_assessment.assessments) {
                 document.getElementById('manual-adjustment').innerHTML = '<p>No risk assessment data available.</p>';
                 return;
@@ -1748,14 +887,6 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
 
             riskLevelDiv.textContent = riskLevel;
             riskLevelDiv.className = `risk-level ${className}`;
-
-            // Visual feedback for changed score
-            const originalScore = currentData.risk_assessment.assessments[toolName].original_score || currentData.risk_assessment.assessments[toolName].score;
-            if (parseInt(score) !== originalScore) {
-                scoreInput.classList.add('score-changed');
-            } else {
-                scoreInput.classList.remove('score-changed');
-            }
         }
 
         function getDetailedFormula(toolName, assessment) {
@@ -1805,16 +936,53 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             if (!assessment.evidence) return '';
 
             let components = '<div class="score-breakdown"><strong>Scoring Components:</strong><ul>';
-            assessment
-
-.evidence.forEach(e => {
+            assessment.evidence.forEach(e => {
                 components += `<li>${e}</li>`;
             });
             components += '</ul></div>';
             return components;
         }
+        async function saveAllAdjustments() {
+            const adjustmentDivs = document.querySelectorAll('.adjustment-item');
+            const adjustments = [];
 
-        function markEvidence(toolName, index, status) {
+            adjustmentDivs.forEach(div => {
+                const toolName = div.dataset.tool;
+                const manualScore = document.getElementById(`manual-score-${toolName}`).value;
+                const adjustmentReason = document.getElementById(`reason-${toolName}`).value;
+
+                adjustments.push({
+                    tool_name: toolName,
+                    manual_score: manualScore,
+                    adjustment_reason: adjustmentReason
+                });
+            });
+
+            try {
+                const response = await fetch('/save_risk_adjustments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        resident_name: currentData.resident_name,
+                        adjustments: adjustments
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Risk adjustments saved successfully!');
+                } else {
+                    alert('Failed to save risk adjustments: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error saving risk adjustments:', error);
+                alert('Error occurred while saving adjustments.');
+            }
+        }
+         function markEvidence(toolName, index, status) {
             const evidenceItem = document.getElementById(`evidence-${toolName}-${index}`);
             if (evidenceItem) {
                 evidenceItem.className = `evidence-item ${status}`; // Update class for styling
@@ -1857,47 +1025,681 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             document.getElementById(`evidence-impact-${toolName}`).innerHTML = impactMessage;
         }
 
-        async function saveAllAdjustments() {
-            const adjustmentDivs = document.querySelectorAll('.adjustment-item');
-            const adjustments = [];
+        // Generate care plan functionality
+        document.getElementById('generatePlanBtn').addEventListener('click', async function() {
+            const generateBtn = this;
+            const originalBtnText = generateBtn.innerHTML;
 
-            adjustmentDivs.forEach(div => {
-                const toolName = div.dataset.tool;
-                const manualScore = document.getElementById(`manual-score-${toolName}`).value;
-                const adjustmentReason = document.getElementById(`reason-${toolName}`).value;
+            generateBtn.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <div class="btn-spinner"></div>
+                    <span>✏️ Generating...</span>
+                </div>
+            `;
+            generateBtn.disabled = true;
 
-                adjustments.push({
-                    tool_name: toolName,
-                    manual_score: manualScore,
-                    adjustment_reason: adjustmentReason
-                });
-            });
+            const loading = document.getElementById('loading');
+            const finalPlan = document.getElementById('finalPlan');
+
+            loading.style.display = 'block';
+            startReportGenerationProgress();
 
             try {
-                const response = await fetch('/save_risk_adjustments', {
+                // Collect selected suggestions with WHAT-WHY-HOW data and flag status
+                const selectedSuggestions = [];
+
+                document.querySelectorAll('input[name="include-suggestion"]:checked').forEach(checkbox => {
+                    const index = parseInt(checkbox.value);
+                    const suggestion = currentData.suggestions[index];
+
+                    if (!suggestion) return;
+
+                    // Check if this item is flagged
+                    const isFlagged = document.querySelector(`input[name="flag-suggestion"][value="${index}"]`).checked;
+
+                    // Collect WHY data (reasons)
+                    const reasons = [];
+                    const reasonCheckboxes = document.querySelectorAll(`input[name="reason-${index}"]:checked`);
+                    reasonCheckboxes.forEach(cb => {
+                        if (cb.value === 'custom') {
+                            const customReason = document.querySelector(`input[name="custom-reason-${index}"]`).value;
+                            if (customReason) reasons.push(customReason);
+                        } else {
+                            const reasonIndex = parseInt(cb.value);
+                            if (suggestion.possible_reasons && suggestion.possible_reasons[reasonIndex]) {
+                                reasons.push(suggestion.possible_reasons[reasonIndex]);
+                            }
+                        }
+                    });
+
+                    // Collect HOW data (interventions)
+                    const interventions = [];
+                    const interventionCheckboxes = document.querySelectorAll(`input[name="intervention-${index}"]:checked`);
+                    interventionCheckboxes.forEach(cb => {
+                        if (cb.value === 'custom') {
+                            const customIntervention = document.querySelector(`input[name="custom-intervention-${index}"]`).value;
+                            if (customIntervention) interventions.push(customIntervention);
+                        } else {
+                            const interventionIndex = parseInt(cb.value);
+                            if (suggestion.suggested_interventions && suggestion.suggested_interventions[interventionIndex]) {
+                                interventions.push(suggestion.suggested_interventions[interventionIndex]);
+                            }
+                        }
+                    });
+
+                    selectedSuggestions.push({
+                        ...suggestion,
+                        reasons: reasons,
+                        interventions: interventions,
+                        flagged: isFlagged
+                    });
+                });
+
+                const managerComments = document.getElementById('managerComments').value || '';
+                const managerCommentsEarly = document.getElementById('managerCommentsEarly').value || '';
+                const combinedComments = [managerCommentsEarly, managerComments].filter(c => c.trim()).join('\n\n');
+
+                console.log('Sending data:', {
+                    original_care_plan: currentData.original_care_plan,
+                    selected_suggestions: selectedSuggestions,
+                    manager_comments: managerComments,
+                    resident_name: currentData.resident_name
+                });
+
+                const response = await fetch('/generate_care_plan', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        resident_name: currentData.resident_name,
-                        adjustments: adjustments
+                        original_care_plan: currentData.original_care_plan,
+                        selected_suggestions: selectedSuggestions,
+                        manager_comments: combinedComments,
+                        resident_name: currentData.resident_name
                     })
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
+                console.log('Response data:', data);
 
                 if (data.success) {
-                    alert('Risk adjustments saved successfully!');
+                    document.getElementById('carePlanContent').innerHTML = data.care_plan.html;
+                    finalPlan.style.display = 'block';
+
+                    // Store for download
+                    window.currentReport = {
+                        content: data.care_plan.markdown,
+                        resident_name: currentData.resident_name
+                    };
+
+                    // Scroll to results
+                    finalPlan.scrollIntoView({ behavior: 'smooth' });
                 } else {
-                    alert('Failed to save risk adjustments: ' + data.error);
+                    alert('Care plan generation failed: ' + (data.error || 'Unknown error'));
                 }
             } catch (error) {
-                console.error('Error saving risk adjustments:', error);
-                alert('Error occurred while saving adjustments.');
+                console.error('Error in generate care plan:', error);
+                alert('Error occurred: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+                // Restore button state
+                generateBtn.innerHTML = originalBtnText;
+                generateBtn.disabled = false;
+            }
+        });
+
+         // Email dropdown toggle
+        document.getElementById('emailBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const dropdown = this.parentElement;
+            const options = dropdown.querySelector('.email-options');
+            const isVisible = options.style.display === 'block';
+
+            // Hide all other dropdowns first
+            document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+
+            options.style.display = isVisible ? 'none' : 'block';
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.email-dropdown')) {
+                document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+            }
+        });
+
+        // Copy content functionality (copies HTML content)
+        document.getElementById('copyContentBtn').addEventListener('click', function() {
+            copyContent();
+        });
+        document.getElementById('copyContentBtnBottom').addEventListener('click', function() {
+            copyContent();
+        });
+
+        function copyContent() {
+            const content = document.getElementById('carePlanContent');
+            if (content) {
+                const range = document.createRange();
+                range.selectNode(content);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                alert('Care plan content copied to clipboard!');
             }
         }
 
+        // Edit functionality
+        document.getElementById('editBtn').addEventListener('click', function() {
+           editContent();
+        });
+         document.getElementById('editBtnBottom').addEventListener('click', function() {
+           editContent();
+        });
+         function editContent() {
+            if (window.currentReport) {
+                const content = document.getElementById('carePlanContent');
+                const currentHtml = content.innerHTML;
+
+                // Convert to editable
+                content.innerHTML = `
+                    <div class="edit-container">
+                        <textarea id="editableContent" style="width: 100%; min-height: 400px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 14px; line-height: 1.6;">${window.currentReport.content}</textarea>
+                        <div style="margin-top: 15px; text-align: right;">
+                            <button id="cancelEdit" class="action-btn" style="margin-right: 10px;">Cancel</button>
+                            <button id="saveEdit" class="action-btn primary">Save Changes</button>
+                        </div>
+                    </div>
+                `;
+
+                // Cancel edit
+                document.getElementById('cancelEdit').addEventListener('click', function() {
+                    content.innerHTML = currentHtml;
+                });
+
+                // Save edit
+                document.getElementById('saveEdit').addEventListener('click', function() {
+                    const newContent = document.getElementById('editableContent').value;
+                    window.currentReport.content = newContent;
+
+                    // Convert back to HTML display
+                    const converter = new showdown.Converter();
+                    content.innerHTML = converter.makeHtml(newContent);
+
+                    alert('Changes saved successfully!');
+                });
+            }
+        }
+
+        // Email to Care Team functionality
+        document.getElementById('emailCareTeamBtn').addEventListener('click', function() {
+            sendCareTeamEmail();
+            document.querySelector('.email-options').style.display = 'none';
+        });
+
+        // Email to Family functionality
+        document.getElementById('emailFamilyBtn').addEventListener('click', function() {
+            sendFamilyEmail();
+            document.querySelector('.email-options').style.display = 'none';
+        });
+
+          // Add event listeners for bottom buttons
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'emailCareTeamBtnBottom') {
+                sendCareTeamEmail();
+                e.target.closest('.email-options').style.display = 'none';
+            }
+            if (e.target && e.target.id === 'emailFamilyBtnBottom') {
+                sendFamilyEmail();
+                e.target.closest('.email-options').style.display = 'none';
+            }
+             if (e.target && e.target.id === 'emailBtnBottom') {
+                e.preventDefault();
+                const dropdown = e.target.parentElement;
+                const options = dropdown.querySelector('.email-options');
+                const isVisible = options.style.display === 'block';
+
+                // Hide all other dropdowns first
+                document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+
+                options.style.display = isVisible ? 'none' : 'block';
+            }
+        });
+        async function downloadPDF() {
+                if (window.currentReport) {
+                    try {
+                        const response = await fetch('/download_pdf', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(window.currentReport)
+                        });
+
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = `Care_Plan_${window.currentReport.resident_name}_${new Date().getTime()}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                    } catch (error) {
+                        alert('Download failed: ' + error.message);
+                    }
+                }
+            }
+        // Start over functionality
+        document.getElementById('startOverBtn').addEventListener('click', function() {
+            startOver();
+        });
+          document.getElementById('startOverBtnBottom').addEventListener('click', function() {
+            startOver();
+        });
+
+          document.getElementById('downloadBtn').addEventListener('click', async function() {
+                await downloadPDF();
+            });
+           document.getElementById('downloadBtnBottom').addEventListener('click',async function() {
+                await downloadPDF();
+            });
+
+             document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'emailBtn') {
+                e.preventDefault();
+                const dropdown = e.target.parentElement;
+                const options = dropdown.querySelector('.email-options');
+                const isVisible = options.style.display === 'block';
+
+                // Hide all other dropdowns first
+                document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+
+                options.style.display = isVisible ? 'none' : 'block';
+            }
+        });
+        function startOver() {
+            document.getElementById('suggestions').style.display = 'none';
+            document.getElementById('finalPlan').style.display = 'none';
+            document.getElementById('dataQualitySection').style.display = 'none';
+            document.getElementById('uploadForm').reset();
+            updateFileLabel(document.getElementById('daily_log'), 'Click to select log file');
+            updateFileLabel(document.getElementById('care_plan'), 'Click to select care plan');
+            window.currentReport = null;
+            currentData = {};
+        }
+        function sendCareTeamEmail() {
+             if (window.currentReport) {
+                const subject = encodeURIComponent(`URGENT: Care Plan Update - ${window.currentReport.resident_name}`);
+
+                // Extract sections dynamically from care plan
+                const content = window.currentReport.content;
+                let criticalUpdates = [];
+                let medicationChanges = [];
+                let behaviorConcerns = [];
+                let mobilityUpdates = [];
+                let priorityFlags = [];
+
+                // Parse care plan sections
+                const sections = content.split(/^## /m);
+
+                sections.forEach(section => {
+                    const lines = section.split('\n');
+                    const title = lines[0];
+
+                    // Look for priority flagged items
+                    if (title.includes('🚩 Priority Observation Areas') || title.includes('Priority') || title.includes('Flagged')) {
+                        lines.forEach(line => {
+                            if (line.includes('🚩') || line.includes('Priority:') || line.includes('Alert:')) {
+                                priorityFlags.push(line.replace(/🚩\s*/, '').trim());
+                            }
+                        });
+                    }
+
+                    // Extract medication updates
+                    if (title.toLowerCase().includes('medication') || title.toLowerCase().includes('health')) {
+                        const updates = extractUpdatedItems(lines);
+                        medicationChanges.push(...updates);
+                    }
+
+                    // Extract behavior updates
+                    if (title.toLowerCase().includes('behavior') || title.toLowerCase().includes('communication')) {
+                        const updates = extractUpdatedItems(lines);
+                        behaviorConcerns.push(...updates);
+                    }
+
+                    // Extract mobility updates
+                    if (title.toLowerCase().includes('mobility') || title.toLowerCase().includes('safety')) {
+                        const updates = extractUpdatedItems(lines);
+                        mobilityUpdates.push(...updates);
+                    }
+
+                    // Look for any items marked with ✏️ (recent updates)
+                    lines.forEach(line => {
+                        if (line.includes('✏️')) {
+                            criticalUpdates.push(line.replace('✏️', '').trim());
+                        }
+                    });
+                });
+
+                // Generate Care Team email body
+                let emailBody = `Dear Care Team,
+
+URGENT: Updated care plan for ${window.currentReport.resident_name} requires IMMEDIATE implementation.
+
+📋 RESIDENT: ${window.currentReport.resident_name}
+📅 Updated: ${new Date().toLocaleDateString()}
+⏰ IMPLEMENTATION DEADLINE: Next shift
+`;
+
+                // Add priority flags first
+                if (priorityFlags.length > 0) {
+                    emailBody += `
+🚩 CRITICAL PRIORITY ALERTS:
+`;
+                    priorityFlags.forEach((flag, index) => {
+                        emailBody += `${index + 1}. ${flag}\n`;
+                    });
+                }
+
+                // Add critical updates
+                if (criticalUpdates.length > 0) {
+                    emailBody += `
+🚨 KEY CHANGES REQUIRED:
+`;
+                    criticalUpdates.slice(0, 5).forEach((update, index) => {
+                        emailBody += `${index + 1}. ${update}\n`;
+                    });
+                }
+
+                // Add medication changes
+                if (medicationChanges.length > 0) {
+                    emailBody += `
+💊 MEDICATION/HEALTH UPDATES:
+`;
+                    medicationChanges.slice(0, 3).forEach((change, index) => {
+                        emailBody += `• ${change}\n`;
+                    });
+                }
+
+                // Add behavior concerns
+                if (behaviorConcerns.length > 0) {
+                    emailBody += `
+🗣️ BEHAVIOR/COMMUNICATION UPDATES:
+`;
+                    behaviorConcerns.slice(0, 3).forEach((concern, index) => {
+                        emailBody += `• ${concern}\n`;
+                    });
+                }
+
+                // Add mobility updates
+                if (mobilityUpdates.length > 0) {
+                    emailBody += `
+🚶 MOBILITY/SAFETY UPDATES:
+`;
+                    mobilityUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                emailBody += `
+📋 IMMEDIATE ACTIONS REQUIRED:
+• Review ALL changes before next shift handover
+• Brief entire care team on new protocols
+• Implement changes during resident's next care session
+• Monitor resident response and document observations
+• Escalate any concerns to nursing supervisor immediately
+• Update family contact if necessary
+
+⚠️ COMPLIANCE REQUIREMENTS:
+• All staff must acknowledge receipt of this update
+• Changes must be implemented within 24 hours
+• Document all interventions in resident care log
+• Report any adverse reactions immediately
+
+📞 URGENT QUESTIONS: Contact Nursing Supervisor
+📋 DOCUMENTATION: Update resident care records
+📄 FULL PLAN: Complete care plan document attached
+
+Care Management Team
+Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
+
+--- CONFIDENTIAL CARE INFORMATION ---`;
+
+                const body = encodeURIComponent(emailBody);
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
+                window.open(gmailUrl, '_blank');
+            }
+        }
+         function extractUpdatedItems(lines) {
+            const updates = [];
+            lines.forEach(line => {
+                if (line.includes('✏️') || line.includes('Updated:') || line.includes('New:') || line.includes('Changed:')) {
+                    // Clean up the line and extract the meaningful content
+                    let cleaned = line.replace(/✏️/g, '').replace(/\*\*/g, '').trim();
+                    if (cleaned && cleaned.length > 10) {
+                        updates.push(cleaned);
+                    }
+                }
+            });
+            return updates;
+        }
+          function sendFamilyEmail() {
+            if (window.currentReport) {
+                const subject = encodeURIComponent(`Care Plan Update - ${window.currentReport.resident_name}`);
+
+                // Extract family-relevant information from care plan
+                const content = window.currentReport.content;
+                let personalCareUpdates = [];
+                let wellnessUpdates = [];
+                let socialUpdates = [];
+                let comfortUpdates = [];
+
+                // Parse care plan sections for family-friendly content
+                const sections = content.split(/^## /m);
+
+                sections.forEach(section => {
+                    const lines = section.split('\n');
+                    const title = lines[0];
+
+                    // Extract personal care updates
+                    if (title.toLowerCase().includes('personal care') || title.toLowerCase().includes('daily routine')) {
+                        const updates = extractFamilyFriendlyUpdates(lines);
+                        personalCareUpdates.push(...updates);
+                    }
+
+                    // Extract health and wellness updates
+                    if (title.toLowerCase().includes('health') || title.toLowerCase().includes('nutrition') || title.toLowerCase().includes('medication')) {
+                        const updates = extractFamilyFriendlyUpdates(lines);
+                        wellnessUpdates.push(...updates);
+                    }
+
+                    // Extract social and communication updates
+                    if (title.toLowerCase().includes('social') || title.toLowerCase().includes('communication') || title.toLowerCase().includes('behavior')) {
+                        const updates = extractFamilyFriendlyUpdates(lines);
+                        socialUpdates.push(...updates);
+                    }
+
+                    // Extract comfort and preference updates
+                    if (title.toLowerCase().includes('comfort') || title.toLowerCase().includes('preference') || title.toLowerCase().includes('environment')) {
+                        const updates = extractFamilyFriendlyUpdates(lines);
+                        comfortUpdates.push(...updates);
+                    }
+                });
+
+                // Generate Family email body
+                let emailBody = `Dear ${window.currentReport.resident_name}'s Family,
+
+We hope this message finds you well. We wanted to share some positive updates about ${window.currentReport.resident_name}'s care plan and how we're working to enhance their daily experience with us.
+
+👥 ABOUT ${window.currentReport.resident_name.toUpperCase()}:
+We've been closely observing ${window.currentReport.resident_name} and have identified some wonderful opportunities to better support their individual needs and preferences.
+`;
+
+                // Add personal care updates
+                if (personalCareUpdates.length > 0) {
+                    emailBody += `
+🛁 DAILY CARE ENHANCEMENTS:
+Our team has noticed some preferences that help ${window.currentReport.resident_name} feel more comfortable:
+`;
+                    personalCareUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                // Add wellness updates
+                if (wellnessUpdates.length > 0) {
+                    emailBody += `
+💗 HEALTH & WELLNESS FOCUS:
+We're taking extra care to support ${window.currentReport.resident_name}'s wellbeing through:
+`;
+                    wellnessUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                // Add social updates
+                if (socialUpdates.length > 0) {
+                    emailBody += `
+🗣️ COMMUNICATION & SOCIAL ENGAGEMENT:
+We've learned more about how ${window.currentReport.resident_name} likes to connect with others:
+`;
+                    socialUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                // Add comfort updates
+                if (comfortUpdates.length > 0) {
+                    emailBody += `
+🏠 COMFORT & ENVIRONMENT:
+We're making these adjustments to help ${window.currentReport.resident_name} feel more at home:
+`;
+                    comfortUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                emailBody += `
+💭 YOUR INSIGHTS MATTER:
+As ${window.currentReport.resident_name}'s family, your knowledge about their preferences, habits, and personality helps us provide the most personalized care possible. We would love to hear from you about:
+
+• Any observations about what makes ${window.currentReport.resident_name} most comfortable
+• Special preferences or routines from home that we should know about
+• How ${window.currentReport.resident_name} typically responds to changes
+• Family traditions or activities they particularly enjoy
+• Any concerns or questions you have about these updates
+
+🤝 PARTNERSHIP IN CARE:
+We believe the best care happens when families and care teams work together. Your input helps us create an environment where ${window.currentReport.resident_name} can thrive and feel truly at home.
+
+🌟 WHAT'S NEXT:
+• We'll continue monitoring ${window.currentReport.resident_name}'s response to these changes
+• Our team will document their preferences and reactions
+• We'll keep you updated on their progress and any new insights
+• Please feel free to visit and see how ${window.currentReport.resident_name} is doing
+
+📞 WE'RE HERE FOR YOU:
+• Call us anytime to discuss ${window.currentReport.resident_name}'s care: [PHONE NUMBER]
+• Email us your thoughts and suggestions
+• Schedule a meeting with our care team
+• Visit during care activities to see the updates in action
+
+Thank you for trusting us with ${window.currentReport.resident_name}'s care. We're honored to be part of their journey and yours.
+
+With warm regards and appreciation,
+The Care Team at [FACILITY NAME]
+${new Date().toLocaleDateString()}
+
+P.S. We've attached the complete care plan for your records. Please don't hesitate to reach out with any questions!
+
+--- This communication contains confidential care information ---`;
+
+                const body = encodeURIComponent(emailBody);
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
+                window.open(gmailUrl, '_blank');
+            }
+        }
+         function extractFamilyFriendlyUpdates(lines) {
+            const updates = [];
+            lines.forEach(line => {
+                if (line.includes('✏️') || line.includes('Updated:') || line.includes('New:') || line.includes('Enhanced:')) {
+                    // Convert clinical language to family-friendly language
+                    let cleaned = line.replace(/✏️/g, '').replace(/\*\*/g, '').trim();
+
+                    // Make language more family-friendly
+                    cleaned = cleaned.replace(/intervention/gi, 'support approach');
+                    cleaned = cleaned.replace(/protocol/gi, 'routine');
+                    cleaned = cleaned.replace(/assessment/gi, 'observation');
+                    cleaned = cleaned.replace(/monitor/gi, 'keep an eye on');
+                    cleaned = cleaned.replace(/implement/gi, 'try');
+                    cleaned = cleaned.replace(/compliance/gi, 'following along with');
+
+                    if (cleaned && cleaned.length > 10) {
+                        updates.push(cleaned);
+                    }
+                }
+            });
+            return updates;
+        }
+          function startReportGenerationProgress() {
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            const loadingText = document.getElementById('loading-text');
+            const progressSteps = document.getElementById('progress-steps');
+
+            // Clear previous steps
+            progressSteps.innerHTML = '';
+
+            const steps = [
+                { text: "📝 Preparing care plan template...", progress: 15 },
+                { text: "🔄 Integrating selected suggestions...", progress: 30 },
+                { text: "🛡️ Adding risk assessment data...", progress: 45 },
+                { text: "📋 Structuring care plan sections...", progress: 60 },
+                { text: "✏️ Formatting care plan content...", progress: 75 },
+                { text: "🎨 Generating final report...", progress: 90 },
+                { text: "✅ Care plan ready!", progress: 100 }
+            ];
+
+            let currentStep = 0;
+
+            function updateProgress() {
+                if (currentStep < steps.length) {
+                    const step = steps[currentStep];
+                    progressFill.style.width = step.progress + '%';
+                    progressText.textContent = step.progress + '%';
+                    loadingText.textContent = step.text;
+
+                    // Add step to progress steps
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'progress-step';
+                    stepDiv.style.opacity = '0';
+                    stepDiv.style.transform = 'translateX(-20px)';
+                    stepDiv.style.transition = 'all 0.3s ease';
+                    stepDiv.textContent = step.text;
+                    progressSteps.appendChild(stepDiv);
+
+                    // Animate step appearance
+                    setTimeout(() => {
+                        stepDiv.style.opacity = '1';
+                        stepDiv.style.transform = 'translateX(0)';
+                    }, 100);
+
+                    currentStep++;
+
+                    // Slower timing for report generation
+                    let delay = Math.random() * 1500 + 1200; // 1.2-2.7s per step
+
+                    setTimeout(updateProgress, delay);
+                }
+            }
+
+            updateProgress();
+        }
     </script>
 </body>
 </html>
