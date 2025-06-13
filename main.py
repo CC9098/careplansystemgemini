@@ -340,7 +340,7 @@ def create_fallback_analysis(response_text):
 
 def extract_log_highlights(daily_log_content, resident_name):
     """Extract significant log entries for highlighting"""
-    
+
     prompt = f"""You are a care log analyzer. Extract the most significant entries from this month's care log that deserve special attention.
 
 RESIDENT: {resident_name}
@@ -382,19 +382,22 @@ Guidelines:
             temperature=0.3
         )
 
+        if not response or not response.choices:
+            raise Exception("No response from OpenAI API")
+
         response_text = response.choices[0].message.content.strip()
-        
+
         # Clean response and extract JSON
         response_text = re.sub(r'```json\s*', '', response_text)
         response_text = re.sub(r'```\s*$', '', response_text)
-        
+
         try:
             highlights = json.loads(response_text)
             if isinstance(highlights, list) and len(highlights) > 0:
                 return highlights
         except json.JSONDecodeError:
             pass
-            
+
         # Fallback highlights if parsing fails
         return [
             {
@@ -412,7 +415,7 @@ Guidelines:
 
 def analyze_data_quality(daily_log_content, resident_name):
     """Analyze the quality of care log data and staff performance"""
-    
+
     prompt = f"""You are a care home data quality analyst. Analyze the care log entries and provide a comprehensive assessment of data quality, completeness, and staff performance.
 
 RESIDENT: {resident_name}
@@ -498,18 +501,21 @@ Guidelines:
             temperature=0.3
         )
 
+        if not response or not response.choices:
+            raise Exception("No response from OpenAI API")
+
         response_text = response.choices[0].message.content.strip()
-        
+
         # Clean response and extract JSON
         response_text = re.sub(r'```json\s*', '', response_text)
         response_text = re.sub(r'```\s*$', '', response_text)
-        
+
         try:
             quality_analysis = json.loads(response_text)
             return quality_analysis
         except json.JSONDecodeError:
             pass
-            
+
         # Fallback analysis if parsing fails
         return {
             "overall_quality": {
@@ -740,6 +746,9 @@ Guidelines:
             temperature=0.7
         )
 
+        if not response or not response.choices:
+            raise Exception("No response from OpenAI API")
+
         response_text = response.choices[0].message.content
         print(f"Raw AI response length: {len(response_text)}")
 
@@ -832,7 +841,7 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
     if risk_assessment_data and 'assessments' in risk_assessment_data:
         risk_assessment_section = format_risk_assessment_for_care_plan(risk_assessment_data)
 
-    prompt = f"""You are a professional care home management assistant. Your task is to rewrite and organize the existing care plan, seamlessly integrating updates into appropriate sections and adding a priority observation section.
+    prompt = f"""You are a professional care home management assistant. Your task is to rewriteand organize the existing care plan, seamlessly integrating updates into appropriate sections and adding a priority observation section.
 
 **ORIGINAL CARE PLAN:**
 {original_care_plan}
@@ -1086,7 +1095,7 @@ def analyze():
     try:
         # Get form data
         resident_name = request.form.get('resident_name', 'Unnamed Resident')
-        
+
         # Get selected analysis options
         analysis_options = request.form.getlist('analysis_options')
         if not analysis_options:
@@ -1095,7 +1104,7 @@ def analyze():
         # Enhanced file validation
         print(f"Received form data: {dict(request.form)}")
         print(f"Received files: {list(request.files.keys())}")
-        
+
         # Check daily log file
         if 'daily_log' not in request.files:
             return jsonify({'error': '未收到護理記錄檔案 / Daily log file not received'}), 400
@@ -1119,7 +1128,7 @@ def analyze():
         # File type validation
         if not allowed_file(daily_log_file.filename):
             return jsonify({'error': f'不支援的護理記錄檔案格式 / Unsupported daily log file format: {daily_log_file.filename}'}), 400
-        
+
         if care_plan_file and not allowed_file(care_plan_file.filename):
             return jsonify({'error': f'不支援的護理計劃檔案格式 / Unsupported care plan file format: {care_plan_file.filename}'}), 400
 
@@ -1127,7 +1136,7 @@ def analyze():
         max_size = 5 * 1024 * 1024  # 5MB
         if daily_log_file.content_length and daily_log_file.content_length > max_size:
             return jsonify({'error': f'護理記錄檔案過大 / Daily log file too large: {daily_log_file.content_length / 1024 / 1024:.2f}MB > 5MB'}), 400
-        
+
         if care_plan_file and care_plan_file.content_length and care_plan_file.content_length > max_size:
             return jsonify({'error': f'護理計劃檔案過大 / Care plan file too large: {care_plan_file.content_length / 1024 / 1024:.2f}MB > 5MB'}), 400
 
@@ -1137,7 +1146,7 @@ def analyze():
 
         try:
             print(f"Processing daily log file: {daily_log_file.filename}")
-            
+
             if daily_log_file.filename.lower().endswith('.pdf'):
                 daily_log_content, daily_log_error = extract_pdf_text(daily_log_file)
             else:
@@ -1146,14 +1155,14 @@ def analyze():
                 file_extension = daily_log_file.filename.split('.')[-1]
                 daily_log_path = os.path.join(app.config['UPLOAD_FOLDER'], 
                                               secure_filename(f"daily_{timestamp}.{file_extension}"))
-                
+
                 # Save file
                 daily_log_file.save(daily_log_path)
                 print(f"Saved daily log to: {daily_log_path}")
-                
+
                 # Read and process
                 daily_log_content = read_csv_flexible(daily_log_path)
-                
+
                 # Clean up
                 if os.path.exists(daily_log_path):
                     os.remove(daily_log_path)
@@ -1178,7 +1187,7 @@ def analyze():
         if care_plan_file:
             try:
                 print(f"Processing care plan file: {care_plan_file.filename}")
-                
+
                 if care_plan_file.filename.lower().endswith('.pdf'):
                     care_plan_content, care_plan_error = extract_pdf_text(care_plan_file)
                 else:
@@ -1187,14 +1196,14 @@ def analyze():
                     file_extension = care_plan_file.filename.split('.')[-1]
                     care_plan_path = os.path.join(app.config['UPLOAD_FOLDER'], 
                                                   secure_filename(f"care_{timestamp}.{file_extension}"))
-                    
+
                     # Save file
                     care_plan_file.save(care_plan_path)
                     print(f"Saved care plan to: {care_plan_path}")
-                    
+
                     # Read and process
                     care_plan_content = read_csv_flexible(care_plan_path)
-                    
+
                     # Clean up
                     if os.path.exists(care_plan_path):
                         os.remove(care_plan_path)
@@ -1313,7 +1322,18 @@ def analyze():
         print(f"Error in analyze endpoint: {str(e)}")
         import traceback
         traceback.print_exc()
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+        # More specific error messages
+        if "rate_limit_exceeded" in str(e).lower():
+            error_msg = "API rate limit exceeded. Please try again in a few minutes."
+        elif "insufficient_quota" in str(e).lower():
+            error_msg = "OpenAI API quota exceeded. Please check your API key balance."
+        elif "invalid_api_key" in str(e).lower():
+            error_msg = "Invalid OpenAI API key. Please check your API key in Secrets."
+        else:
+            error_msg = f"Analysis failed: {str(e)}"
+
+        return jsonify({'error': error_msg}), 500
 
 @app.route('/risk_assessment_details', methods=['POST'])
 def risk_assessment_details():
@@ -1613,7 +1633,376 @@ def download_pdf():
         elements = []
 
         # Get styles
-        styles = getSampleStyleSheet()
+        json\s*', '', response_text)
+        response_text = re.sub(r'```\s*$', '', response_text)
+
+        try:
+            highlights = json.loads(response_text)
+            if isinstance(highlights, list) and len(highlights) > 0:
+                return highlights
+        except json.JSONDecodeError:
+            pass
+
+        # Fallback highlights if parsing fails
+        return [
+            {
+                "original_text": "Multiple behavioral incidents documented throughout the month",
+                "significance": "Pattern of behaviors requiring ongoing monitoring and intervention strategies",
+                "category": "Behavior",
+                "priority": "Medium",
+                "date": "This month"
+            }
+        ]
+
+    except Exception as e:
+        print(f"Error extracting log highlights: {str(e)}")
+        return []
+
+def analyze_data_quality(daily_log_content, resident_name):
+    """Analyze the quality of care log data and staff performance"""
+
+    prompt = f"""You are a care home data quality analyst. Analyze the care log entries and provide a comprehensive assessment of data quality, completeness, and staff performance.
+
+RESIDENT: {resident_name}
+
+CARE LOG CONTENT:
+{daily_log_content}
+
+Analyze the log entries and provide assessment in the following areas:
+
+1. Overall log quality (good/fair/poor)
+2. Missing essential data that should be recorded
+3. Suggestions for more comprehensive data collection
+4. Staff performance analysis
+
+Respond with ONLY a valid JSON object like this:
+
+{{
+    "overall_quality": {{
+        "rating": "Good/Fair/Poor",
+        "score": 85,
+        "summary": "Brief overall assessment of log quality"
+    }},
+    "completeness_analysis": {{
+        "present_data_types": [
+            "List of data types found in logs (e.g., behavioral incidents, meal intake, medication times, etc.)"
+        ],
+        "missing_critical_data": [
+            "Essential data that should be recorded but is missing"
+        ],
+        "missing_recommended_data": [
+            "Additional data that would improve care quality"
+        ]
+    }},
+    "improvement_suggestions": [
+        {{
+            "category": "Data Collection",
+            "suggestion": "Specific suggestion for better data collection",
+            "priority": "High/Medium/Low",
+            "impact": "Expected positive impact of this improvement"
+        }}
+    ],
+    "staff_performance": {{
+        "total_entries_analyzed": 0,
+        "best_staff_examples": [
+            {{
+                "staff_identifier": "Staff name or ID found in logs",
+                "example_entry": "Exact text of well-written log entry",
+                "why_good": "Explanation of what makes this entry excellent",
+                "date": "Date if available"
+            }}
+        ],
+        "worst_staff_examples": [
+            {{
+                "staff_identifier": "Staff name or ID found in logs", 
+                "example_entry": "Exact text of poorly written log entry",
+                "why_poor": "Explanation of what makes this entry inadequate",
+                "improvement_needed": "Specific suggestions for improvement",
+                "date": "Date if available"
+            }}
+        ],
+        "general_staff_feedback": "Overall assessment of staff logging practices"
+    }},
+    "data_trends": {{
+        "consistency": "Assessment of data consistency over time",
+        "frequency": "Assessment of logging frequency",
+        "detail_level": "Assessment of detail and specificity in entries"
+    }}
+}}
+
+Guidelines:
+- Be constructive and specific in feedback
+- Identify actual staff names/IDs from log entries where visible
+- Focus on actionable improvements
+- Consider both clinical and administrative data needs
+- Preserve exact text from log entries in examples
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model="o3-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=3000,
+            temperature=0.3
+        )
+
+        if not response or not response.choices:
+            raise Exception("No response from OpenAI API")
+
+        response_text = response.choices[0].message.content.strip()
+
+        # Clean response and extract JSON
+        response_text = re.sub(r'```json\s*', '', response_text)
+        response_text = re.sub(r'```\s*$', '', response_text)
+
+        try:
+            quality_analysis = json.loads(response_text)
+            return quality_analysis
+        except json.JSONDecodeError:
+            pass
+
+        # Fallback analysis if parsing fails
+        return {
+            "overall_quality": {
+                "rating": "Fair",
+                "score": 65,
+                "summary": "Log contains basic information but could be more comprehensive"
+            },
+            "completeness_analysis": {
+                "present_data_types": ["Basic behavioral incidents", "Some meal information"],
+                "missing_critical_data": ["Medication administration times", "Vital signs", "Weight measurements"],
+                "missing_recommended_data": ["Mood assessments", "Social interaction notes", "Pain assessments"]
+            },
+            "improvement_suggestions": [
+                {
+                    "category": "Data Collection",
+                    "suggestion": "Implement standardized logging templates for consistent data capture",
+                    "priority": "High",
+                    "impact": "More complete and useful care records"
+                }
+            ],
+            "staff_performance": {
+                "total_entries_analyzed": 0,
+                "best_staff_examples": [],
+                "worst_staff_examples": [],
+                "general_staff_feedback": "Staff logging varies in quality and completeness"
+            },
+            "data_trends": {
+                "consistency": "Inconsistent logging patterns observed",
+                "frequency": "Some gaps in regular logging",
+                "detail_level": "Basic details provided, more specificity needed"
+            }
+        }
+
+    except Exception as e:
+        print(f"Error analyzing data quality: {str(e)}")
+        return {
+            "overall_quality": {
+                "rating": "Unknown",
+                "score": 50,
+                "summary": "Unable to analyze log quality"
+            },
+            "completeness_analysis": {
+                "present_data_types": [],
+                "missing_critical_data": [],
+                "missing_recommended_data": []
+            },
+            "improvement_suggestions": [],
+            "staff_performance": {
+                "total_entries_analyzed": 0,
+                "best_staff_examples": [],
+                "worst_staff_examples": [],
+                "general_staff_feedback": "Analysis unavailable"
+            },
+            "data_trends": {
+                "consistency": "Unknown",
+                "frequency": "Unknown", 
+                "detail_level": "Unknown"
+            }
+        }
+
+def analyze_and_suggest_changes(daily_log, current_care_plan, resident_name):
+    """Step 1: Analyze and suggest changes with gap detection"""
+
+    prompt = f"""You are a care home management assistant. Your task is to analyze the resident's care log and current care plan, then identify specific behavioral or care issues that need attention.
+
+RESIDENT: {resident_name}
+
+CARE LOG (this month):
+{daily_log}
+
+CURRENT CARE PLAN:
+{current_care_plan}
+
+Please analyze the care log and identify specific, concrete issues that need to be addressed. Also identify gaps between the care log and current care plan.
+
+You MUST respond with a valid JSON object with this exact structure (no extra text before or after):
+
+{{
+    "analysis_summary": "Brief summary of key findings from the care log",
+    "care_plan_gaps": {{
+        "description": "Description of significant events/patterns in logs that are NOT addressed in the current care plan",
+        "missing_areas": [
+            "Specific area 1 missing from care plan but evident in logs",
+            "Specific area 2 missing from care plan but evident in logs",
+            "Specific area 3 missing from care plan but evident in logs"
+        ],
+        "alert_level": "High"
+    }},
+    "suggestions": [
+        {{
+            "id": 1,
+            "category": "Behavior",
+            "specific_issue": "Nighttime Agitation and Sleep Disturbances",
+            "description": "Frequent nighttime wandering, shouting, and disruptive behaviors affecting sleep patterns",
+            "evidence": "Multiple night checks showing resident awake and unsettled, shouting episodes documented",
+            "priority": "High",
+            "icon": "😴",
+            "flagged": false,
+            "possible_reasons": [
+                "Anxiety or confusion in unfamiliar nighttime environment",
+                "Unmet comfort needs during night hours",
+                "Medication timing affecting sleep cycles",
+                "Pain or discomfort disrupting sleep",
+                "Sundowning effects of dementia"
+            ],
+            "suggested_interventions": [
+                "Implement calming nighttime routine with soft lighting",
+                "Consider sleep aids or medication review with GP",
+                "Provide comfort items like familiar blankets or music",
+                "Increase staffing during peak agitation hours",
+                "Environmental modifications to reduce stimulation"
+            ]
+        }},
+        {{
+            "id": 2,
+            "category": "Behavior",
+            "specific_issue": "Self-Harm and Dangerous Behaviors",
+            "description": "Incidents of pouring tea over head and other self-destructive actions",
+            "evidence": "Tea pouring incident documented, self-harm behaviors observed",
+            "priority": "High",
+            "icon": "⚠️",
+            "flagged": true,
+            "possible_reasons": [
+                "Frustration due to inability to communicate needs",
+                "Sensory seeking behavior in dementia",
+                "Response to overwhelming emotions or situations",
+                "Attention-seeking when feeling isolated",
+                "Physical discomfort unable to express verbally"
+            ],
+            "suggested_interventions": [
+                "Remove potential harmful items from immediate reach",
+                "Implement 1:1 supervision during high-risk periods",
+                "Provide alternative sensory activities",
+                "Increase meaningful engagement and social interaction",
+                "Assess for underlying pain or medical issues"
+            ]
+        }},
+        {{
+            "id": 3,
+            "category": "Behavior",
+            "specific_issue": "Undressing and Personal Care Resistance",
+            "description": "Inappropriate undressing behaviors and resistance to personal care",
+            "evidence": "Undressing behaviors documented in care logs",
+            "priority": "Medium",
+            "icon": "🚿",
+            "flagged": false,
+            "possible_reasons": [
+                "Discomfort with clothing or temperature regulation",
+                "Confusion about appropriate social behaviors",
+                "Seeking comfort through familiar actions",
+                "Resistance to loss of independence in care",
+                "Sensory processing changes affecting clothing tolerance"
+            ],
+            "suggested_interventions": [
+                "Use gentle approach and familiar staff for personal care",
+                "Modify clothing to more comfortable, easy-to-wear options",
+                "Provide privacy and dignity during care activities",
+                "Use distraction techniques during care routines",
+                "Consider underlying medical causes for discomfort"
+            ]
+        }},
+        {{
+            "id": 4,
+            "category": "Eating & Drinking",
+            "specific_issue": "Inconsistent Eating Patterns and Food Refusal",
+            "description": "Irregular eating behaviors and refusing meals at times",
+            "evidence": "Inconsistent eating patterns noted in care logs",
+            "priority": "Medium",
+            "icon": "🍽️",
+            "flagged": false,
+            "possible_reasons": [
+                "Medication affecting appetite or taste",
+                "Difficulty swallowing or dental problems",
+                "Lack of food preferences being met",
+                "Anxiety or agitation affecting appetite",
+                "Changes in cognitive function affecting eating skills"
+            ],
+            "suggested_interventions": [
+                "Offer smaller, more frequent meals throughout day",
+                "Provide finger foods and familiar comfort foods",
+                "Assess for swallowing difficulties or dental issues",
+                "Create calm, pleasant dining environment",
+                "Monitor weight and nutritional intake closely"
+            ]
+        }},
+        {{
+            "id": 5,
+            "category": "Choice & Communication",
+            "specific_issue": "Entering Other Residents' Spaces",
+            "description": "Inappropriate entry into other residents' rooms and spaces",
+            "evidence": "Documented incidents of entering other residents' spaces",
+            "priority": "Medium",
+            "icon": "🗣️",
+            "flagged": false,
+            "possible_reasons": [
+                "Confusion about personal space and boundaries",
+                "Searching for familiar environments or people",
+                "Restlessness and need for purposeful activity",
+                "Memory loss affecting spatial orientation",
+                "Seeking social interaction and companionship"
+            ],
+            "suggested_interventions": [
+                "Implement gentle redirection techniques",
+                "Provide clear visual cues for personal spaces",
+                "Increase structured activities and social engagement",
+                "Use memory aids and familiar objects in own room",
+                "Train staff in person-centered redirection approaches"
+            ]
+        }}
+    ]
+}}
+
+Guidelines:
+- Identify 5-8 specific, concrete issues based on the evidence in Jean's care log
+- Each issue should be a specific problem with clear evidence
+- Generate 5 specific possible reasons for each issue based on the context
+- Generate 5 specific interventions for each issue
+- Choose appropriate icons that match the issue type
+- Base all suggestions on evidence found in the care log
+- Include specific evidence in the "evidence" field for each suggestion
+- For care_plan_gaps, identify significant patterns/events in logs that are completely missing from the current care plan"""
+
+    try:
+        response = client.chat.completions.create(
+            model="o3-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=4000,
+            temperature=0.7
+        )
+
+        if not response or not response.choices:
+            raise Exception("No response from OpenAI API")
+
+        response_text = response.choices[0].message.content
+        print(f"Raw AI response length: {len(response_text)}")
+
+        # Clean the response text more thoroughly
+        response_text = response_text.strip()
+
+        # Remove any markdown code blocks
+        response_text = re.sub(r'```json\s*', '', response_text)
+        response_text = re.sub(r'styles = getSampleStyleSheet()
 
         # Custom styles
         title_style = ParagraphStyle(
