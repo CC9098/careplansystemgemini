@@ -1050,7 +1050,7 @@ def read_csv_flexible(file_path):
                 dialect = csv.Sniffer().sniff(file.read(1024))
                 file.seek(0)
                 reader = csv.reader(file, dialect)
-                rowss = list(reader)
+                rows = list(reader)
 
                 if rows:
                     headers = rows[0] if len(rows) > 0 else []
@@ -1744,4 +1744,5 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
+    print("Starting Flask app...")
     app.run(host='0.0.0.0', port=5000, debug=True)
