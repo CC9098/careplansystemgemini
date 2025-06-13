@@ -1745,4 +1745,9 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 if __name__ == '__main__':
     print("Starting Flask app...")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    try:
+        app.run(host='0.0.0.0', port=5000, debug=True)
+    except Exception as e:
+        print(f"Error starting Flask app: {e}")
+        import traceback
+        traceback.print_exc()
