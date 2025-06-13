@@ -6,7 +6,7 @@ import csv
 import io
 import json
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, jsonify, send_file, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_file
 import anthropic
 from werkzeug.utils import secure_filename
 import markdown
@@ -19,11 +19,9 @@ from risk_assessment import RiskAssessmentCalculator, format_risk_assessment_for
 app = Flask(__name__, template_folder='templates')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB file limit
 app.config['UPLOAD_FOLDER'] = 'temp_uploads'
-app.config['ATTACHED_ASSETS'] = 'attached_assets' # Added configuration for attached assets
 
 # Create temp folder
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs(app.config['ATTACHED_ASSETS'], exist_ok=True) # Create attached assets folder
 
 # Initialize Claude API
 api_key = os.environ.get('CLAUDE')
@@ -342,7 +340,7 @@ def create_fallback_analysis(response_text):
 
 def extract_log_highlights(daily_log_content, resident_name):
     """Extract significant log entries for highlighting"""
-
+    
     prompt = f"""You are a care log analyzer. Extract the most significant entries from this month's care log that deserve special attention.
 
 RESIDENT: {resident_name}
@@ -385,18 +383,18 @@ Guidelines:
         )
 
         response_text = message.content[0].text.strip()
-
+        
         # Clean response and extract JSON
         response_text = re.sub(r'```json\s*', '', response_text)
         response_text = re.sub(r'```\s*$', '', response_text)
-
+        
         try:
             highlights = json.loads(response_text)
             if isinstance(highlights, list) and len(highlights) > 0:
                 return highlights
         except json.JSONDecodeError:
             pass
-
+            
         # Fallback highlights if parsing fails
         return [
             {
@@ -414,7 +412,7 @@ Guidelines:
 
 def analyze_data_quality(daily_log_content, resident_name):
     """Analyze the quality of care log data and staff performance"""
-
+    
     prompt = f"""You are a care home data quality analyst. Analyze the care log entries and provide a comprehensive assessment of data quality, completeness, and staff performance.
 
 RESIDENT: {resident_name}
@@ -501,17 +499,17 @@ Guidelines:
         )
 
         response_text = message.content[0].text.strip()
-
+        
         # Clean response and extract JSON
         response_text = re.sub(r'```json\s*', '', response_text)
         response_text = re.sub(r'```\s*$', '', response_text)
-
+        
         try:
             quality_analysis = json.loads(response_text)
             return quality_analysis
         except json.JSONDecodeError:
             pass
-
+            
         # Fallback analysis if parsing fails
         return {
             "overall_quality": {
@@ -834,8 +832,7 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
     if risk_assessment_data and 'assessments' in risk_assessment_data:
         risk_assessment_section = format_risk_assessment_for_care_plan(risk_assessment_data)
 
-    prompt = f"""You are a professional```python
-care home management assistant. Your task is to rewrite and organize the existing care plan, seamlessly integrating updates into appropriate sections and adding a priority observation section.
+    prompt = f"""You are a professional care home management assistant. Your task is to rewrite and organize the existing care plan, seamlessly integrating updates into appropriate sections and adding a priority observation section.
 
 **ORIGINAL CARE PLAN:**
 {original_care_plan}
@@ -1050,7 +1047,7 @@ def read_csv_flexible(file_path):
                 dialect = csv.Sniffer().sniff(file.read(1024))
                 file.seek(0)
                 reader = csv.reader(file, dialect)
-                rows = list(reader)
+                rowss = list(reader)
 
                 if rows:
                     headers = rows[0] if len(rows) > 0 else []
@@ -1081,11 +1078,6 @@ def read_csv_flexible(file_path):
 def index():
     return render_template('index.html')
 
-@app.route('/attached_assets/<path:filename>')
-def get_attached_asset(filename):
-    """Serve static files from attached_assets directory"""
-    return send_from_directory(app.config['ATTACHED_ASSETS'], filename)
-
 @app.route('/analyze', methods=['POST'])
 def analyze():
     if not client:
@@ -1094,7 +1086,7 @@ def analyze():
     try:
         # Get form data
         resident_name = request.form.get('resident_name', 'Unnamed Resident')
-
+        
         # Get selected analysis options
         analysis_options = request.form.getlist('analysis_options')
         if not analysis_options:
@@ -1103,7 +1095,7 @@ def analyze():
         # Enhanced file validation
         print(f"Received form data: {dict(request.form)}")
         print(f"Received files: {list(request.files.keys())}")
-
+        
         # Check daily log file
         if 'daily_log' not in request.files:
             return jsonify({'error': '未收到護理記錄檔案 / Daily log file not received'}), 400
@@ -1127,7 +1119,7 @@ def analyze():
         # File type validation
         if not allowed_file(daily_log_file.filename):
             return jsonify({'error': f'不支援的護理記錄檔案格式 / Unsupported daily log file format: {daily_log_file.filename}'}), 400
-
+        
         if care_plan_file and not allowed_file(care_plan_file.filename):
             return jsonify({'error': f'不支援的護理計劃檔案格式 / Unsupported care plan file format: {care_plan_file.filename}'}), 400
 
@@ -1135,7 +1127,7 @@ def analyze():
         max_size = 5 * 1024 * 1024  # 5MB
         if daily_log_file.content_length and daily_log_file.content_length > max_size:
             return jsonify({'error': f'護理記錄檔案過大 / Daily log file too large: {daily_log_file.content_length / 1024 / 1024:.2f}MB > 5MB'}), 400
-
+        
         if care_plan_file and care_plan_file.content_length and care_plan_file.content_length > max_size:
             return jsonify({'error': f'護理計劃檔案過大 / Care plan file too large: {care_plan_file.content_length / 1024 / 1024:.2f}MB > 5MB'}), 400
 
@@ -1145,7 +1137,7 @@ def analyze():
 
         try:
             print(f"Processing daily log file: {daily_log_file.filename}")
-
+            
             if daily_log_file.filename.lower().endswith('.pdf'):
                 daily_log_content, daily_log_error = extract_pdf_text(daily_log_file)
             else:
@@ -1154,14 +1146,14 @@ def analyze():
                 file_extension = daily_log_file.filename.split('.')[-1]
                 daily_log_path = os.path.join(app.config['UPLOAD_FOLDER'], 
                                               secure_filename(f"daily_{timestamp}.{file_extension}"))
-
+                
                 # Save file
                 daily_log_file.save(daily_log_path)
                 print(f"Saved daily log to: {daily_log_path}")
-
+                
                 # Read and process
                 daily_log_content = read_csv_flexible(daily_log_path)
-
+                
                 # Clean up
                 if os.path.exists(daily_log_path):
                     os.remove(daily_log_path)
@@ -1186,7 +1178,7 @@ def analyze():
         if care_plan_file:
             try:
                 print(f"Processing care plan file: {care_plan_file.filename}")
-
+                
                 if care_plan_file.filename.lower().endswith('.pdf'):
                     care_plan_content, care_plan_error = extract_pdf_text(care_plan_file)
                 else:
@@ -1195,14 +1187,14 @@ def analyze():
                     file_extension = care_plan_file.filename.split('.')[-1]
                     care_plan_path = os.path.join(app.config['UPLOAD_FOLDER'], 
                                                   secure_filename(f"care_{timestamp}.{file_extension}"))
-
+                    
                     # Save file
                     care_plan_file.save(care_plan_path)
                     print(f"Saved care plan to: {care_plan_path}")
-
+                    
                     # Read and process
                     care_plan_content = read_csv_flexible(care_plan_path)
-
+                    
                     # Clean up
                     if os.path.exists(care_plan_path):
                         os.remove(care_plan_path)
@@ -1630,7 +1622,7 @@ def download_pdf():
             fontSize=18,
             spaceAfter=30,
             alignment=TA_CENTER,
-        )```python
+        )
 
         heading_style = ParagraphStyle(
             'CustomHeading',
@@ -1744,10 +1736,4 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    print("Starting Flask app...")
-    try:
-        app.run(host='0.0.0.0', port=5000, debug=True)
-    except Exception as e:
-        print(f"Error starting Flask app: {e}")
-        import traceback
-        traceback.print_exc()
+    app.run(host='0.0.0.0', port=5000, debug=True)
