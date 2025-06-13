@@ -215,6 +215,10 @@ header h1, header p {
   font-weight: 700;
 }
 
+.file-upload-wrapper {
+  position: relative;
+}
+
 .upload-box input[type="file"] {
   position: absolute;
   opacity: 0;
@@ -223,6 +227,31 @@ header h1, header p {
   cursor: pointer;
   top: 0;
   left: 0;
+  z-index: 2;
+}
+
+.file-label-text {
+  transition: color 0.3s ease;
+}
+
+.upload-box.file-selected {
+  border-color: #28a745;
+  background-color: #f8fff9;
+}
+
+.upload-box.file-selected .file-label {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.upload-box.error {
+  border-color: #dc3545;
+  background-color: #fff5f5;
+}
+
+.upload-box.error .file-label {
+  background-color: #f8d7da;
+  color: #721c24;
 }
 
 .file-label {

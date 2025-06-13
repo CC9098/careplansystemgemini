@@ -69,29 +69,32 @@
 
                 <div class="upload-grid">
                     <div class="upload-box" id="daily-log-box">
-                        <h3>Monthly Care Log</h3>
-                        <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt,.pdf" required oninvalid="this.setCustomValidity('Please select a care log file')" oninput="this.setCustomValidity('')">
+                    <h3>Monthly Care Log</h3>
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt,.pdf" required>
                         <label for="daily_log" class="file-label">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 10px; opacity: 0.5;">
                                 <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span>Click to select log file or drag & drop here</span>
+                            <span class="file-label-text">Click to select log file or drag & drop here</span>
                         </label>
-                        <p class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables.</small></p>
+                        <div class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables.</small></div>
                     </div>
+                </div>
 
-                    <div class="upload-box" id="care-plan-box">
-                        <h3>Current Care Plan</h3>
+                <div class="upload-box" id="care-plan-box">
+                    <h3>Current Care Plan</h3>
+                    <div class="file-upload-wrapper">
                         <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt,.pdf">
                         <label for="care_plan" class="file-label">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 10px; opacity: 0.5;">
                                 <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span>Click to select care plan or drag & drop here</span>
+                            <span class="file-label-text">Click to select care plan or drag & drop here</span>
                         </label>
-                        <p class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables. Required for Care Plan Analysis.</small></p>
+                        <div class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables. Required for Care Plan Analysis.</small></div>
                     </div>
                 </div>
 
@@ -220,7 +223,7 @@
         });
 
         function updateFileLabel(input, defaultText) {
-            const label = input.nextElementSibling.querySelector('span');
+            const label = input.nextElementSibling.querySelector('.file-label-text');
             label.textContent = input.files.length > 0 ? input.files[0].name : defaultText;
         }
 
@@ -295,7 +298,7 @@
                 // Check if both individual options are now selected
                 const carePlanChecked = document.querySelector('input[value="care_plan"]').checked;
                 const riskAssessmentChecked = document.querySelector('input[value="risk_assessment"]').checked;
-                
+
                 if (carePlanChecked && riskAssessmentChecked) {
                     document.querySelector('input[value="combo_mode"]').checked = true;
                 }
@@ -566,7 +569,7 @@
         function displayDataQuality(qualityData) {
             const dataQualitySection = document.getElementById('dataQualitySection');
             const dataQualityDetails = document.getElementById('dataQualityDetails');
-            
+
             if (!qualityData) {
                 dataQualitySection.style.display = 'none';
                 return;
@@ -592,14 +595,14 @@
                             ${(qualityData.completeness_analysis?.present_data_types || []).map(item => `<li>${item}</li>`).join('')}
                         </ul>
                     </div>
-                    
+
                     <div class="completeness-card missing-critical">
                         <h4>🚨 Missing Critical Data</h4>
                         <ul>
                             ${(qualityData.completeness_analysis?.missing_critical_data || []).map(item => `<li>${item}</li>`).join('')}
                         </ul>
                     </div>
-                    
+
                     <div class="completeness-card missing-recommended">
                         <h4>💡 Recommended Additions</h4>
                         <ul>
@@ -627,7 +630,7 @@
                 <div class="staff-performance">
                     <h4>👥 Staff Performance Analysis</h4>
                     <p class="general-feedback">${qualityData.staff_performance?.general_staff_feedback || 'No feedback available'}</p>
-                    
+
                     <div class="staff-examples-grid">
                         <div class="staff-examples best-examples">
                             <h5>🌟 Best Logging Examples</h5>
@@ -642,7 +645,7 @@
                                 </div>
                             `).join('') || '<p>No examples available</p>'}
                         </div>
-                        
+
                         <div class="staff-examples worst-examples">
                             <h5>⚠️ Areas for Improvement</h5>
                             ${(qualityData.staff_performance?.worst_staff_examples || []).map(example => `
@@ -682,8 +685,8 @@
 
         function toggleDataQuality() {
             const content = document.getElementById('dataQualityContent');
-            const button = document.querySelector('.data-quality-header .toggle-btn');
-            
+            const button = document.querySelector('.dataQuality-header .toggle-btn');
+
             if (content.style.display === 'none') {
                 content.style.display = 'block';
                 button.textContent = '📉 Hide Quality Report';
@@ -1566,7 +1569,9 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                 html += '<h4>📊 AI Calculation Breakdown</h4>';
                 html += '<div class="disagreement-alert"><h5>⚠️ Manager Review Required</h5><p>Please verify these AI calculations against actual resident observations and care plan records.</p></div>';
 
-                Object.entries(details.calculation_process).forEach(([toolName, process]) => {
+                Object.entries(details.calculation_process).forEach(([toolName, processFile upload functionality in HTML and JavaScript has been addressed.
+```html
+) => {
                     html += `<div class="calculation-tool">
                         <h5>${toolName.replace('_', ' ').toUpperCase()}</h5>
                         <p><strong>AI Calculated Score:</strong> ${process.total_score}</p>
@@ -1801,3 +1806,98 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
 
             let components = '<div class="score-breakdown"><strong>Scoring Components:</strong><ul>';
             assessment
+
+.evidence.forEach(e => {
+                components += `<li>${e}</li>`;
+            });
+            components += '</ul></div>';
+            return components;
+        }
+
+        function markEvidence(toolName, index, status) {
+            const evidenceItem = document.getElementById(`evidence-${toolName}-${index}`);
+            if (evidenceItem) {
+                evidenceItem.className = `evidence-item ${status}`; // Update class for styling
+                evidenceItem.dataset.status = status; // Store the status
+            }
+
+             // Update impact message immediately
+            updateEvidenceImpact(toolName);
+        }
+
+        function updateEvidenceImpact(toolName) {
+            const adjustmentDiv = document.querySelector(`.adjustment-item[data-tool="${toolName}"]`);
+            if (!adjustmentDiv) return;
+
+            let foundCount = 0;
+            let notFoundCount = 0;
+            let questionableCount = 0;
+
+            const evidenceItems = adjustmentDiv.querySelectorAll('.evidence-item');
+            evidenceItems.forEach(item => {
+                const status = item.dataset.status;
+                if (status === 'found') foundCount++;
+                else if (status === 'not-found') notFoundCount++;
+                else if (status === 'questionable') questionableCount++;
+            });
+
+            let impactMessage = '';
+
+            if (notFoundCount > 0) {
+                impactMessage += `<p>❌ <strong>Manager Validation Required:</strong> ${notFoundCount} pieces of AI evidence could not be validated against current care records.</p>`;
+            }
+            if (questionableCount > 0) {
+                impactMessage += `<p>❓ <strong>Additional Review Needed:</strong> ${questionableCount} pieces of AI evidence are unclear or outdated and require further validation.</p>`;
+            }
+
+            if (foundCount === 0 && notFoundCount === 0 && questionableCount === 0) {
+                impactMessage = '<p>No evidence validation performed yet.</p>';
+            }
+
+            document.getElementById(`evidence-impact-${toolName}`).innerHTML = impactMessage;
+        }
+
+        async function saveAllAdjustments() {
+            const adjustmentDivs = document.querySelectorAll('.adjustment-item');
+            const adjustments = [];
+
+            adjustmentDivs.forEach(div => {
+                const toolName = div.dataset.tool;
+                const manualScore = document.getElementById(`manual-score-${toolName}`).value;
+                const adjustmentReason = document.getElementById(`reason-${toolName}`).value;
+
+                adjustments.push({
+                    tool_name: toolName,
+                    manual_score: manualScore,
+                    adjustment_reason: adjustmentReason
+                });
+            });
+
+            try {
+                const response = await fetch('/save_risk_adjustments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        resident_name: currentData.resident_name,
+                        adjustments: adjustments
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Risk adjustments saved successfully!');
+                } else {
+                    alert('Failed to save risk adjustments: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error saving risk adjustments:', error);
+                alert('Error occurred while saving adjustments.');
+            }
+        }
+
+    </script>
+</body>
+</html>

@@ -1092,64 +1092,125 @@ def analyze():
         if not analysis_options:
             return jsonify({'error': 'Please select at least one analysis option'}), 400
 
-        # Check files
+        # Enhanced file validation
+        print(f"Received form data: {dict(request.form)}")
+        print(f"Received files: {list(request.files.keys())}")
+        
+        # Check daily log file
         if 'daily_log' not in request.files:
-            return jsonify({'error': 'Please upload daily log file'}), 400
+            return jsonify({'error': '未收到護理記錄檔案 / Daily log file not received'}), 400
 
         daily_log_file = request.files['daily_log']
         if not daily_log_file or daily_log_file.filename == '':
-            return jsonify({'error': 'Please select a daily log file'}), 400
+            return jsonify({'error': '請選擇護理記錄檔案 / Please select a daily log file'}), 400
 
-        # Care plan file is required for care plan analysis or combo mode
+        print(f"Daily log file: {daily_log_file.filename}, size: {daily_log_file.content_length}")
+
+        # Care plan file validation
         care_plan_file = None
         if 'care_plan' in analysis_options or 'combo_mode' in analysis_options:
             if 'care_plan' not in request.files:
-                return jsonify({'error': 'Please upload care plan file for care plan analysis or combo mode'}), 400
+                return jsonify({'error': '護理計劃分析需要護理計劃檔案 / Care plan file required for care plan analysis'}), 400
             care_plan_file = request.files['care_plan']
             if not care_plan_file or care_plan_file.filename == '':
-                return jsonify({'error': 'Please select a care plan file for care plan analysis or combo mode'}), 400
+                return jsonify({'error': '請選擇護理計劃檔案 / Please select a care plan file'}), 400
+            print(f"Care plan file: {care_plan_file.filename}, size: {care_plan_file.content_length}")
 
-        # Validate file types
+        # File type validation
         if not allowed_file(daily_log_file.filename):
-            return jsonify({'error': 'Daily log file must be CSV, TXT, or PDF'}), 400
+            return jsonify({'error': f'不支援的護理記錄檔案格式 / Unsupported daily log file format: {daily_log_file.filename}'}), 400
         
         if care_plan_file and not allowed_file(care_plan_file.filename):
-            return jsonify({'error': 'Care plan file must be CSV, TXT, or PDF'}), 400
+            return jsonify({'error': f'不支援的護理計劃檔案格式 / Unsupported care plan file format: {care_plan_file.filename}'}), 400
 
-        # Process daily log file
+        # File size validation (5MB limit)
+        max_size = 5 * 1024 * 1024  # 5MB
+        if daily_log_file.content_length and daily_log_file.content_length > max_size:
+            return jsonify({'error': f'護理記錄檔案過大 / Daily log file too large: {daily_log_file.content_length / 1024 / 1024:.2f}MB > 5MB'}), 400
+        
+        if care_plan_file and care_plan_file.content_length and care_plan_file.content_length > max_size:
+            return jsonify({'error': f'護理計劃檔案過大 / Care plan file too large: {care_plan_file.content_length / 1024 / 1024:.2f}MB > 5MB'}), 400
+
+        # Process daily log file with enhanced error handling
         daily_log_content = ""
         daily_log_error = None
 
-        if daily_log_file.filename.lower().endswith('.pdf'):
-            daily_log_content, daily_log_error = extract_pdf_text(daily_log_file)
-        else:
-            # Save and read CSV/TXT files
-            daily_log_path = os.path.join(app.config['UPLOAD_FOLDER'], 
-                                          secure_filename(f"daily_{datetime.now().timestamp()}.csv"))
-            daily_log_file.save(daily_log_path)
-            daily_log_content = read_csv_flexible(daily_log_path)
-            os.remove(daily_log_path)
+        try:
+            print(f"Processing daily log file: {daily_log_file.filename}")
+            
+            if daily_log_file.filename.lower().endswith('.pdf'):
+                daily_log_content, daily_log_error = extract_pdf_text(daily_log_file)
+            else:
+                # Create unique filename to avoid conflicts
+                timestamp = datetime.now().timestamp()
+                file_extension = daily_log_file.filename.split('.')[-1]
+                daily_log_path = os.path.join(app.config['UPLOAD_FOLDER'], 
+                                              secure_filename(f"daily_{timestamp}.{file_extension}"))
+                
+                # Save file
+                daily_log_file.save(daily_log_path)
+                print(f"Saved daily log to: {daily_log_path}")
+                
+                # Read and process
+                daily_log_content = read_csv_flexible(daily_log_path)
+                
+                # Clean up
+                if os.path.exists(daily_log_path):
+                    os.remove(daily_log_path)
+                    print(f"Cleaned up: {daily_log_path}")
 
-        if daily_log_error:
-            return jsonify({'error': daily_log_error}), 400
+            if daily_log_error:
+                return jsonify({'error': f'護理記錄檔案處理錯誤 / Daily log processing error: {daily_log_error}'}), 400
+
+            if not daily_log_content or len(daily_log_content.strip()) < 10:
+                return jsonify({'error': '護理記錄檔案內容為空或過短 / Daily log file is empty or too short'}), 400
+
+            print(f"Daily log content length: {len(daily_log_content)} characters")
+
+        except Exception as e:
+            print(f"Error processing daily log file: {str(e)}")
+            return jsonify({'error': f'處理護理記錄檔案時發生錯誤 / Error processing daily log file: {str(e)}'}), 400
 
         # Process care plan file (if provided)
         care_plan_content = ""
         care_plan_error = None
 
         if care_plan_file:
-            if care_plan_file.filename.lower().endswith('.pdf'):
-                care_plan_content, care_plan_error = extract_pdf_text(care_plan_file)
-            else:
-                # Save and read CSV/TXT files
-                care_plan_path = os.path.join(app.config['UPLOAD_FOLDER'], 
-                                              secure_filename(f"care_{datetime.now().timestamp()}.csv"))
-                care_plan_file.save(care_plan_path)
-                care_plan_content = read_csv_flexible(care_plan_path)
-                os.remove(care_plan_path)
+            try:
+                print(f"Processing care plan file: {care_plan_file.filename}")
+                
+                if care_plan_file.filename.lower().endswith('.pdf'):
+                    care_plan_content, care_plan_error = extract_pdf_text(care_plan_file)
+                else:
+                    # Create unique filename
+                    timestamp = datetime.now().timestamp()
+                    file_extension = care_plan_file.filename.split('.')[-1]
+                    care_plan_path = os.path.join(app.config['UPLOAD_FOLDER'], 
+                                                  secure_filename(f"care_{timestamp}.{file_extension}"))
+                    
+                    # Save file
+                    care_plan_file.save(care_plan_path)
+                    print(f"Saved care plan to: {care_plan_path}")
+                    
+                    # Read and process
+                    care_plan_content = read_csv_flexible(care_plan_path)
+                    
+                    # Clean up
+                    if os.path.exists(care_plan_path):
+                        os.remove(care_plan_path)
+                        print(f"Cleaned up: {care_plan_path}")
 
-            if care_plan_error:
-                return jsonify({'error': care_plan_error}), 400
+                if care_plan_error:
+                    return jsonify({'error': f'護理計劃檔案處理錯誤 / Care plan processing error: {care_plan_error}'}), 400
+
+                if not care_plan_content or len(care_plan_content.strip()) < 10:
+                    return jsonify({'error': '護理計劃檔案內容為空或過短 / Care plan file is empty or too short'}), 400
+
+                print(f"Care plan content length: {len(care_plan_content)} characters")
+
+            except Exception as e:
+                print(f"Error processing care plan file: {str(e)}")
+                return jsonify({'error': f'處理護理計劃檔案時發生錯誤 / Error processing care plan file: {str(e)}'}), 400
 
         # Dual AI System Implementation
         processed_daily_log = daily_log_content
