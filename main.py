@@ -389,7 +389,7 @@ Guidelines:
 
         # Clean response and extract JSON
         response_text = re.sub(r'```json\s*', '', response_text)
-        response_text = re.sub(r'```\s*$', '', response_text)
+        response_text = re.sub(r'```\s*', '', response_text)
 
         try:
             highlights = json.loads(response_text)
@@ -508,7 +508,7 @@ Guidelines:
 
         # Clean response and extract JSON
         response_text = re.sub(r'```json\s*', '', response_text)
-        response_text = re.sub(r'```\s*$', '', response_text)
+        response_text = re.sub(r'```\s*', '', response_text)
 
         try:
             quality_analysis = json.loads(response_text)
@@ -757,7 +757,7 @@ Guidelines:
 
         # Remove any markdown code blocks
         response_text = re.sub(r'```json\s*', '', response_text)
-        response_text = re.sub(r'```\s*$', '', response_text)
+        response_text = re.sub(r'```\s*', '', response_text)
 
         # Try to extract JSON from the response
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
