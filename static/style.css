@@ -59,20 +59,20 @@ header {
   flex-shrink: 0;
 }
 
-.logo-image {
-  height: 80px;
-  width: auto;
-  filter: drop-shadow(0 4px 12px rgba(255, 98, 66, 0.2));
+.logo-placeholder {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+    padding: 10px;
 }
 
 .hero-illustration {
   flex-shrink: 0;
 }
 
-.hero-image {
-  height: 120px;
-  width: auto;
-  animation: float 3s ease-in-out infinite;
+.hero-placeholder {
+    font-size: 48px;
+    padding: 20px;
 }
 
 @keyframes float {
