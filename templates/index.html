@@ -134,6 +134,17 @@
                     <div id="logHighlights"></div>
                 </div>
 
+                <!-- Data Quality Analysis -->
+                <div id="dataQualitySection" class="data-quality-section" style="display: none;">
+                    <div class="data-quality-header">
+                        <h3>📊 Data Quality Analysis</h3>
+                        <button onclick="toggleDataQuality()" class="action-btn toggle-btn">📈 View Quality Report</button>
+                    </div>
+                    <div id="dataQualityContent" class="data-quality-content" style="display: none;">
+                        <div id="dataQualityDetails"></div>
+                    </div>
+                </div>
+
                 <div class="suggestions-container">
                     <h3>📋 Select suggestions to implement:</h3>
                     <div id="suggestionsList"></div>
@@ -346,6 +357,11 @@
                 displayRiskAssessment(data.risk_assessment);
             }
 
+            // Display data quality analysis if available
+            if (data.data_quality_analysis) {
+                displayDataQuality(data.data_quality_analysis);
+            }
+
             // Display suggestions with specific issues and dynamic options
             const suggestionsList = document.getElementById('suggestionsList');
             suggestionsList.innerHTML = '';
@@ -458,6 +474,136 @@
             });
 
             highlightedLogsSection.style.display = 'block'; // Show the section
+        }
+
+        function displayDataQuality(qualityData) {
+            const dataQualitySection = document.getElementById('dataQualitySection');
+            const dataQualityDetails = document.getElementById('dataQualityDetails');
+            
+            if (!qualityData) {
+                dataQualitySection.style.display = 'none';
+                return;
+            }
+
+            // Build the data quality content
+            let html = `
+                <div class="quality-overview">
+                    <div class="quality-score">
+                        <h4>📊 Overall Quality Score</h4>
+                        <div class="score-display">
+                            <span class="score-number">${qualityData.overall_quality?.score || 'N/A'}/100</span>
+                            <span class="score-rating ${(qualityData.overall_quality?.rating || '').toLowerCase()}">${qualityData.overall_quality?.rating || 'Unknown'}</span>
+                        </div>
+                        <p class="score-summary">${qualityData.overall_quality?.summary || 'No summary available'}</p>
+                    </div>
+                </div>
+
+                <div class="completeness-grid">
+                    <div class="completeness-card present-data">
+                        <h4>✅ Present Data Types</h4>
+                        <ul>
+                            ${(qualityData.completeness_analysis?.present_data_types || []).map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <div class="completeness-card missing-critical">
+                        <h4>🚨 Missing Critical Data</h4>
+                        <ul>
+                            ${(qualityData.completeness_analysis?.missing_critical_data || []).map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <div class="completeness-card missing-recommended">
+                        <h4>💡 Recommended Additions</h4>
+                        <ul>
+                            ${(qualityData.completeness_analysis?.missing_recommended_data || []).map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="improvement-suggestions">
+                    <h4>🔧 Improvement Suggestions</h4>
+                    <div class="suggestions-list">
+                        ${(qualityData.improvement_suggestions || []).map(suggestion => `
+                            <div class="suggestion-item priority-${(suggestion.priority || 'medium').toLowerCase()}">
+                                <div class="suggestion-header">
+                                    <span class="category">${suggestion.category || 'General'}</span>
+                                    <span class="priority">${suggestion.priority || 'Medium'}</span>
+                                </div>
+                                <p class="suggestion-text">${suggestion.suggestion || ''}</p>
+                                <p class="suggestion-impact"><strong>Impact:</strong> ${suggestion.impact || ''}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="staff-performance">
+                    <h4>👥 Staff Performance Analysis</h4>
+                    <p class="general-feedback">${qualityData.staff_performance?.general_staff_feedback || 'No feedback available'}</p>
+                    
+                    <div class="staff-examples-grid">
+                        <div class="staff-examples best-examples">
+                            <h5>🌟 Best Logging Examples</h5>
+                            ${(qualityData.staff_performance?.best_staff_examples || []).map(example => `
+                                <div class="staff-example good">
+                                    <div class="staff-info">
+                                        <strong>Staff:</strong> ${example.staff_identifier || 'Unknown'}
+                                        ${example.date ? `<span class="date">${example.date}</span>` : ''}
+                                    </div>
+                                    <blockquote class="example-text">"${example.example_entry || ''}"</blockquote>
+                                    <p class="feedback-text"><strong>Why good:</strong> ${example.why_good || ''}</p>
+                                </div>
+                            `).join('') || '<p>No examples available</p>'}
+                        </div>
+                        
+                        <div class="staff-examples worst-examples">
+                            <h5>⚠️ Areas for Improvement</h5>
+                            ${(qualityData.staff_performance?.worst_staff_examples || []).map(example => `
+                                <div class="staff-example needs-improvement">
+                                    <div class="staff-info">
+                                        <strong>Staff:</strong> ${example.staff_identifier || 'Unknown'}
+                                        ${example.date ? `<span class="date">${example.date}</span>` : ''}
+                                    </div>
+                                    <blockquote class="example-text">"${example.example_entry || ''}"</blockquote>
+                                    <p class="feedback-text"><strong>Issue:</strong> ${example.why_poor || ''}</p>
+                                    <p class="improvement-text"><strong>Suggestion:</strong> ${example.improvement_needed || ''}</p>
+                                </div>
+                            `).join('') || '<p>No examples available</p>'}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-trends">
+                    <h4>📈 Data Trends</h4>
+                    <div class="trends-grid">
+                        <div class="trend-item">
+                            <strong>Consistency:</strong> ${qualityData.data_trends?.consistency || 'Unknown'}
+                        </div>
+                        <div class="trend-item">
+                            <strong>Frequency:</strong> ${qualityData.data_trends?.frequency || 'Unknown'}
+                        </div>
+                        <div class="trend-item">
+                            <strong>Detail Level:</strong> ${qualityData.data_trends?.detail_level || 'Unknown'}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            dataQualityDetails.innerHTML = html;
+            dataQualitySection.style.display = 'block';
+        }
+
+        function toggleDataQuality() {
+            const content = document.getElementById('dataQualityContent');
+            const button = document.querySelector('.data-quality-header .toggle-btn');
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                button.textContent = '📉 Hide Quality Report';
+            } else {
+                content.style.display = 'none';
+                button.textContent = '📈 View Quality Report';
+            }
         }
 
         // Generate care plan functionality

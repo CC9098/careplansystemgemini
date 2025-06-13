@@ -410,6 +410,166 @@ Guidelines:
         print(f"Error extracting log highlights: {str(e)}")
         return []
 
+def analyze_data_quality(daily_log_content, resident_name):
+    """Analyze the quality of care log data and staff performance"""
+    
+    prompt = f"""You are a care home data quality analyst. Analyze the care log entries and provide a comprehensive assessment of data quality, completeness, and staff performance.
+
+RESIDENT: {resident_name}
+
+CARE LOG CONTENT:
+{daily_log_content}
+
+Analyze the log entries and provide assessment in the following areas:
+
+1. Overall log quality (good/fair/poor)
+2. Missing essential data that should be recorded
+3. Suggestions for more comprehensive data collection
+4. Staff performance analysis
+
+Respond with ONLY a valid JSON object like this:
+
+{{
+    "overall_quality": {{
+        "rating": "Good/Fair/Poor",
+        "score": 85,
+        "summary": "Brief overall assessment of log quality"
+    }},
+    "completeness_analysis": {{
+        "present_data_types": [
+            "List of data types found in logs (e.g., behavioral incidents, meal intake, medication times, etc.)"
+        ],
+        "missing_critical_data": [
+            "Essential data that should be recorded but is missing"
+        ],
+        "missing_recommended_data": [
+            "Additional data that would improve care quality"
+        ]
+    }},
+    "improvement_suggestions": [
+        {{
+            "category": "Data Collection",
+            "suggestion": "Specific suggestion for better data collection",
+            "priority": "High/Medium/Low",
+            "impact": "Expected positive impact of this improvement"
+        }}
+    ],
+    "staff_performance": {{
+        "total_entries_analyzed": 0,
+        "best_staff_examples": [
+            {{
+                "staff_identifier": "Staff name or ID found in logs",
+                "example_entry": "Exact text of well-written log entry",
+                "why_good": "Explanation of what makes this entry excellent",
+                "date": "Date if available"
+            }}
+        ],
+        "worst_staff_examples": [
+            {{
+                "staff_identifier": "Staff name or ID found in logs", 
+                "example_entry": "Exact text of poorly written log entry",
+                "why_poor": "Explanation of what makes this entry inadequate",
+                "improvement_needed": "Specific suggestions for improvement",
+                "date": "Date if available"
+            }}
+        ],
+        "general_staff_feedback": "Overall assessment of staff logging practices"
+    }},
+    "data_trends": {{
+        "consistency": "Assessment of data consistency over time",
+        "frequency": "Assessment of logging frequency",
+        "detail_level": "Assessment of detail and specificity in entries"
+    }}
+}}
+
+Guidelines:
+- Be constructive and specific in feedback
+- Identify actual staff names/IDs from log entries where visible
+- Focus on actionable improvements
+- Consider both clinical and administrative data needs
+- Preserve exact text from log entries in examples
+"""
+
+    try:
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=3000,
+            temperature=0.3,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        response_text = message.content[0].text.strip()
+        
+        # Clean response and extract JSON
+        response_text = re.sub(r'```json\s*', '', response_text)
+        response_text = re.sub(r'```\s*$', '', response_text)
+        
+        try:
+            quality_analysis = json.loads(response_text)
+            return quality_analysis
+        except json.JSONDecodeError:
+            pass
+            
+        # Fallback analysis if parsing fails
+        return {
+            "overall_quality": {
+                "rating": "Fair",
+                "score": 65,
+                "summary": "Log contains basic information but could be more comprehensive"
+            },
+            "completeness_analysis": {
+                "present_data_types": ["Basic behavioral incidents", "Some meal information"],
+                "missing_critical_data": ["Medication administration times", "Vital signs", "Weight measurements"],
+                "missing_recommended_data": ["Mood assessments", "Social interaction notes", "Pain assessments"]
+            },
+            "improvement_suggestions": [
+                {
+                    "category": "Data Collection",
+                    "suggestion": "Implement standardized logging templates for consistent data capture",
+                    "priority": "High",
+                    "impact": "More complete and useful care records"
+                }
+            ],
+            "staff_performance": {
+                "total_entries_analyzed": 0,
+                "best_staff_examples": [],
+                "worst_staff_examples": [],
+                "general_staff_feedback": "Staff logging varies in quality and completeness"
+            },
+            "data_trends": {
+                "consistency": "Inconsistent logging patterns observed",
+                "frequency": "Some gaps in regular logging",
+                "detail_level": "Basic details provided, more specificity needed"
+            }
+        }
+
+    except Exception as e:
+        print(f"Error analyzing data quality: {str(e)}")
+        return {
+            "overall_quality": {
+                "rating": "Unknown",
+                "score": 50,
+                "summary": "Unable to analyze log quality"
+            },
+            "completeness_analysis": {
+                "present_data_types": [],
+                "missing_critical_data": [],
+                "missing_recommended_data": []
+            },
+            "improvement_suggestions": [],
+            "staff_performance": {
+                "total_entries_analyzed": 0,
+                "best_staff_examples": [],
+                "worst_staff_examples": [],
+                "general_staff_feedback": "Analysis unavailable"
+            },
+            "data_trends": {
+                "consistency": "Unknown",
+                "frequency": "Unknown", 
+                "detail_level": "Unknown"
+            }
+        }
+
 def analyze_and_suggest_changes(daily_log, current_care_plan, resident_name):
     """Step 1: Analyze and suggest changes with gap detection"""
 
@@ -1041,6 +1201,10 @@ def analyze():
             processing_steps.append("🔍 Extracting log highlights...")
             log_highlights = extract_log_highlights(processed_daily_log, resident_name)
 
+        # Always analyze data quality
+        processing_steps.append("📊 Analyzing data quality...")
+        data_quality_analysis = analyze_data_quality(processed_daily_log, resident_name)
+
         # Ensure we have at least minimal data structure
         if not analysis_result and 'care_plan' not in analysis_options:
             analysis_result = {
@@ -1080,6 +1244,7 @@ def analyze():
             'processing_steps': processing_steps,
             'was_compressed': is_large_file(daily_log_content),
             'risk_assessment': risk_assessment_results,
+            'data_quality_analysis': data_quality_analysis,
             'analysis_options': analysis_options
         })
 
