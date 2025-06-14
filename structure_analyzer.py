@@ -61,7 +61,7 @@ Guidelines:
     try:
         message = structure_client.messages.create(
             model="o3",
-            max_tokens=2000,
+            max_completion_tokens=2000,
             temperature=0.3,
             messages=[{"role": "user", "content": prompt}]
         )
