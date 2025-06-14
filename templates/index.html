@@ -387,7 +387,7 @@
                 if (data.success && data.step === 'suggestions') {
                     currentData = data;
                     displaySuggestions(data);
-                    displayHighlightedLogs(data.highlighted_logs);
+                    displayHighlightedLogs(data.log_highlights);
                     suggestions.style.display = 'block';
                 } else {
                     alert('Analysis failed: ' + (data.error || 'Unknown error'));
