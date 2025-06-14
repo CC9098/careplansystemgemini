@@ -740,7 +740,7 @@ Guidelines:
 
     try:
         response = client.chat.completions.create(
-            model="o3-2025-04-16",
+            model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=4000,
             temperature=0.7
@@ -839,7 +839,7 @@ def generate_final_care_plan(original_care_plan, selected_suggestions, manager_c
     # Format risk assessment data
     risk_assessment_section = ""
     if risk_assessment_data and 'assessments' in risk_assessment_data:
-        risk_assessment_section = format_risk_assessment_for_care_plan(risk_assessment_data)
+        riskassessment_section = format_risk_assessment_for_care_plan(risk_assessment_data)
 
     prompt = f"""You are a professional care home management assistant. Your task is to rewriteand organize the existing care plan, seamlessly integrating updates into appropriate sections and adding a priority observation section.
 
@@ -891,7 +891,7 @@ Generate the complete updated care plan with natural integration."""
 
     try:
         response = client.chat.completions.create(
-            model="o3-2025-04-16",
+            model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=4000,
             temperature=0.7
@@ -1626,7 +1626,10 @@ def download_pdf():
 
         # Create PDF
         output = io.BytesIO()
-        doc = SimpleDocTemplate(output, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+        doc = SimpleDocTemplate(output, pagesize=A4, rightMargin=72, leftHere's the updated code:
+
+```python
+Margin=72, topMargin=72, bottomMargin=18)
 
         # Container for the 'Flowable' objects
         elements = []
