@@ -401,7 +401,7 @@ Guidelines:
         response = client.chat.completions.create(
             model="o3",
             messages=[{"role": "user", "content": prompt}],
-            max_completion_tokens=2000,
+            max_completion_tokens=30000,
             temperature=0.3
         )
 
@@ -520,7 +520,7 @@ Guidelines:
         response = client.chat.completions.create(
             model="o3",
             messages=[{"role": "user", "content": prompt}],
-            max_completion_tokens=3000,
+            max_completion_tokens=30000,
             temperature=0.3
         )
 
@@ -765,8 +765,8 @@ Guidelines:
         response = client.chat.completions.create(
             model="o3",
             messages=[{"role": "user", "content": prompt}],
-            max_completion_tokens=4000,
-            temperature=0.7
+            max_completion_tokens=30000,
+            temperature=0.3
         )
 
         if not response or not response.choices:
@@ -916,8 +916,8 @@ Generate the complete updated care plan with natural integration."""
         response = client.chat.completions.create(
             model="o3",
             messages=[{"role": "user", "content": prompt}],
-            max_completion_tokens=4000,
-            temperature=0.7
+            max_completion_tokens=30000,
+            temperature=0.3
         )
         return response.choices[0].message.content
     except Exception as e:
