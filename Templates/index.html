@@ -365,7 +365,11 @@
             finalPlan.style.display = 'none';
             loading.style.display = 'block';
 
-            startProgressAnimation();
+            // Simple loading message for analysis
+            const loadingText = document.getElementById('loading-text');
+            if (loadingText) {
+                loadingText.textContent = '🧠 Analyzing care logs and generating suggestions...';
+            }
 
             try {
                 const formData = new FormData(this);
