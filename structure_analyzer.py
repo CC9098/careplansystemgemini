@@ -60,7 +60,7 @@ Guidelines:
 
     try:
         message = structure_client.messages.create(
-            model="gpt-4o",
+            model="o3-mini",
             max_tokens=2000,
             temperature=0.3,
             messages=[{"role": "user", "content": prompt}]
