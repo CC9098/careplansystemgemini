@@ -399,7 +399,7 @@ Guidelines:
 
     try:
         response = client.chat.completions.create(
-            model="o3-2025-04-16",
+            model="o3",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=2000,
             temperature=0.3
@@ -518,7 +518,7 @@ Guidelines:
 
     try:
         response = client.chat.completions.create(
-            model="o3-2025-04-16",
+            model="o3",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=3000,
             temperature=0.3
@@ -763,7 +763,7 @@ Guidelines:
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="o3",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=4000,
             temperature=0.7
@@ -914,7 +914,7 @@ Generate the complete updated care plan with natural integration."""
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="o3",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=4000,
             temperature=0.7
