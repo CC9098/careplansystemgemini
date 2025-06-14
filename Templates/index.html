@@ -1,269 +1,1705 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Care Buddy AI - 護理計劃分析平台</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <title>Care Plan - AI Care Plan Analysis</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <div class="header-decoration">
-                <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="header-svg header-svg-left">
-                    <path d="M60 110C87.6142 110 110 87.6142 110 60C110 32.3858 87.6142 10 60 10C32.3858 10 10 32.3858 10 60C10 87.6142 32.3858 110 60 110Z" fill="#FADADD" fill-opacity="0.2"/>
-                    <path d="M60 100C82.0914 100 100 82.0914 100 60C100 37.9086 82.0914 20 60 20C37.9086 20 20 37.9086 20 60C20 82.0914 37.9086 100 60 100Z" stroke="#F08080" stroke-width="2" stroke-dasharray="4 4"/>
-                    <path d="M70 50C75.5228 50 80 45.5228 80 40C80 34.4772 75.5228 30 70 30C64.4772 30 60 34.4772 60 40C60 45.5228 64.4772 50 70 50Z" fill="#F08080" fill-opacity="0.3"/>
-                </svg>
-                
-                <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="header-svg header-svg-right">
-                    <path d="M60 110C87.6142 110 110 87.6142 110 60C110 32.3858 87.6142 10 60 10C32.3858 10 10 32.3858 10 60C10 87.6142 32.3858 110 60 110Z" fill="#FADADD" fill-opacity="0.2"/>
-                    <path d="M40 80C45.5228 80 50 75.5228 50 70C50 64.4772 45.5228 60 40 60C34.4772 60 30 64.4772 30 70C30 75.5228 34.4772 80 40 80Z" fill="#F08080" fill-opacity="0.3"/>
-                    <path d="M85 75L75 85M75 75L85 85" stroke="#F08080" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-            </div>
-            
             <div class="brand-container">
                 <div class="brand-logo">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.27 2 8.5C2 5.41 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.08C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.41 22 8.5C22 12.27 18.6 15.36 13.45 20.03L12 21.35Z" fill="#F08080"/>
-                        <path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.27 2 8.5C2 5.41 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.08C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.41 22 8.5C22 12.27 18.6 15.36 13.45 20.03L12 21.35Z" fill="url(#paint0_linear)" fill-opacity="0.6"/>
-                        <path d="M16.5 8.5C16.5 6.5 14.5 5 12 8C9.5 5 7.5 6.5 7.5 8.5C7.5 10.5 9.5 12.5 12 14C14.5 12.5 16.5 10.5 16.5 8.5Z" fill="white"/>
-                        <defs>
-                            <linearGradient id="paint0_linear" x1="12" y1="3" x2="12" y2="21.35" gradientUnits="userSpaceOnUse">
-                                <stop stop-color="#FFC07F"/>
-                                <stop offset="1" stop-color="#F08080"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Care Plan Logo" class="logo-image">
                 </div>
-                <div class="brand-text">
-                    <h1>Care Buddy AI</h1>
-                    <div class="brand-accent"></div>
+                <div class="hero-illustration">
+                    <div class="hero-placeholder">🤖💊📋</div>
                 </div>
             </div>
-            
-            <p>上傳住戶日誌和現有護理計劃，AI 將為您分析並提供優化建議</p>
+            <div class="header-content">
+                <h1>AI-Powered Care Plan Analysis</h1>
+                <p>Upload resident logs and current care plans. Our AI will analyze patterns and provide personalized optimization suggestions for better care outcomes.</p>
+            </div>
         </header>
 
         <main>
+            <!-- Step 1: File Upload -->
             <form id="uploadForm" class="upload-section">
+                <div class="form-header">
+                    <h2>📋 Start Your Analysis</h2>
+                    <p>Begin by entering resident information and selecting your analysis preferences</p>
+                </div>
+
                 <div class="form-group">
-                    <label for="resident_name">住戶姓名：</label>
-                    <input type="text" id="resident_name" name="resident_name" placeholder="請輸入住戶姓名" required>
+                    <label for="resident_name">Resident Name:</label>
+                    <input type="text" id="resident_name" name="resident_name" placeholder="Enter resident name" required oninvalid="this.setCustomValidity('Please enter resident name')" oninput="this.setCustomValidity('')">
+                </div>
+
+                <!-- Analysis Options -->
+                <div class="form-group">
+                    <label>Analysis Options:</label>
+                    <div class="checkbox-group">
+                        <label class="analysis-option">
+                            <input type="checkbox" name="analysis_options" value="care_plan" checked>
+                            <div class="option-content">
+                                <strong>📋 Care Plan Analysis</strong>
+                                <p>Analyze existing care plans and suggest improvements based on log patterns</p>
+                            </div>
+                        </label>
+                        <label class="analysis-option">
+                            <input type="checkbox" name="analysis_options" value="risk_assessment" checked>
+                            <div class="option-content">
+                                <strong>🛡️ Risk Assessment</strong>
+                                <p>Calculate risk scores using validated assessment tools (Falls, Nutrition, etc.)</p>
+                            </div>
+                        </label>
+                        <label class="analysis-option combo-option">
+                            <input type="checkbox" name="analysis_options" value="combo_mode" checked>
+                            <div class="option-content">
+                                <strong>🔄 Comprehensive Analysis</strong>
+                                <p>Complete care optimization combining both care plan analysis and risk assessments</p>
+                            </div>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="upload-grid">
-                    <div class="upload-box">
-                        <div class="upload-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M14 2V8H20" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M16 13H8" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M16 17H8" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M10 9H9H8" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                    <div class="upload-box" id="daily-log-box">
+                        <h3>📊 Monthly Care Log</h3>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt,.pdf" required>
+                            <label for="daily_log" class="file-label">
+                                <div class="upload-icon">📄</div>
+                                <span class="file-label-text">Click to select log file or drag & drop here</span>
+                            </label>
+                            <div class="file-info">Supports CSV, TXT, and PDF files<br><small>For best results, use CSV format. PDF support is limited to text-based tables.</small></div>
                         </div>
-                        <h3>本月日誌記錄</h3>
-                        <input type="file" id="daily_log" name="daily_log" accept=".csv,.txt" required>
-                        <label for="daily_log" class="file-label">
-                            <span>點擊選擇檔案或拖放到此處</span>
-                        </label>
-                        <p class="file-info"></p>
                     </div>
 
-                    <div class="upload-box">
-                        <div class="upload-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M14 3V7C14 7.26522 14.1054 7.51957 14.2929 7.70711C14.4804 7.89464 14.7348 8 15 8H19" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M17 21H7C6.46957 21 5.96086 20.7893 5.58579 20.4142C5.21071 20.0391 5 19.5304 5 19V5C5 4.46957 5.21071 3.96086 5.58579 3.58579C5.96086 3.21071 6.46957 3 7 3H14L19 8V19C19 19.5304 18.7893 20.0391 18.4142 20.4142C18.0391 20.7893 17.5304 21 17 21Z" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M9 7H10" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M9 13H15" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M9 17H15" stroke="#F08080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                    <div class="upload-box" id="care-plan-box">
+                        <h3>📋 Current Care Plan</h3>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt,.pdf">
+                            <label for="care_plan" class="file-label">
+                                <div class="upload-icon">📋</div>
+                                <span class="file-label-text">Click to select care plan or drag & drop here</span>
+                            </label>
+                            <div class="file-info">Supports CSV, TXT, and PDF files<br><small>Required for Care Plan Analysis and Comprehensive mode.</small></div>
                         </div>
-                        <h3>現有護理計劃</h3>
-                        <input type="file" id="care_plan" name="care_plan" accept=".csv,.txt" required>
-                        <label for="care_plan" class="file-label">
-                            <span>點擊選擇檔案或拖放到此處</span>
-                        </label>
-                        <p class="file-info"></p>
                     </div>
                 </div>
 
                 <button type="submit" class="analyze-btn">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 6C13.93 6 15.5 7.57 15.5 9.5C15.5 11.43 13.93 13 12 13C10.07 13 8.5 11.43 8.5 9.5C8.5 7.57 10.07 6 12 6ZM12 20C9.97 20 8.1 19.33 6.66 18.12C6.25 17.8 6 17.3 6 16.75C6 14.99 7.5 13.5 9.25 13.5H14.75C16.5 13.5 18 14.99 18 16.75C18 17.3 17.75 17.8 17.34 18.12C15.9 19.33 14.03 20 12 20Z" fill="#4A4A4A"/>
-                    </svg>
-                    <span>開始 AI 分析</span>
+                    <span>🚀 Analyze & Get Suggestions</span>
                 </button>
             </form>
 
+            <!-- Loading -->
             <div id="loading" class="loading" style="display: none;">
                 <div class="spinner"></div>
-                <p>AI 正在分析中，請稍候...</p>
+                <p id="loading-text">AI is analyzing files, please wait...</p>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text">0%</div>
+                </div>
+                <div class="progress-steps" id="progress-steps"></div>
             </div>
 
-            <div id="results" class="results-section" style="display: none;">
-                <div class="results-header">
-                    <h2>分析報告</h2>
-                    <div class="action-buttons">
-                        <button id="copyBtn" class="action-btn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 5px;">
-                                <path d="M20 9H11C9.89543 9 9 9.89543 9 11V20C9 21.1046 9.89543 22 11 22H20C21.1046 22 22 21.1046 22 20V11C22 9.89543 21.1046 9 20 9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M5 15H4C3.46957 15 2.96086 14.7893 2.58579 14.4142C2.21071 14.0391 2 13.5304 2 13V4C2 3.46957 2.21071 2.96086 2.58579 2.58579C2.96086 2.21071 3.46957 2 4 2H13C13.5304 2 14.0391 2.21071 14.4142 2.58579C14.7893 2.96086 15 3.46957 15 4V5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            複製
-                        </button>
-                        <button id="downloadBtn" class="action-btn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 5px;">
-                                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            下載
-                        </button>
-                        <button id="newAnalysisBtn" class="action-btn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 5px;">
-                                <path d="M23 4V10H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M1 20V14H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M3.51 9.00001C4.01717 7.56455 4.87913 6.2854 6.01547 5.27543C7.1518 4.26547 8.52547 3.55978 10.0083 3.22427C11.4911 2.88877 13.0348 2.93436 14.4952 3.35679C15.9556 3.77922 17.2853 4.56473 18.36 5.64001L23 10M1 14L5.64 18.36C6.71475 19.4353 8.04437 20.2208 9.50481 20.6432C10.9652 21.0657 12.5089 21.1113 13.9917 20.7758C15.4745 20.4402 16.8482 19.7346 17.9845 18.7246C19.1209 17.7146 19.9828 16.4355 20.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            新分析
-                        </button>
+            <!-- Step 2: Suggestion Selection -->
+            <div id="suggestions" class="results-section" style="display: none;">
+                <div class="section-header">
+                    <h2>📋 Care Plan Update Suggestions</h2>
+                    <div class="analysis-illustration">
+                        <img src="{{ url_for('static', filename='analysis.png') }}" alt="Care Team Analysis" class="section-image">
                     </div>
                 </div>
-                <div id="reportContent" class="report-content"></div>
+
+                <div id="analysisSummary" class="analysis-summary"></div>
+
+                <div class="manager-comments-early">
+                    <h4>💬 Manager's Initial Comments:</h4>
+                    <textarea id="managerCommentsEarly" placeholder="Add your observations about this resident before reviewing suggestions..."></textarea>
+                </div>
+
+                <!-- Risk Assessment Section -->
+                <div id="risk-assessment-section" class="risk-assessment-section" style="display: none;">
+                    <h3>🛡️ Risk Assessment Results</h3>
+                    <div class="risk-assessment-notice">
+                        <p><strong>⚠️ Important:</strong> AI calculations are preliminary estimates. Manager review and adjustment based on actual resident observations is required.</p>
+                    </div>
+                    <div id="risk-summary" class="risk-summary"></div>
+                    <div class="risk-details-toggle">
+                        <button onclick="toggleRiskDetails()" class="action-btn">📊 View Detailed Calculations & Evidence</button>
+                        <button onclick="toggleManualAdjustment()" class="action-btn">✏️ Manual Score Adjustment</button>
+                    </div>
+                    <div id="risk-details" class="risk-details" style="display: none;"></div>
+                    <div id="manual-adjustment" class="manual-adjustment-section" style="display: none;"></div>
+                </div>
+
+                <!-- Highlighted Log Entries -->
+                <div id="highlightedLogs" class="highlighted-logs" style="display: none;">
+                    <h3>📝 Highlighted Log Entries</h3>
+                    <div id="logHighlights"></div>
+                </div>
+
+                <!-- Data Quality Analysis -->
+                <div id="dataQualitySection" class="data-quality-section" style="display: none;">
+                    <div class="data-quality-header">
+                        <h3>📊 Data Quality Analysis</h3>
+                        <button onclick="toggleDataQuality()" class="action-btn toggle-btn">📈 View Quality Report</button>
+                    </div>
+                    <div id="dataQualityContent" class="data-quality-content" style="display: none;">
+                        <div id="dataQualityDetails"></div>
+                    </div>
+                </div>
+
+                <div class="suggestions-container">
+                    <h3>📋 Select suggestions to implement:</h3>
+                    <div id="suggestionsList"></div>
+
+                    <div class="manager-comments">
+                        <h4>💬 Additional Comments/Suggestions:</h4>
+                        <textarea id="managerComments" placeholder="Add your own observations or modifications..."></textarea>
+                    </div>
+
+                    <button id="generatePlanBtn" class="analyze-btn">
+                        <span>✅ Generate Updated Care Plan</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Final Care Plan -->
+            <div id="finalPlan" class="results-section" style="display: none;">
+                <div class="results-header">
+                    <h2>📄 Updated Care Plan</h2>
+                    <div class="action-buttons">
+                        <button id="copyContentBtn" class="action-btn">📋 Copy Content</button>
+                        <button id="editBtn" class="action-btn">✏️ Edit Plan</button>
+                        <div class="email-dropdown">
+                            <button id="emailBtn" class="action-btn dropdown-toggle">📧 Email Plan ▼</button>
+                            <div class="email-options">
+                                <button id="emailCareTeamBtn" class="email-option">👥 Email Care Team</button>
+                                <button id="emailFamilyBtn" class="email-option">👨‍👩‍👧‍👦 Email Family</button>
+                            </div>
+                        </div>
+                        <button id="downloadBtn" class="action-btn">📥 Download PDF</button>
+                        <button id="startOverBtn" class="action-btn">🔄 Start Over</button>
+                    </div>
+                </div>
+                <div id="carePlanContent" class="content"></div>
+
+                <!-- Bottom Action Buttons -->
+                <div class="action-buttons bottom-actions">
+                    <button id="copyContentBtnBottom" class="action-btn">📋 Copy Content</button>
+                    <button id="editBtnBottom" class="action-btn">✏️ Edit Plan</button>
+                    <div class="email-dropdown">
+                        <button id="emailBtnBottom" class="action-btn dropdown-toggle">📧 Email Plan ▼</button>
+                        <div class="email-options">
+                            <button id="emailCareTeamBtnBottom" class="email-option">👥 Email Care Team</button>
+                            <button id="emailFamilyBtnBottom" class="email-option">👨‍👩‍👧‍👦 Email Family</button>
+                        </div>
+                    </div>
+                    <button id="downloadBtnBottom" class="action-btn">📥 Download PDF</button>
+                    <button id="startOverBtnBottom" class="action-btn">🔄 Start Over</button>
+                </div>
             </div>
         </main>
-
-        <footer>
-            <p>© 2024 Care Buddy AI | 所有上傳資料將在分析後立即刪除</p>
-        </footer>
     </div>
 
     <script>
-        // 檔案上傳處理
-        document.querySelectorAll('input[type="file"]').forEach(input => {
-            input.addEventListener('change', function(e) {
-                const fileName = e.target.files[0]?.name || '未選擇檔案';
-                const fileInfo = e.target.parentElement.querySelector('.file-info');
-                fileInfo.textContent = `已選擇: ${fileName}`;
-            });
+        let currentData = {};
+
+        // File upload handlers
+        document.getElementById('daily_log').addEventListener('change', function(e) {
+            updateFileLabel(this, 'Click to select log file or drag & drop here');
         });
 
-        // 表單提交
+        document.getElementById('care_plan').addEventListener('change', function(e) {
+            updateFileLabel(this, 'Click to select care plan or drag & drop here');
+        });
+
+        function updateFileLabel(input, defaultText) {
+            const label = input.nextElementSibling.querySelector('.file-label-text');
+            label.textContent = input.files.length > 0 ? input.files[0].name : defaultText;
+        }
+
+        // Drag and drop functionality
+        function setupDragAndDrop(boxId, inputId, defaultText) {
+            const box = document.getElementById(boxId);
+            const input = document.getElementById(inputId);
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                box.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                box.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                box.addEventListener(eventName, unhighlight, false);
+            });
+
+            box.addEventListener('drop', handleDrop, false);
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight(e) {
+                box.classList.add('drag-over');
+            }
+
+            function unhighlight(e) {
+                box.classList.remove('drag-over');
+            }
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files.length > 0) {
+                    input.files = files;
+                    updateFileLabel(input, defaultText);
+                }
+            }
+        }
+
+        // Initialize drag and drop for both upload boxes
+        setupDragAndDrop('daily-log-box', 'daily_log', 'Click to select log file or drag & drop here');
+        setupDragAndDrop('care-plan-box', 'care_plan', 'Click to select care plan or drag & drop here');
+
+        // Analysis options change handlers
+        document.addEventListener('change', function(e) {
+            if (e.target.name === 'analysis_options') {
+                handleAnalysisOptionChange(e.target);
+                updateAnalysisOptionsDisplay();
+            }
+        });
+
+        function handleAnalysisOptionChange(checkbox) {
+            if (checkbox.value === 'combo_mode' && checkbox.checked) {
+                document.querySelector('input[value="care_plan"]').checked = true;
+                document.querySelector('input[value="risk_assessment"]').checked = true;
+            } else if (checkbox.value === 'combo_mode' && !checkbox.checked) {
+                // Keep individual options as they are
+            } else if ((checkbox.value === 'care_plan' || checkbox.value === 'risk_assessment') && !checkbox.checked) {
+                document.querySelector('input[value="combo_mode"]').checked = false;
+            } else if (checkbox.value === 'care_plan' || checkbox.value === 'risk_assessment') {
+                const carePlanChecked = document.querySelector('input[value="care_plan"]').checked;
+                const riskAssessmentChecked = document.querySelector('input[value="risk_assessment"]').checked;
+
+                if (carePlanChecked && riskAssessmentChecked) {
+                    document.querySelector('input[value="combo_mode"]').checked = true;
+                }
+            }
+        }
+
+        function updateAnalysisOptionsDisplay() {
+            const selectedOptions = Array.from(document.querySelectorAll('input[name="analysis_options"]:checked')).map(cb => cb.value);
+            const carePlanInput = document.getElementById('care_plan');
+            const carePlanBox = carePlanInput.closest('.upload-box');
+
+            if (selectedOptions.includes('care_plan') || selectedOptions.includes('combo_mode')) {
+                carePlanInput.required = true;
+                carePlanBox.querySelector('.file-info').innerHTML = 'Supports CSV, TXT, and PDF files<br><small>Required for Care Plan Analysis and Comprehensive mode.</small>';
+            } else {
+                carePlanInput.required = false;
+                carePlanBox.querySelector('.file-info').innerHTML = 'Supports CSV, TXT, and PDF files<br><small>Optional for Risk Assessment only.</small>';
+            }
+
+            if (selectedOptions.includes('combo_mode')) {
+                document.querySelector('input[value="care_plan"]').checked = true;
+                document.querySelector('input[value="risk_assessment"]').checked = true;
+            }
+        }
+
+        updateAnalysisOptionsDisplay();
+
+        // Step 1: Upload and analyze
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const formData = new FormData(this);
-            const loading = document.getElementById('loading');
-            const results = document.getElementById('results');
+            const residentName = document.getElementById('resident_name').value.trim();
+            const dailyLogFile = document.getElementById('daily_log').files[0];
+            const carePlanFile = document.getElementById('care_plan').files[0];
+            const selectedOptions = Array.from(document.querySelectorAll('input[name="analysis_options"]:checked')).map(cb => cb.value);
 
-            // 顯示載入中
+            if (!residentName) {
+                alert('Please enter resident name');
+                return;
+            }
+
+            if (!dailyLogFile) {
+                alert('Please select a care log file');
+                return;
+            }
+
+            if ((selectedOptions.includes('care_plan') || selectedOptions.includes('combo_mode')) && !carePlanFile) {
+                alert('Please select a care plan file for care plan analysis or combo mode');
+                return;
+            }
+
+            const analyzeBtn = document.querySelector('.analyze-btn');
+            const originalBtnText = analyzeBtn.innerHTML;
+
+            analyzeBtn.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <div class="btn-spinner"></div>
+                    <span>🤖 Analyzing...</span>
+                </div>
+            `;
+            analyzeBtn.disabled = true;
+
+            const loading = document.getElementById('loading');
+            const suggestions = document.getElementById('suggestions');
+            const finalPlan = document.getElementById('finalPlan');
+
+            suggestions.style.display = 'none';
+            finalPlan.style.display = 'none';
             loading.style.display = 'block';
-            results.style.display = 'none';
+
+            startProgressAnimation();
 
             try {
+                const formData = new FormData(this);
                 const response = await fetch('/analyze', {
                     method: 'POST',
                     body: formData
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.step === 'suggestions') {
+                    currentData = data;
+                    displaySuggestions(data);
+                    displayHighlightedLogs(data.highlighted_logs);
+                    suggestions.style.display = 'block';
+                } else {
+                    alert('Analysis failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error occurred:', error);
+                alert('Error occurred: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+                analyzeBtn.innerHTML = originalBtnText;
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        function displaySuggestions(data) {
+            let summaryHtml = `
+                <h4>🔍 Analysis Summary:</h4>
+                <p>${data.analysis_summary}</p>
+            `;
+
+            if (data.care_plan_gaps && data.care_plan_gaps.description) {
+                const alertClass = data.care_plan_gaps.alert_level === 'High' ? 'gap-alert-high' : 
+                                 data.care_plan_gaps.alert_level === 'Medium' ? 'gap-alert-medium' : 'gap-alert-low';
+
+                summaryHtml += `
+                    <div class="care-plan-gap-alert ${alertClass}">
+                        <h4>⚠️ Care Plan Gap Alert - ${data.care_plan_gaps.alert_level} Priority</h4>
+                        <p><strong>Gap Description:</strong> ${data.care_plan_gaps.description}</p>
+                        <div class="missing-areas">
+                            <strong>Missing Areas:</strong>
+                            <ul>
+                                ${data.care_plan_gaps.missing_areas.map(area => `<li>${area}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <p class="gap-action"><strong>Action Required:</strong> Manager must review and update care plan to address these gaps immediately.</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('analysisSummary').innerHTML = summaryHtml;
+
+            if (data.risk_assessment && data.risk_assessment.summary) {
+                displayRiskAssessment(data.risk_assessment);
+            }
+
+            if (data.data_quality_analysis) {
+                displayDataQuality(data.data_quality_analysis);
+            }
+
+            const suggestionsList = document.getElementById('suggestionsList');
+            suggestionsList.innerHTML = '';
+
+            if (!data.suggestions || data.suggestions.length === 0) {
+                suggestionsList.innerHTML = '<p>No suggestions found in the analysis.</p>';
+                return;
+            }
+
+            data.suggestions.forEach((suggestion, index) => {
+                const issueIcon = suggestion.icon || '📋';
+                const specificIssue = suggestion.specific_issue || suggestion.suggestion || 'Care Issue';
+                const description = suggestion.description || suggestion.reason || 'No description available';
+
+                const div = document.createElement('div');
+                div.className = 'suggestion-card';
+                div.innerHTML = `
+                    <div class="suggestion-header priority-${suggestion.priority ? suggestion.priority.toLowerCase() : 'medium'}" onclick="toggleSuggestion(${index})">
+                        <div class="what-section">
+                            <span class="priority priority-${suggestion.priority ? suggestion.priority.toLowerCase() : 'medium'}">${suggestion.priority || 'Medium'}</span>
+                            <strong>${issueIcon} ${specificIssue}</strong>
+                            <p class="problem-statement">${description}</p>
+                            ${suggestion.evidence ? `<div class="evidence-preview"><strong>📋 Evidence from logs:</strong> ${suggestion.evidence}</div>` : ''}
+                        </div>
+                        <span class="expand-icon">▼</span>
+                    </div>
+
+                    <div id="suggestion-details-${index}" class="suggestion-details" style="display: none;">
+                        <div class="why-section">
+                            <h4>🤔 Possible Reasons (select all that apply):</h4>
+                            <div class="checkbox-group">
+                                ${generateReasonCheckboxes(suggestion.possible_reasons || [], index)}
+                                <label class="custom-reason">
+                                    <input type="checkbox" name="reason-${index}" value="custom"> Other: 
+                                    <input type="text" name="custom-reason-${index}" placeholder="Specify custom reason">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="how-section">
+                            <h4>✅ Suggested Interventions (select all that apply):</h4>
+                            <div class="checkbox-group">
+                                ${generateInterventionCheckboxes(suggestion.suggested_interventions || [], index)}
+                                <label class="custom-intervention">
+                                    <input type="checkbox" name="intervention-${index}" value="custom"> Custom: 
+                                    <input type="text" name="custom-intervention-${index}" placeholder="Specify custom intervention">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="include-section">
+                            <div class="flag-and-include">
+                                <label class="flag-suggestion">
+                                    <input type="checkbox" name="flag-suggestion" value="${index}">
+                                    <span class="flag-icon">🚩</span> <strong>Flag for Priority Follow-up</strong>
+                                </label>
+                                <label class="include-suggestion">
+                                    <input type="checkbox" name="include-suggestion" value="${index}">
+                                    <strong>Include this issue in final care plan</strong>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                suggestionsList.appendChild(div);
+            });
+        }
+
+        function generateReasonCheckboxes(reasons, index) {
+            return reasons.map((reason, i) => 
+                `<label><input type="checkbox" name="reason-${index}" value="${i}"> ${reason}</label>`
+            ).join('');
+        }
+
+        function generateInterventionCheckboxes(interventions, index) {
+            return interventions.map((intervention, i) => 
+                `<label><input type="checkbox" name="intervention-${index}" value="${i}"> ${intervention}</label>`
+            ).join('');
+        }
+
+        function toggleSuggestion(index) {
+            const details = document.getElementById(`suggestion-details-${index}`);
+            const icon = details.previousElementSibling.querySelector('.expand-icon');
+
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                details.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+
+        function displayHighlightedLogs(logs) {
+            const highlightedLogsDiv = document.getElementById('logHighlights');
+            const highlightedLogsSection = document.getElementById('highlightedLogs');
+            highlightedLogsDiv.innerHTML = '';
+
+            if (!logs || logs.length === 0) {
+                highlightedLogsDiv.innerHTML = '<p>No significant log entries highlighted.</p>';
+                highlightedLogsSection.style.display = 'none';
+                return;
+            }
+
+            logs.forEach(log => {
+                const logEntryDiv = document.createElement('div');
+                logEntryDiv.className = 'log-entry';
+                logEntryDiv.innerHTML = `<p>${log}</p>`;
+                highlightedLogsDiv.appendChild(logEntryDiv);
+            });
+
+            highlightedLogsSection.style.display = 'block';
+        }
+
+        function displayDataQuality(qualityData) {
+            const dataQualitySection = document.getElementById('dataQualitySection');
+            const dataQualityDetails = document.getElementById('dataQualityDetails');
+
+            if (!qualityData) {
+                dataQualitySection.style.display = 'none';
+                return;
+            }
+
+            let html = `
+                <div class="quality-overview">
+                    <div class="quality-score">
+                        <h4>📊 Overall Quality Score</h4>
+                        <div class="score-display">
+                            <span class="score-number">${qualityData.overall_quality?.score || 'N/A'}/100</span>
+                            <span class="score-rating ${(qualityData.overall_quality?.rating || '').toLowerCase()}">${qualityData.overall_quality?.rating || 'Unknown'}</span>
+                        </div>
+                        <p class="score-summary">${qualityData.overall_quality?.summary || 'No summary available'}</p>
+                    </div>
+                </div>
+            `;
+
+            dataQualityDetails.innerHTML = html;
+            dataQualitySection.style.display = 'block';
+        }
+
+        function displayRiskAssessment(riskData) {
+            const section = document.getElementById('risk-assessment-section');
+            const summaryDiv = document.getElementById('risk-summary');
+            const detailsDiv = document.getElementById('risk-details');
+
+            if (!riskData || !riskData.summary) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+
+            const summary = riskData.summary;
+            summaryDiv.innerHTML = `
+                <div class="risk-overview">
+                    <div class="risk-stats">
+                        <span class="risk-stat high">🔴 High Risk: ${summary.high_risk_count || 0}</span>
+                        <span class="risk-stat medium">🟡 Medium Risk: ${summary.medium_risk_count || 0}</span>
+                        <span class="risk-stat low">🟢 Low Risk: ${summary.low_risk_count || 0}</span>
+                    </div>
+                    ${summary.priority_alerts && summary.priority_alerts.length > 0 ?
+                        `<div class="priority-alerts">
+                            <h4>🚨 Priority Alerts:</h4>
+                            ${summary.priority_alerts.map(alert => `<div class="alert-item">${alert.alert}</div>`).join('')}
+                        </div>` : ''
+                    }
+                </div>
+            `;
+            if (riskData.assessments) {
+                let detailsHTML = '<div class="risk-assessments">';
+
+                Object.entries(riskData.assessments).forEach(([toolName, assessment]) => {
+                    if (assessment.error) return;
+
+                    detailsHTML += `
+                        <div class="assessment-item">
+                            <h4>${assessment.tool_name}</h4>
+                            <div class="assessment-score">
+                                Score: ${assessment.score}/${assessment.max_score} -
+                                <span class="risk-level ${assessment.risk_level.toLowerCase().replace(' ', '-')}">${assessment.risk_level}</span>
+                            </div>
+                            ${assessment.evidence && assessment.evidence.length > 0 ?
+                        `<div class="evidence">
+                            <strong>Evidence Found:</strong>
+                            <ul>${assessment.evidence.map(e => `<li>✅ ${e}</li>`).join('')}</ul>
+                        </div>` : ''
+                    }
+                    ${assessment.missing_data && assessment.missing_data.length > 0 ?
+                        `<div class="missing-data-alert">
+                            <strong>⚠️ Manager Input Required:</strong>
+                            <ul>${assessment.missing_data.map(m => `<li>❌ ${m}</li>`).join('')}</ul>
+                        </div>` : ''
+                    }
+                            <div class="next-review">Next Review: ${assessment.next_review_date}</div>
+                        </div>
+                    `;
+                });
+
+                detailsHTML += '</div>';
+                detailsDiv.innerHTML = detailsHTML;
+            }
+        }
+
+        function toggleDataQuality() {
+            const content = document.getElementById('dataQualityContent');
+            const button = document.querySelector('.data-quality-header .toggle-btn');
+
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                button.textContent = '📉 Hide Quality Report';
+            } else {
+                content.style.display = 'none';
+                button.textContent = '📈 View Quality Report';
+            }
+        }
+
+        function toggleRiskDetails() {
+            const detailsDiv = document.getElementById('risk-details');
+            const isVisible = detailsDiv.style.display === 'block';
+
+            if (isVisible) {
+                detailsDiv.style.display = 'none';
+            } else {
+                detailsDiv.style.display = 'block';
+                // Load detailed calculation if not already loaded
+                if (!detailsDiv.innerHTML.trim()) {
+                    loadRiskCalculationDetails();
+                }
+            }
+        }
+        async function loadRiskCalculationDetails() {
+            if (!currentData.risk_assessment) return;
+
+            try {
+                const response = await fetch('/risk_assessment_details', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        care_plan_content: currentData.original_care_plan,
+                        daily_log_content: currentData.daily_log_content || '',
+                        resident_name: currentData.resident_name
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success && data.calculation_details) {
+                    displayRiskCalculationDetails(data.calculation_details);
+                }
+            } catch (error) {
+                console.error('Error loading risk calculation details:', error);
+                document.getElementById('risk-details').innerHTML =
+                    '<p>Error loading detailed calculations.</p>';
+            }
+        }
+
+        function displayRiskCalculationDetails(details) {
+            const detailsDiv = document.getElementById('risk-details');
+            let html = '<div class="calculation-breakdown">';
+
+            if (details.calculation_process) {
+                html += '<h4>📊 AI Calculation Breakdown</h4>';
+                html += '<div class="disagreement-alert"><h5>⚠️ Manager Review Required</h5><p>Please verify these AI calculations against actual resident observations and care plan records.</p></div>';
+
+                Object.entries(details.calculation_process).forEach(([toolName, process]) => {
+                    html += `<div class="calculation-tool">
+                        <h5>${toolName.replace('_', ' ').toUpperCase()}</h5>
+                        <p><strong>AI Calculated Score:</strong> ${process.total_score}</p>
+                        <div class="calculation-steps">`;
+
+                    process.steps.forEach(step => {
+                        html += `<div class="calculation-step">
+                            <span class="step-item">${step.item}:</span>
+                            <span class="step-score">+${step.score}</span>
+                            <span class="step-reason">${step.reason}</span>
+                        </div>`;
+                    });
+
+                    html += '</div></div>';
+                });
+
+                html += `
+                    <div class="evidence-validation">
+                        <h5>🔍 Evidence Validation</h5>
+                        <p><strong>Instructions:</strong> Review each piece of AI-identified evidence against actual care plan records:</p>
+                        <ul>
+                            <li>✅ <strong>Confirmed:</strong> Evidence found in current care plan/logs</li>
+                            <li>❌ <strong>Not Found:</strong> No evidence in current records</li>
+                            <li>❓ <strong>Questionable:</strong> Evidence outdated or unclear</li>
+                        </ul>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            detailsDiv.innerHTML = html;
+        }
+        function toggleManualAdjustment() {
+            const adjustmentDiv = document.getElementById('manual-adjustment');
+            const isVisible = adjustmentDiv.style.display === 'block';
+
+            if (isVisible) {
+                adjustmentDiv.style.display = 'none';
+            } else {
+                adjustmentDiv.style.display = 'block';
+                // Load manual adjustment interface if not already loaded
+                if (!adjustmentDiv.innerHTML.trim()) {
+                    loadManualAdjustmentInterface();
+                }
+            }
+        }
+        async function loadManualAdjustmentInterface() {
+            if (!currentData.risk_assessment || !currentData.risk_assessment.assessments) {
+                document.getElementById('manual-adjustment').innerHTML = '<p>No risk assessment data available.</p>';
+                return;
+            }
+
+            const adjustmentDiv = document.getElementById('manual-adjustment');
+            let html = `
+                <h4>✏️ Manual Risk Score Adjustment</h4>
+                <p><strong>Instructions:</strong> Review AI calculations against actual resident care plan and adjust scores based on your professional judgment.</p>
+                <div class="adjustment-grid">
+            `;
+
+            Object.entries(currentData.risk_assessment.assessments).forEach(([toolName, assessment]) => {
+                if (assessment.error) return;
+
+                html += `
+                    <div class="adjustment-item" data-tool="${toolName}">
+                        <div class="adjustment-header">
+                            <h5>${assessment.tool_name}</h5>
+                            <span class="risk-level ${assessment.risk_level.toLowerCase().replace(' ', '-')}">${assessment.risk_level}</span>
+                        </div>
+
+                        <div class="scoring-breakdown">
+                            <h5>📊 Detailed Scoring Formula</h5>
+                            <div id="formula-${toolName}" class="formula-display">
+                                ${getDetailedFormula(toolName, assessment)}
+                            </div>
+                        </div>
+
+                        <div class="ai-vs-manual">
+                            <div class="ai-score">
+                                <h5>🤖 AI Calculated</h5>
+                                <div class="score-display">${assessment.score}/${assessment.max_score}</div>
+                                <div class="risk-level">${assessment.risk_level}</div>
+                                <div class="score-components">
+                                    ${getScoreComponents(toolName, assessment)}
+                                </div>
+                            </div>
+                            <div class="manual-score">
+                                <h5>✏️ Manager Override</h5>
+                                <input type="number" class="score-input" id="manual-score-${toolName}" 
+                                       value="${assessment.score}" min="0" max="${assessment.max_score}" 
+                                       onchange="updateRiskLevel('${toolName}', this.value, '${assessment.max_score}')">
+                                <div>/${assessment.max_score}</div>
+                                <div id="manual-risk-level-${toolName}" class="risk-level" style="margin-top: 5px; font-size: 12px;"></div>
+                            </div>
+                        </div>
+
+                        <div id="evidence-impact-${toolName}" class="evidence-impact"></div>
+
+                        <div class="evidence-comparison">
+                            <h6>📋 Evidence Review</h6>
+                            <div class="evidence-section">
+                                <h5>📋 AI Found Evidence - Manager Validation:</h5>
+                                <p><small><strong>Instructions:</strong> Review each piece of evidence against actual care records. Click ✅ if found, ❓ if questionable, ❌ if not found.</small></p>
+                                ${assessment.evidence && assessment.evidence.length > 0 ? 
+                                    assessment.evidence.map((evidence, index) => `
+                                        <div class="evidence-item" id="evidence-${toolName}-${index}" style="margin: 8px 0; padding: 10px; border: 1px solid #dee2e6; border-radius: 4px;">
+                                            <div style="margin-bottom: 8px;"><strong>Evidence:</strong> ${evidence}</div>
+                                            <div style="text-align: right;">
+                                                <button onclick="markEvidence('${toolName}', ${index}, 'found')" class="btn-evidence" title="Evidence found in records">✅ Found</button>
+                                                <button onclick="markEvidence('${toolName}', ${index}, 'questionable')" class="btn-evidence" title="Evidence unclear or outdated">❓ Unclear</button>
+                                                <button onclick="markEvidence('${toolName}', ${index}, 'not-found')" class="btn-evidence" title="Evidence not found in records">❌ Not Found</button>
+                                            </div>
+                                        </div>
+                                    `).join('') : 
+                                    '<p>No evidence provided by AI</p>'
+                                }
+                            </div>
+                        </div>
+
+                        <div class="adjustment-reason">
+                            <label><strong>Adjustment Reason:</strong></label>
+                            <textarea id="reason-${toolName}" placeholder="Explain why you adjusted this score based on actual resident observations, care plan records, or your professional judgment..."></textarea>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                </div>
+                <div class="save-adjustment">
+                    <button onclick="saveAllAdjustments()" class="action-btn primary">💾 Save All Adjustments</button>
+                </div>
+            `;
+
+            adjustmentDiv.innerHTML = html;
+
+            // Initialize manual risk levels
+            Object.keys(currentData.risk_assessment.assessments).forEach(toolName => {
+                const assessment = currentData.risk_assessment.assessments[toolName];
+                if (!assessment.error) {
+                    updateRiskLevel(toolName, assessment.score, assessment.max_score);
+                }
+            });
+        }
+
+        function updateRiskLevel(toolName, score, maxScore) {
+            const riskLevelDiv = document.getElementById(`manual-risk-level-${toolName}`);
+            const scoreInput = document.getElementById(`manual-score-${toolName}`);
+
+            let riskLevel = '';
+            let className = '';
+
+            // Determine risk level based on tool and score
+            if (toolName === 'falls_screening') {
+                if (score >= 3) { riskLevel = 'High Risk'; className = 'high'; }
+                else if (score >= 2) { riskLevel = 'Medium Risk'; className = 'medium'; }
+                else { riskLevel = 'Low Risk'; className = 'low'; }
+            } else if (toolName === 'must_nutrition') {
+                if (score >= 2) { riskLevel = 'High Risk'; className = 'high'; }
+                else if (score == 1) { riskLevel = 'Medium Risk'; className = 'medium'; }
+                else { riskLevel = 'Low Risk'; className = 'low'; }
+            } else if (toolName === 'waterlow') {
+                if (score >= 20) { riskLevel = 'Very High Risk'; className = 'high'; }
+                else if (score >= 15) { riskLevel = 'High Risk'; className = 'high'; }
+                else if (score >= 10) { riskLevel = 'Medium Risk'; className = 'medium'; }
+                else { riskLevel = 'Low Risk'; className = 'low'; }
+            } else if (toolName === 'abbey_pain') {
+                if (score >= 14) { riskLevel = 'Severe Pain'; className = 'high'; }
+                else if (score >= 8) { riskLevel = 'Moderate Pain'; className = 'medium'; }
+                else if (score >= 3) { riskLevel = 'Mild Pain'; className = 'medium'; }
+                else { riskLevel = 'No Pain to Mild Pain'; className = 'low'; }
+            } else if (toolName === 'cornell_depression') {
+                if (score >= 18) { riskLevel = 'Definite Depression'; className = 'high'; }
+                else if (score >= 10) { riskLevel = 'Probable Depression'; className = 'high'; }
+                else { riskLevel = 'Low Risk'; className = 'low'; }
+            } else if (toolName === 'peep') {
+                if (score == 4) { riskLevel = 'Severe Risk'; className = 'high'; }
+                else if (score == 3) { riskLevel = 'High Risk'; className = 'high'; }
+                else if (score == 2) { riskLevel = 'Medium Risk'; className = 'medium'; }
+                else { riskLevel = 'Low Risk'; className = 'low'; }
+            } else {
+                // Generic risk level calculation
+                const percentage = (score / maxScore) * 100;
+                if (percentage >= 70) { riskLevel = 'High Risk'; className = 'high'; }
+                else if (percentage >= 40) { riskLevel = 'Medium Risk'; className = 'medium'; }
+                else { riskLevel = 'Low Risk'; className = 'low'; }
+            }
+
+            riskLevelDiv.textContent = riskLevel;
+            riskLevelDiv.className = `risk-level ${className}`;
+        }
+
+        function getDetailedFormula(toolName, assessment) {
+            const formulas = {
+                'falls_screening': `
+                    <div class="formula">
+                        <strong>Falls Risk Formula:</strong><br>
+                        Total = Falls History(0-1) + Medications≥4(0-1) + Diagnosis(0-1) + Balance Issues(0-1) + Chair Rise(0-1) + Postural Hypotension(0-1)<br>
+                        <em>Total = Falls History(0-1) + Medications≥4(0-1) + Diagnosis(0-1) + Balance Issues(0-1) + Chair Rise(0-1) + Postural Hypotension(0-1)</em><br>
+                        <strong>Risk Level:</strong> 0-1=Low Risk, 2=Medium Risk, 3+=High Risk
+                    </div>`,
+                'must_nutrition': `
+                    <div class="formula">
+                        <strong>MUST Formula:</strong><br>
+                        Total = BMI Score(0-2) + Weight Loss(0-2) + Acute Illness Fasting(0-2)<br>
+                        <em>Total = BMI Score(0-2) + Weight Loss(0-2) + Acute Illness Fasting(0-2)</em><br>
+                        BMI: <18.5=2 points, 18.5-20=1 point, >20=0 points<br>
+                        Weight Loss: >10%=2 points, 5-10%=1 point, <5%=0 points<br>
+                        <strong>Risk Level:</strong> 0=Low Risk, 1=Medium Risk, 2+=High Risk
+                    </div>`,
+                'waterlow': `
+                    <div class="formula">
+                        <strong>Waterlow Formula:</strong><br>
+                        Total = Age + Gender + BMI + Skin + Mobility + Nutrition + Continence<br>
+                        <em>Total = Age + Gender + BMI + Skin + Mobility + Nutrition + Continence</em><br>
+                        <strong>Risk Level:</strong> <10=Low Risk, 10-15=Medium Risk, 15-20=High Risk, 20+=Very High Risk
+                    </div>`,
+                'abbey_pain': `
+                    <div class="formula">
+                        <strong>Abbey Pain Formula:</strong><br>
+                        Total = Vocalisation + Facial + Body Language + Behavioural + Physiological + Physical Changes<br>
+                        <em>Total = Vocalisation + Facial + Body Language + Behavioural + Physiological + Physical Changes</em><br>
+                        Each item: 0=None, 1=Mild, 2=Moderate, 3=Severe<br>
+                        <strong>Risk Level:</strong> 0-2=None to Mild, 3-7=Mild, 8-13=Moderate, 14-18=Severe Pain
+                    </div>`
+            };
+
+            return formulas[toolName] || `
+                <div class="formula">
+                    <strong>Assessment Formula:</strong><br>
+                    Total Range: 0-${assessment.max_score}<br>
+                    Current Calculation: ${assessment.score}/${assessment.max_score}
+                </div>`;
+        }
+
+        function getScoreComponents(toolName, assessment) {
+            if (!assessment.evidence) return '';
+
+            let components = '<div class="score-breakdown"><strong>Scoring Components:</strong><ul>';
+            assessment.evidence.forEach(e => {
+                components += `<li>${e}</li>`;
+            });
+            components += '</ul></div>';
+            return components;
+        }
+        async function saveAllAdjustments() {
+            const adjustmentDivs = document.querySelectorAll('.adjustment-item');
+            const adjustments = [];
+
+            adjustmentDivs.forEach(div => {
+                const toolName = div.dataset.tool;
+                const manualScore = document.getElementById(`manual-score-${toolName}`).value;
+                const adjustmentReason = document.getElementById(`reason-${toolName}`).value;
+
+                adjustments.push({
+                    tool_name: toolName,
+                    manual_score: manualScore,
+                    adjustment_reason: adjustmentReason
+                });
+            });
+
+            try {
+                const response = await fetch('/save_risk_adjustments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        resident_name: currentData.resident_name,
+                        adjustments: adjustments
+                    })
+                });
+
                 const data = await response.json();
 
                 if (data.success) {
-                    // 顯示結果
-                    document.getElementById('reportContent').innerHTML = data.html;
-                    results.style.display = 'block';
-
-                    // 儲存 markdown 內容供下載
-                    window.currentReport = {
-                        content: data.markdown,
-                        resident_name: formData.get('resident_name')
-                    };
+                    alert('Risk adjustments saved successfully!');
                 } else {
-                    alert('分析失敗：' + data.error);
+                    alert('Failed to save risk adjustments: ' + data.error);
                 }
             } catch (error) {
-                alert('發生錯誤：' + error.message);
-            } finally {
-                loading.style.display = 'none';
+                console.error('Error saving risk adjustments:', error);
+                alert('Error occurred while saving adjustments.');
             }
-        });
-
-        // 複製功能
-        document.getElementById('copyBtn').addEventListener('click', function() {
-            if (window.currentReport) {
-                navigator.clipboard.writeText(window.currentReport.content)
-                    .then(() => alert('已複製到剪貼簿！'))
-                    .catch(err => alert('複製失敗：' + err));
+        }
+         function markEvidence(toolName, index, status) {
+            const evidenceItem = document.getElementById(`evidence-${toolName}-${index}`);
+            if (evidenceItem) {
+                evidenceItem.className = `evidence-item ${status}`; // Update class for styling
+                evidenceItem.dataset.status = status; // Store the status
             }
-        });
 
-        // 下載功能
-        document.getElementById('downloadBtn').addEventListener('click', async function() {
-            if (window.currentReport) {
-                try {
-                    const response = await fetch('/download', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(window.currentReport)
+             // Update impact message immediately
+            updateEvidenceImpact(toolName);
+        }
+
+        function updateEvidenceImpact(toolName) {
+            const adjustmentDiv = document.querySelector(`.adjustment-item[data-tool="${toolName}"]`);
+            if (!adjustmentDiv) return;
+
+            let foundCount = 0;
+            let notFoundCount = 0;
+            let questionableCount = 0;
+
+            const evidenceItems = adjustmentDiv.querySelectorAll('.evidence-item');
+            evidenceItems.forEach(item => {
+                const status = item.dataset.status;
+                if (status === 'found') foundCount++;
+                else if (status === 'not-found') notFoundCount++;
+                else if (status === 'questionable') questionableCount++;
+            });
+
+            let impactMessage = '';
+
+            if (notFoundCount > 0) {
+                impactMessage += `<p>❌ <strong>Manager Validation Required:</strong> ${notFoundCount} pieces of AI evidence could not be validated against current care records.</p>`;
+            }
+            if (questionableCount > 0) {
+                impactMessage += `<p>❓ <strong>Additional Review Needed:</strong> ${questionableCount} pieces of AI evidence are unclear or outdated and require further validation.</p>`;
+            }
+
+            if (foundCount === 0 && notFoundCount === 0 && questionableCount === 0) {
+                impactMessage = '<p>No evidence validation performed yet.</p>';
+            }
+
+            document.getElementById(`evidence-impact-${toolName}`).innerHTML = impactMessage;
+        }
+
+        // Generate care plan functionality
+        document.getElementById('generatePlanBtn').addEventListener('click', async function() {
+            const generateBtn = this;
+            const originalBtnText = generateBtn.innerHTML;
+
+            generateBtn.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <div class="btn-spinner"></div>
+                    <span>✏️ Generating...</span>
+                </div>
+            `;
+            generateBtn.disabled = true;
+
+            const loading = document.getElementById('loading');
+            const finalPlan = document.getElementById('finalPlan');
+
+            loading.style.display = 'block';
+            startReportGenerationProgress();
+
+            try {
+                // Collect selected suggestions with WHAT-WHY-HOW data and flag status
+                const selectedSuggestions = [];
+
+                document.querySelectorAll('input[name="include-suggestion"]:checked').forEach(checkbox => {
+                    const index = parseInt(checkbox.value);
+                    const suggestion = currentData.suggestions[index];
+
+                    if (!suggestion) return;
+
+                    // Check if this item is flagged
+                    const isFlagged = document.querySelector(`input[name="flag-suggestion"][value="${index}"]`).checked;
+
+                    // Collect WHY data (reasons)
+                    const reasons = [];
+                    const reasonCheckboxes = document.querySelectorAll(`input[name="reason-${index}"]:checked`);
+                    reasonCheckboxes.forEach(cb => {
+                        if (cb.value === 'custom') {
+                            const customReason = document.querySelector(`input[name="custom-reason-${index}"]`).value;
+                            if (customReason) reasons.push(customReason);
+                        } else {
+                            const reasonIndex = parseInt(cb.value);
+                            if (suggestion.possible_reasons && suggestion.possible_reasons[reasonIndex]) {
+                                reasons.push(suggestion.possible_reasons[reasonIndex]);
+                            }
+                        }
                     });
 
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `護理計劃分析_${window.currentReport.resident_name}_${new Date().toISOString().slice(0,10)}.md`;
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                } catch (error) {
-                    alert('下載失敗：' + error.message);
+                    // Collect HOW data (interventions)
+                    const interventions = [];
+                    const interventionCheckboxes = document.querySelectorAll(`input[name="intervention-${index}"]:checked`);
+                    interventionCheckboxes.forEach(cb => {
+                        if (cb.value === 'custom') {
+                            const customIntervention = document.querySelector(`input[name="custom-intervention-${index}"]`).value;
+                            if (customIntervention) interventions.push(customIntervention);
+                        } else {
+                            const interventionIndex = parseInt(cb.value);
+                            if (suggestion.suggested_interventions && suggestion.suggested_interventions[interventionIndex]) {
+                                interventions.push(suggestion.suggested_interventions[interventionIndex]);
+                            }
+                        }
+                    });
+
+                    selectedSuggestions.push({
+                        ...suggestion,
+                        reasons: reasons,
+                        interventions: interventions,
+                        flagged: isFlagged
+                    });
+                });
+
+                const managerComments = document.getElementById('managerComments').value || '';
+                const managerCommentsEarly = document.getElementById('managerCommentsEarly').value || '';
+                const combinedComments = [managerCommentsEarly, managerComments].filter(c => c.trim()).join('\n\n');
+
+                console.log('Sending data:', {
+                    original_care_plan: currentData.original_care_plan,
+                    selected_suggestions: selectedSuggestions,
+                    manager_comments: managerComments,
+                    resident_name: currentData.resident_name
+                });
+
+                const response = await fetch('/generate_care_plan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        original_care_plan: currentData.original_care_plan,
+                        selected_suggestions: selectedSuggestions,
+                        manager_comments: combinedComments,
+                        resident_name: currentData.resident_name
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.success) {
+                    document.getElementById('carePlanContent').innerHTML = data.care_plan.html;
+                    finalPlan.style.display = 'block';
+
+                    // Store for download
+                    window.currentReport = {
+                        content: data.care_plan.markdown,
+                        resident_name: currentData.resident_name
+                    };
+
+                    // Scroll to results
+                    finalPlan.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('Care plan generation failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error in generate care plan:', error);
+                alert('Error occurred: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+                // Restore button state
+                generateBtn.innerHTML = originalBtnText;
+                generateBtn.disabled = false;
             }
         });
 
-        // 新分析
-        document.getElementById('newAnalysisBtn').addEventListener('click', function() {
-            document.getElementById('uploadForm').reset();
-            document.querySelectorAll('.file-info').forEach(el => el.textContent = '');
-            document.getElementById('results').style.display = 'none';
-            window.currentReport = null;
+         // Email dropdown toggle
+        document.getElementById('emailBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const dropdown = this.parentElement;
+            const options = dropdown.querySelector('.email-options');
+            const isVisible = options.style.display === 'block';
+
+            // Hide all other dropdowns first
+            document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+
+            options.style.display = isVisible ? 'none' : 'block';
         });
 
-        // 拖放功能
-        document.querySelectorAll('.upload-box').forEach(box => {
-            const input = box.querySelector('input[type="file"]');
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.email-dropdown')) {
+                document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+            }
+        });
 
-            ['dragenter', 'dragover'].forEach(eventName => {
-                box.addEventListener(eventName, function(e) {
-                    e.preventDefault();
-                    box.classList.add('drag-over');
+        // Copy content functionality (copies HTML content)
+        document.getElementById('copyContentBtn').addEventListener('click', function() {
+            copyContent();
+        });
+        document.getElementById('copyContentBtnBottom').addEventListener('click', function() {
+            copyContent();
+        });
+
+        function copyContent() {
+            const content = document.getElementById('carePlanContent');
+            if (content) {
+                const range = document.createRange();
+                range.selectNode(content);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                alert('Care plan content copied to clipboard!');
+            }
+        }
+
+        // Edit functionality
+        document.getElementById('editBtn').addEventListener('click', function() {
+           editContent();
+        });
+         document.getElementById('editBtnBottom').addEventListener('click', function() {
+           editContent();
+        });
+         function editContent() {
+            if (window.currentReport) {
+                const content = document.getElementById('carePlanContent');
+                const currentHtml = content.innerHTML;
+
+                // Convert to editable
+                content.innerHTML = `
+                    <div class="edit-container">
+                        <textarea id="editableContent" style="width: 100%; min-height: 400px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 14px; line-height: 1.6;">${window.currentReport.content}</textarea>
+                        <div style="margin-top: 15px; text-align: right;">
+                            <button id="cancelEdit" class="action-btn" style="margin-right: 10px;">Cancel</button>
+                            <button id="saveEdit" class="action-btn primary">Save Changes</button>
+                        </div>
+                    </div>
+                `;
+
+                // Cancel edit
+                document.getElementById('cancelEdit').addEventListener('click', function() {
+                    content.innerHTML = currentHtml;
                 });
+
+                // Save edit
+                document.getElementById('saveEdit').addEventListener('click', function() {
+                    const newContent = document.getElementById('editableContent').value;
+                    window.currentReport.content = newContent;
+
+                    // Convert back to HTML display
+                    const converter = new showdown.Converter();
+                    content.innerHTML = converter.makeHtml(newContent);
+
+                    alert('Changes saved successfully!');
+                });
+            }
+        }
+
+        // Email to Care Team functionality
+        document.getElementById('emailCareTeamBtn').addEventListener('click', function() {
+            sendCareTeamEmail();
+            document.querySelector('.email-options').style.display = 'none';
+        });
+
+        // Email to Family functionality
+        document.getElementById('emailFamilyBtn').addEventListener('click', function() {
+            sendFamilyEmail();
+            document.querySelector('.email-options').style.display = 'none';
+        });
+
+          // Add event listeners for bottom buttons
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'emailCareTeamBtnBottom') {
+                sendCareTeamEmail();
+                e.target.closest('.email-options').style.display = 'none';
+            }
+            if (e.target && e.target.id === 'emailFamilyBtnBottom') {
+                sendFamilyEmail();
+                e.target.closest('.email-options').style.display = 'none';
+            }
+             if (e.target && e.target.id === 'emailBtnBottom') {
+                e.preventDefault();
+                const dropdown = e.target.parentElement;
+                const options = dropdown.querySelector('.email-options');
+                const isVisible = options.style.display === 'block';
+
+                // Hide all other dropdowns first
+                document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+
+                options.style.display = isVisible ? 'none' : 'block';
+            }
+        });
+        async function downloadPDF() {
+                if (window.currentReport) {
+                    try {
+                        const response = await fetch('/download_pdf', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(window.currentReport)
+                        });
+
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = `Care_Plan_${window.currentReport.resident_name}_${new Date().getTime()}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                    } catch (error) {
+                        alert('Download failed: ' + error.message);
+                    }
+                }
+            }
+        // Start over functionality
+        document.getElementById('startOverBtn').addEventListener('click', function() {
+            startOver();
+        });
+          document.getElementById('startOverBtnBottom').addEventListener('click', function() {
+            startOver();
+        });
+
+          document.getElementById('downloadBtn').addEventListener('click', async function() {
+                await downloadPDF();
+            });
+           document.getElementById('downloadBtnBottom').addEventListener('click',async function() {
+                await downloadPDF();
             });
 
-            ['dragleave', 'drop'].forEach(eventName => {
-                box.addEventListener(eventName, function(e) {
-                    e.preventDefault();
-                    box.classList.remove('drag-over');
-                });
-            });
+             document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'emailBtn') {
+                e.preventDefault();
+                const dropdown = e.target.parentElement;
+                const options = dropdown.querySelector('.email-options');
+                const isVisible = options.style.display === 'block';
 
-            box.addEventListener('drop', function(e) {
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    input.files = files;
-                    const event = new Event('change', { bubbles: true });
-                    input.dispatchEvent(event);
+                // Hide all other dropdowns first
+                document.querySelectorAll('.email-options').forEach(opt => opt.style.display = 'none');
+
+                options.style.display = isVisible ? 'none' : 'block';
+            }
+        });
+        function startOver() {
+            document.getElementById('suggestions').style.display = 'none';
+            document.getElementById('finalPlan').style.display = 'none';
+            document.getElementById('dataQualitySection').style.display = 'none';
+            document.getElementById('uploadForm').reset();
+            updateFileLabel(document.getElementById('daily_log'), 'Click to select log file');
+            updateFileLabel(document.getElementById('care_plan'), 'Click to select care plan');
+            window.currentReport = null;
+            currentData = {};
+        }
+        function sendCareTeamEmail() {
+             if (window.currentReport) {
+                const subject = encodeURIComponent(`URGENT: Care Plan Update - ${window.currentReport.resident_name}`);
+
+                // Extract sections dynamically from care plan
+                const content = window.currentReport.content;
+                let criticalUpdates = [];
+                let medicationChanges = [];
+                let behaviorConcerns = [];
+                let mobilityUpdates = [];
+                let priorityFlags = [];
+
+                // Parse care plan sections
+                const sections = content.split(/^## /m);
+
+                sections.forEach(section => {
+                    const lines = section.split('\n');
+                    const title = lines[0];
+
+                    // Look for priority flagged items
+                    if (title.includes('🚩 Priority Observation Areas') || title.includes('Priority') || title.includes('Flagged')) {
+                        lines.forEach(line => {
+                            if (line.includes('🚩') || line.includes('Priority:') || line.includes('Alert:')) {
+                                priorityFlags.push(line.replace(/🚩\s*/, '').trim());
+                            }
+                        });
+                    }
+
+                    // Extract medication updates
+                    if (title.toLowerCase().includes('medication') || title.toLowerCase().includes('health')) {
+                        const updates = extractUpdatedItems(lines);
+                        medicationChanges.push(...updates);
+                    }
+
+                    // Extract behavior updates
+                    if (title.toLowerCase().includes('behavior') || title.toLowerCase().includes('communication')) {
+                        const updates = extractUpdatedItems(lines);
+                        behaviorConcerns.push(...updates);
+                    }
+
+                    // Extract mobility updates
+                    if (title.toLowerCase().includes('mobility') || title.toLowerCase().includes('safety')) {
+                        const updates = extractUpdatedItems(lines);
+                        mobilityUpdates.push(...updates);
+                    }
+
+                    // Look for any items marked with ✏️ (recent updates)
+                    lines.forEach(line => {
+                        if (line.includes('✏️')) {
+                            criticalUpdates.push(line.replace('✏️', '').trim());
+                        }
+                    });
+                });
+
+                // Generate Care Team email body
+                let emailBody = `Dear Care Team,
+
+URGENT: Updated care plan for ${window.currentReport.resident_name} requires IMMEDIATE implementation.
+
+📋 RESIDENT: ${window.currentReport.resident_name}
+📅 Updated: ${new Date().toLocaleDateString()}
+⏰ IMPLEMENTATION DEADLINE: Next shift
+`;
+
+                // Add priority flags first
+                if (priorityFlags.length > 0) {
+                    emailBody += `
+🚩 CRITICAL PRIORITY ALERTS:
+`;
+                    priorityFlags.forEach((flag, index) => {
+                        emailBody += `${index + 1}. ${flag}\n`;
+                    });
+                }
+
+                // Add critical updates
+                if (criticalUpdates.length > 0) {
+                    emailBody += `
+🚨 KEY CHANGES REQUIRED:
+`;
+                    criticalUpdates.slice(0, 5).forEach((update, index) => {
+                        emailBody += `${index + 1}. ${update}\n`;
+                    });
+                }
+
+                // Add medication changes
+                if (medicationChanges.length > 0) {
+                    emailBody += `
+💊 MEDICATION/HEALTH UPDATES:
+`;
+                    medicationChanges.slice(0, 3).forEach((change, index) => {
+                        emailBody += `• ${change}\n`;
+                    });
+                }
+
+                // Add behavior concerns
+                if (behaviorConcerns.length > 0) {
+                    emailBody += `
+🗣️ BEHAVIOR/COMMUNICATION UPDATES:
+`;
+                    behaviorConcerns.slice(0, 3).forEach((concern, index) => {
+                        emailBody += `• ${concern}\n`;
+                    });
+                }
+
+                // Add mobility updates
+                if (mobilityUpdates.length > 0) {
+                    emailBody += `
+🚶 MOBILITY/SAFETY UPDATES:
+`;
+                    mobilityUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                emailBody += `
+📋 IMMEDIATE ACTIONS REQUIRED:
+• Review ALL changes before next shift handover
+• Brief entire care team on new protocols
+• Implement changes during resident's next care session
+• Monitor resident response and document observations
+• Escalate any concerns to nursing supervisor immediately
+• Update family contact if necessary
+
+⚠️ COMPLIANCE REQUIREMENTS:
+• All staff must acknowledge receipt of this update
+• Changes must be implemented within 24 hours
+• Document all interventions in resident care log
+• Report any adverse reactions immediately
+
+📞 URGENT QUESTIONS: Contact Nursing Supervisor
+📋 DOCUMENTATION: Update resident care records
+📄 FULL PLAN: Complete care plan document attached
+
+Care Management Team
+Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
+
+--- CONFIDENTIAL CARE INFORMATION ---`;
+
+                const body = encodeURIComponent(emailBody);
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
+                window.open(gmailUrl, '_blank');
+            }
+        }
+         function extractUpdatedItems(lines) {
+            const updates = [];
+            lines.forEach(line => {
+                if (line.includes('✏️') || line.includes('Updated:') || line.includes('New:') || line.includes('Changed:')) {
+                    // Clean up the line and extract the meaningful content
+                    let cleaned = line.replace(/✏️/g, '').replace(/\*\*/g, '').trim();
+                    if (cleaned && cleaned.length > 10) {
+                        updates.push(cleaned);
+                    }
                 }
             });
-        });
+            return updates;
+        }
+          function sendFamilyEmail() {
+            if (window.currentReport) {
+                const subject = encodeURIComponent(`Care Plan Update - ${window.currentReport.resident_name}`);
+
+                // Extract family-relevant information from care plan
+                const content = window.currentReport.content;
+                let personalCareUpdates = [];
+                let wellnessUpdates = [];
+                let socialUpdates = [];
+                let comfortUpdates = [];
+
+                // Parse care plan sections for family-friendly content
+                const sections = content.split(/^## /m);
+
+                sections.forEach(section => {
+                    const lines = section.split('\n');
+                    const title = lines[0];
+
+                    // Extract personal care updates
+                    if (title.toLowerCase().includes('personal care') || title.toLowerCase().includes('daily routine')) {
+                        const updates = extractFamilyFriendlyUpdates(lines);
+                        personalCareUpdates.push(...updates);
+                    }
+
+                    // Extract health and wellness updates
+                    if (title.toLowerCase().includes('health') || title.toLowerCase().includes('nutrition') || title.toLowerCase().includes('medication')) {
+                        const updates = extractFamilyFriendlyUpdates(lines);
+                        wellnessUpdates.push(...updates);
+                    }
+
+                    // Extract social and communication updates
+                    if (title.toLowerCase().includes('social') || title.toLowerCase().includes('communication') || title.toLowerCase().includes('behavior')) {
+                        const updates = extractFamilyFriendlyUpdates(lines);
+                        socialUpdates.push(...updates);
+                    }
+
+                    // Extract comfort and preference updates
+                    if (title.toLowerCase().includes('comfort') || title.toLowerCase().includes('preference') || title.toLowerCase().includes('environment')) {
+                        const updates = extractFamilyFriendlyUpdates(lines);
+                        comfortUpdates.push(...updates);
+                    }
+                });
+
+                // Generate Family email body
+                let emailBody = `Dear ${window.currentReport.resident_name}'s Family,
+
+We hope this message finds you well. We wanted to share some positive updates about ${window.currentReport.resident_name}'s care plan and how we're working to enhance their daily experience with us.
+
+👥 ABOUT ${window.currentReport.resident_name.toUpperCase()}:
+We've been closely observing ${window.currentReport.resident_name} and have identified some wonderful opportunities to better support their individual needs and preferences.
+`;
+
+                // Add personal care updates
+                if (personalCareUpdates.length > 0) {
+                    emailBody += `
+🛁 DAILY CARE ENHANCEMENTS:
+Our team has noticed some preferences that help ${window.currentReport.resident_name} feel more comfortable:
+`;
+                    personalCareUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                // Add wellness updates
+                if (wellnessUpdates.length > 0) {
+                    emailBody += `
+💗 HEALTH & WELLNESS FOCUS:
+We're taking extra care to support ${window.currentReport.resident_name}'s wellbeing through:
+`;
+                    wellnessUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                // Add social updates
+                if (socialUpdates.length > 0) {
+                    emailBody += `
+🗣️ COMMUNICATION & SOCIAL ENGAGEMENT:
+We've learned more about how ${window.currentReport.resident_name} likes to connect with others:
+`;
+                    socialUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                // Add comfort updates
+                if (comfortUpdates.length > 0) {
+                    emailBody += `
+🏠 COMFORT & ENVIRONMENT:
+We're making these adjustments to help ${window.currentReport.resident_name} feel more at home:
+`;
+                    comfortUpdates.slice(0, 3).forEach((update, index) => {
+                        emailBody += `• ${update}\n`;
+                    });
+                }
+
+                emailBody += `
+💭 YOUR INSIGHTS MATTER:
+As ${window.currentReport.resident_name}'s family, your knowledge about their preferences, habits, and personality helps us provide the most personalized care possible. We would love to hear from you about:
+
+• Any observations about what makes ${window.currentReport.resident_name} most comfortable
+• Special preferences or routines from home that we should know about
+• How ${window.currentReport.resident_name} typically responds to changes
+• Family traditions or activities they particularly enjoy
+• Any concerns or questions you have about these updates
+
+🤝 PARTNERSHIP IN CARE:
+We believe the best care happens when families and care teams work together. Your input helps us create an environment where ${window.currentReport.resident_name} can thrive and feel truly at home.
+
+🌟 WHAT'S NEXT:
+• We'll continue monitoring ${window.currentReport.resident_name}'s response to these changes
+• Our team will document their preferences and reactions
+• We'll keep you updated on their progress and any new insights
+• Please feel free to visit and see how ${window.currentReport.resident_name} is doing
+
+📞 WE'RE HERE FOR YOU:
+• Call us anytime to discuss ${window.currentReport.resident_name}'s care: [PHONE NUMBER]
+• Email us your thoughts and suggestions
+• Schedule a meeting with our care team
+• Visit during care activities to see the updates in action
+
+Thank you for trusting us with ${window.currentReport.resident_name}'s care. We're honored to be part of their journey and yours.
+
+With warm regards and appreciation,
+The Care Team at [FACILITY NAME]
+${new Date().toLocaleDateString()}
+
+P.S. We've attached the complete care plan for your records. Please don't hesitate to reach out with any questions!
+
+--- This communication contains confidential care information ---`;
+
+                const body = encodeURIComponent(emailBody);
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`;
+                window.open(gmailUrl, '_blank');
+            }
+        }
+         function extractFamilyFriendlyUpdates(lines) {
+            const updates = [];
+            lines.forEach(line => {
+                if (line.includes('✏️') || line.includes('Updated:') || line.includes('New:') || line.includes('Enhanced:')) {
+                    // Convert clinical language to family-friendly language
+                    let cleaned = line.replace(/✏️/g, '').replace(/\*\*/g, '').trim();
+
+                    // Make language more family-friendly
+                    cleaned = cleaned.replace(/intervention/gi, 'support approach');
+                    cleaned = cleaned.replace(/protocol/gi, 'routine');
+                    cleaned = cleaned.replace(/assessment/gi, 'observation');
+                    cleaned = cleaned.replace(/monitor/gi, 'keep an eye on');
+                    cleaned = cleaned.replace(/implement/gi, 'try');
+                    cleaned = cleaned.replace(/compliance/gi, 'following along with');
+
+                    if (cleaned && cleaned.length > 10) {
+                        updates.push(cleaned);
+                    }
+                }
+            });
+            return updates;
+        }
+          function startReportGenerationProgress() {
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            const loadingText = document.getElementById('loading-text');
+            const progressSteps = document.getElementById('progress-steps');
+
+            // Clear previous steps
+            progressSteps.innerHTML = '';
+
+            const steps = [
+                { text: "📝 Preparing care plan template...", progress: 15 },
+                { text: "🔄 Integrating selected suggestions...", progress: 30 },
+                { text: "🛡️ Adding risk assessment data...", progress: 45 },
+                { text: "📋 Structuring care plan sections...", progress: 60 },
+                { text: "✏️ Formatting care plan content...", progress: 75 },
+                { text: "🎨 Generating final report...", progress: 90 },
+                { text: "✅ Care plan ready!", progress: 100 }
+            ];
+
+            let currentStep = 0;
+
+            function updateProgress() {
+                if (currentStep < steps.length) {
+                    const step = steps[currentStep];
+                    progressFill.style.width = step.progress + '%';
+                    progressText.textContent = step.progress + '%';
+                    loadingText.textContent = step.text;
+
+                    // Add step to progress steps
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'progress-step';
+                    stepDiv.style.opacity = '0';
+                    stepDiv.style.transform = 'translateX(-20px)';
+                    stepDiv.style.transition = 'all 0.3s ease';
+                    stepDiv.textContent = step.text;
+                    progressSteps.appendChild(stepDiv);
+
+                    // Animate step appearance
+                    setTimeout(() => {
+                        stepDiv.style.opacity = '1';
+                        stepDiv.style.transform = 'translateX(0)';
+                    }, 100);
+
+                    currentStep++;
+
+                    // Slower timing for report generation
+                    let delay = Math.random() * 1500 + 1200; // 1.2-2.7s per step
+
+                    setTimeout(updateProgress, delay);
+                }
+            }
+
+            updateProgress();
+        }
     </script>
 </body>
 </html>

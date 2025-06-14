@@ -338,6 +338,29 @@ def create_fallback_analysis(response_text):
         "suggestions": suggestions
     }
 
+def safe_clean_json_response(response_text):
+    """Safely clean JSON response text to avoid regex issues"""
+    if not response_text:
+        return ""
+    
+    # Remove markdown code blocks safely
+    lines = response_text.split('\n')
+    cleaned_lines = []
+    in_code_block = False
+    
+    for line in lines:
+        line_stripped = line.strip()
+        
+        # Check for code block markers
+        if line_stripped.startswith('```json') or line_stripped.startswith('```'):
+            in_code_block = not in_code_block
+            continue
+            
+        if not in_code_block and line_stripped:
+            cleaned_lines.append(line)
+    
+    return '\n'.join(cleaned_lines).strip()
+
 def extract_log_highlights(daily_log_content, resident_name):
     """Extract significant log entries for highlighting"""
 
