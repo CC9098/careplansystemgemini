@@ -4,4 +4,4 @@ markdown
 werkzeug
 PyPDF2
 reportlab
-gunicorn
+gunicorn==21.2.0
