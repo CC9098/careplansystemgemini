@@ -376,7 +376,7 @@ Guidelines:
 
     try:
         response = client.chat.completions.create(
-            model="o3-mini",
+            model="o3-2025-04-16",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=2000,
             temperature=0.3
@@ -495,7 +495,7 @@ Guidelines:
 
     try:
         response = client.chat.completions.create(
-            model="o3-mini",
+            model="o3-2025-04-16",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=3000,
             temperature=0.3
@@ -740,7 +740,7 @@ Guidelines:
 
     try:
         response = client.chat.completions.create(
-            model="o3-mini",
+            model="o3-2025-04-16",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=4000,
             temperature=0.7
@@ -891,7 +891,7 @@ Generate the complete updated care plan with natural integration."""
 
     try:
         response = client.chat.completions.create(
-            model="o3-mini",
+            model="o3-2025-04-16",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=4000,
             temperature=0.7
@@ -1624,13 +1624,10 @@ def download_pdf():
 
         filename = f"Care_Plan_{resident_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
 
-        # Create PDF in memory
-        output = io.BytesIO()
-        doc = SimpleDocTemplate(output, pagesize=A4, rightMargin=72, leftMargin=72,
-                               topMargin=72, bottomMargin=18)
-
+        # Create PDFCode modifications to replace the model names in the OpenAI API calls.
+```python
         # Container for the 'Flowable' objects
-        elements        
+        elements = []
         styles = getSampleStyleSheet()
 
         # Custom styles
