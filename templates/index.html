@@ -1624,7 +1624,7 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
                 window.open(gmailUrl, '_blank');
             }
         }
-         function extractFamilyFriendlyUpdates(lines) {
+        function extractFamilyFriendlyUpdates(lines) {
             const updates = [];
             lines.forEach(line => {
                 if (line.includes('✏️') || line.includes('Updated:') || line.includes('New:') || line.includes('Enhanced:')) {
@@ -1646,7 +1646,59 @@ P.S. We've attached the complete care plan for your records. Please don't hesita
             });
             return updates;
         }
-          function startReportGenerationProgress() {
+
+        // Progress animation while the analyze request is running
+        function startProgressAnimation() {
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            const loadingText = document.getElementById('loading-text');
+            const progressSteps = document.getElementById('progress-steps');
+
+            // Reset progress
+            progressFill.style.width = '0%';
+            progressText.textContent = '0%';
+            progressSteps.innerHTML = '';
+
+            const steps = [
+                { text: "🔍 Analyzing log structure...", progress: 15 },
+                { text: "📊 Optimizing data...", progress: 35 },
+                { text: "🧠 Generating insights...", progress: 60 },
+                { text: "🛡️ Calculating risks...", progress: 80 },
+                { text: "✅ Analysis complete!", progress: 100 }
+            ];
+
+            let currentStep = 0;
+
+            function updateProgress() {
+                if (currentStep < steps.length) {
+                    const step = steps[currentStep];
+                    progressFill.style.width = step.progress + '%';
+                    progressText.textContent = step.progress + '%';
+                    loadingText.textContent = step.text;
+
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'progress-step';
+                    stepDiv.style.opacity = '0';
+                    stepDiv.style.transform = 'translateX(-20px)';
+                    stepDiv.style.transition = 'all 0.3s ease';
+                    stepDiv.textContent = step.text;
+                    progressSteps.appendChild(stepDiv);
+
+                    setTimeout(() => {
+                        stepDiv.style.opacity = '1';
+                        stepDiv.style.transform = 'translateX(0)';
+                    }, 100);
+
+                    currentStep++;
+
+                    let delay = Math.random() * 1000 + 800; // 0.8-1.8s per step
+                    setTimeout(updateProgress, delay);
+                }
+            }
+
+            updateProgress();
+        }
+        function startReportGenerationProgress() {
             const progressFill = document.getElementById('progress-fill');
             const progressText = document.getElementById('progress-text');
             const loadingText = document.getElementById('loading-text');
