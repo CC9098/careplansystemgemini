@@ -1624,8 +1624,10 @@ def download_pdf():
 
         filename = f"Care_Plan_{resident_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
 
-        # Create PDFCode modifications to replace the model names in the OpenAI API calls.
-```python
+        # Create PDF
+        output = io.BytesIO()
+        doc = SimpleDocTemplate(output, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+
         # Container for the 'Flowable' objects
         elements = []
         styles = getSampleStyleSheet()
