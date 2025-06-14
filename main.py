@@ -1649,10 +1649,7 @@ def download_pdf():
 
         # Create PDF
         output = io.BytesIO()
-        doc = SimpleDocTemplate(output, pagesize=A4, rightMargin=72, leftHere's the updated code:
-
-```python
-Margin=72, topMargin=72, bottomMargin=18)
+        doc = SimpleDocTemplate(output, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
 
         # Container for the 'Flowable' objects
         elements = []
@@ -1779,4 +1776,6 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
