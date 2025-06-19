@@ -80,4 +80,9 @@ app = create_app()
 if __name__ == '__main__':
     with app.app_context():
         db.create_all() # 創建資料庫表格
-    app.run(host='0.0.0.0', port=5000, debug=True) 
+    
+    # 獲取端口號，Railway 會設置 PORT 環境變數
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') == 'development'
+    
+    app.run(host='0.0.0.0', port=port, debug=debug) 
