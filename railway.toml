@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python -m gunicorn app:app --bind 0.0.0.0:$PORT"
+startCommand = "python3 -m gunicorn app:app --bind 0.0.0.0:$PORT"
 healthcheckPath = "/api/v1/auth/me"
 healthcheckTimeout = 100
 restartPolicyType = "always"
