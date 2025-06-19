@@ -19,6 +19,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(128))
     google_id = db.Column(db.String(100), unique=True, nullable=True)
     profile_picture = db.Column(db.String(200), nullable=True)
+    is_google_user = db.Column(db.Boolean, default=False)
     is_premium = db.Column(db.Boolean, default=False)
     usage_count = db.Column(db.Integer, default=0)
     last_usage_reset = db.Column(db.DateTime, default=datetime.utcnow)
@@ -59,7 +60,7 @@ class User(UserMixin, db.Model):
             'profile_picture': self.profile_picture,
             'is_premium': self.is_premium,
             'remaining_usage': self.get_remaining_usage(),
-            'is_google_user': bool(self.google_id),
+            'is_google_user': self.is_google_user,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 

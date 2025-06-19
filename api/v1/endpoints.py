@@ -173,6 +173,8 @@ def google_auth():
 @api_v1.route('/auth/google-dev', methods=['POST'])
 def google_auth_dev():
     """開發者模式 Google 認證"""
+    current_app.logger.info(f"Flask ENV: {current_app.config.get('FLASK_ENV')}")
+    
     if not current_app.config.get('FLASK_ENV') == 'development':
         return api_response(False, error={"message": "Development mode only"}, status_code=403)
     
@@ -180,10 +182,13 @@ def google_auth_dev():
     email = data.get('email', 'dev@example.com')
     name = data.get('name', 'Developer User')
     
+    current_app.logger.info(f"Attempting dev auth for: {email}")
+    
     try:
         # 查找或創建開發者用戶
         user = User.query.filter_by(email=email).first()
         if not user:
+            current_app.logger.info("Creating new dev user")
             user = User(
                 email=email,
                 name=name,
@@ -192,15 +197,22 @@ def google_auth_dev():
             )
             db.session.add(user)
             db.session.commit()
+            current_app.logger.info(f"Created user: {user.id}")
+        else:
+            current_app.logger.info(f"Found existing user: {user.id}")
         
         login_user(user)
+        current_app.logger.info("Login successful")
+        
         return api_response(True, data={
             "user": user.to_dict(),
             "message": "Development mode login successful"
         })
     except Exception as e:
         current_app.logger.error(f"Dev auth error: {str(e)}")
-        return api_response(False, error={"message": "Development authentication failed"}, status_code=500)
+        import traceback
+        current_app.logger.error(traceback.format_exc())
+        return api_response(False, error={"message": f"Development authentication failed: {str(e)}"}, status_code=500)
 
 # --- Residents CRUD API ---
 

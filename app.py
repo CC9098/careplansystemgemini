@@ -85,7 +85,11 @@ if __name__ == '__main__':
     # 獲取端口號，支持 Replit、Railway 等平台的 PORT 環境變數
     # 本地開發使用 5001 避免與 macOS ControlCenter 衝突
     port = int(os.environ.get('PORT', 5001))
-    debug = os.environ.get('FLASK_ENV') == 'development'
+    
+    # 設置開發環境
+    flask_env = os.environ.get('FLASK_ENV', 'development')
+    app.config['FLASK_ENV'] = flask_env
+    debug = flask_env == 'development'
     
     print(f"🚀 Starting Flask app on port {port}")
     print(f"🔧 Debug mode: {debug}")
