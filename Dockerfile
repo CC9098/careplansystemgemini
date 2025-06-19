@@ -17,9 +17,10 @@ RUN apt-get update && apt-get install -y \
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs
 
-# Copy package.json and install Node.js dependencies
-COPY package.json ./
-RUN npm install
+# Copy package.json AND package-lock.json
+COPY package*.json ./
+# Use 'npm ci' for faster, more reliable installs based on lock file
+RUN npm ci
 
 # Copy frontend source code and build
 COPY src ./src
