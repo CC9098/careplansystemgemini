@@ -1,0 +1,18 @@
+build:
+  - name: "Install Node Dependencies"
+    command: "npm install"
+  - name: "Build React Frontend"
+    command: "npm run build"
+  - name: "Install Python Dependencies"
+    command: "pip install -r requirements.txt"
+
+run:
+  - name: "Start Flask Server"
+    command: "python app.py"
+
+deployment:
+  build:
+    - "npm install"
+    - "npm run build"
+    - "pip install -r requirements.txt"
+  run: "python app.py" 

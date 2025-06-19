@@ -16,7 +16,7 @@ def create_app():
     # --- Configuration ---
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
     
-    # 處理 Railway 的 DATABASE_URL 格式
+    # 處理數據庫 URL 格式（支持 PostgreSQL 和 SQLite）
     database_url = os.environ.get('DATABASE_URL', 'sqlite:///care_buddy.db')
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all() # 創建資料庫表格
     
-    # 獲取端口號，Railway 會設置 PORT 環境變數
+    # 獲取端口號，支持 Replit、Railway 等平台的 PORT 環境變數
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') == 'development'
     
