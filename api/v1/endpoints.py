@@ -4,6 +4,9 @@ from datetime import datetime, timedelta
 import secrets
 import json
 import requests
+import os
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
 
 from models import db, User, Resident, CarePlanHistory, CareTask, ShareableLink
 
@@ -104,17 +107,100 @@ def logout():
 def get_current_user():
     return api_response(True, data=current_user.to_dict())
 
-@api_v1.route('/auth/google-callback', methods=['POST'])
-def google_callback():
+@api_v1.route('/auth/google', methods=['POST'])
+def google_auth():
+    """處理 Google ID Token 驗證"""
     data = request.get_json()
-    code = data.get('code')
-
-    if not code:
-        return api_response(False, error={"message": "Authorization code is required"}, status_code=400)
+    token = data.get('token')
     
-    # TODO: 實現完整的 Google OAuth 流程
-    # 目前返回模擬響應
-    return api_response(False, error={"message": "Google OAuth not fully implemented yet"}, status_code=501)
+    if not token:
+        return api_response(False, error={"message": "Google ID token is required"}, status_code=400)
+    
+    try:
+        # 驗證 Google ID Token
+        google_client_id = os.environ.get('GOOGLE_CLIENT_ID')
+        if not google_client_id:
+            return api_response(False, error={"message": "Google OAuth not configured"}, status_code=500)
+        
+        # 驗證 token
+        idinfo = id_token.verify_oauth2_token(
+            token, 
+            google_requests.Request(), 
+            google_client_id
+        )
+        
+        # 獲取用戶信息
+        email = idinfo['email']
+        name = idinfo.get('name', '')
+        google_id = idinfo['sub']
+        
+        # 查找或創建用戶
+        user = User.query.filter_by(email=email).first()
+        
+        if not user:
+            # 創建新用戶
+            user = User(
+                email=email,
+                name=name,
+                google_id=google_id,
+                is_google_user=True
+            )
+            db.session.add(user)
+            db.session.commit()
+        else:
+            # 更新現有用戶的 Google ID
+            if not user.google_id:
+                user.google_id = google_id
+                user.is_google_user = True
+                db.session.commit()
+        
+        # 登入用戶
+        login_user(user)
+        
+        return api_response(True, data={
+            "user": user.to_dict(),
+            "message": "Successfully authenticated with Google"
+        })
+        
+    except ValueError as e:
+        # Token 無效
+        current_app.logger.error(f"Google token validation error: {str(e)}")
+        return api_response(False, error={"message": "Invalid Google token"}, status_code=401)
+    except Exception as e:
+        current_app.logger.error(f"Google auth error: {str(e)}")
+        return api_response(False, error={"message": "Google authentication failed"}, status_code=500)
+
+@api_v1.route('/auth/google-dev', methods=['POST'])
+def google_auth_dev():
+    """開發者模式 Google 認證"""
+    if not current_app.config.get('FLASK_ENV') == 'development':
+        return api_response(False, error={"message": "Development mode only"}, status_code=403)
+    
+    data = request.get_json()
+    email = data.get('email', 'dev@example.com')
+    name = data.get('name', 'Developer User')
+    
+    try:
+        # 查找或創建開發者用戶
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            user = User(
+                email=email,
+                name=name,
+                google_id='dev-' + email,
+                is_google_user=True
+            )
+            db.session.add(user)
+            db.session.commit()
+        
+        login_user(user)
+        return api_response(True, data={
+            "user": user.to_dict(),
+            "message": "Development mode login successful"
+        })
+    except Exception as e:
+        current_app.logger.error(f"Dev auth error: {str(e)}")
+        return api_response(False, error={"message": "Development authentication failed"}, status_code=500)
 
 # --- Residents CRUD API ---
 

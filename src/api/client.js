@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // 創建 axios 實例
 const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || '/api/v1',
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api/v1',
   timeout: 30000, // 30 秒超時
   headers: {
     'Content-Type': 'application/json',

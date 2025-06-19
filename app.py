@@ -83,7 +83,11 @@ if __name__ == '__main__':
         db.create_all() # 創建資料庫表格
     
     # 獲取端口號，支持 Replit、Railway 等平台的 PORT 環境變數
-    port = int(os.environ.get('PORT', 5000))
+    # 本地開發使用 5001 避免與 macOS ControlCenter 衝突
+    port = int(os.environ.get('PORT', 5001))
     debug = os.environ.get('FLASK_ENV') == 'development'
+    
+    print(f"🚀 Starting Flask app on port {port}")
+    print(f"🔧 Debug mode: {debug}")
     
     app.run(host='0.0.0.0', port=port, debug=debug) 

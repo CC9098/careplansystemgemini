@@ -2,157 +2,171 @@ import React, { useState } from 'react';
 import {
   Box,
   Button,
-  Container,
   FormControl,
   FormLabel,
   Input,
-  Stack,
+  VStack,
+  Heading,
   Text,
   Alert,
   AlertIcon,
-  Heading,
+  Container,
+  Card,
+  CardBody,
   Link,
   Divider,
   HStack,
+  useToast,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { apiClient } from '../api/client';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { login, loginWithGoogle } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    
+    if (!email || !password) {
+      setError('請輸入電子郵件和密碼');
+      return;
+    }
 
     try {
-      const result = await login(email, password);
-      if (result.success) {
+      setIsLoading(true);
+      setError('');
+      
+      const response = await apiClient.post('/auth/login', {
+        email,
+        password,
+      });
+
+      if (response.data.success) {
+        login(response.data.data);
+        toast({
+          title: '登入成功',
+          description: `歡迎回來，${response.data.data.name}！`,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
         navigate('/dashboard');
       } else {
-        setError(result.error);
+        setError(response.data.error?.message || '登入失敗');
       }
     } catch (err) {
-      setError('登入過程中發生錯誤，請稍後再試');
+      setError(err.response?.data?.error?.message || '登入時發生錯誤');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError('');
+  const handleGoogleSuccess = (user) => {
+    login(user);
+    navigate('/dashboard');
+  };
 
-    try {
-      const result = await loginWithGoogle();
-      if (result.success) {
-        navigate('/dashboard');
-      } else {
-        setError(result.error);
-      }
-    } catch (err) {
-      setError('Google 登入過程中發生錯誤');
-    } finally {
-      setLoading(false);
-    }
+  const handleGoogleError = (error) => {
+    console.error('Google login failed:', error);
   };
 
   return (
     <Container maxW="md" py={12}>
-      <Box
-        bg="white"
-        p={8}
-        borderRadius="lg"
-        boxShadow="md"
-        border="1px solid"
-        borderColor="gray.200"
-      >
-        <Stack spacing={6}>
-          <Box textAlign="center">
-            <Heading color="brand.500" mb={2}>
-              歡迎回來
-            </Heading>
-            <Text color="gray.600">
-              登入您的 AI Care Plan 管理帳戶
-            </Text>
-          </Box>
+      <VStack spacing={8}>
+        <Box textAlign="center">
+          <Heading color="brand.500" mb={2}>
+            登入 AI Care Plan
+          </Heading>
+          <Text color="gray.600">
+            歡迎回來！請登入您的帳戶
+          </Text>
+        </Box>
 
-          {error && (
-            <Alert status="error" borderRadius="md">
-              <AlertIcon />
-              {error}
-            </Alert>
-          )}
+        <Card w="full">
+          <CardBody>
+            <VStack spacing={6}>
+              {/* Google 登入按鈕 */}
+              <GoogleLoginButton 
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                isLoading={isLoading}
+                setIsLoading={setIsLoading}
+              />
 
-          <form onSubmit={handleSubmit}>
-            <Stack spacing={4}>
-              <FormControl isRequired>
-                <FormLabel>電子郵件</FormLabel>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="請輸入您的電子郵件"
-                />
-              </FormControl>
+              <HStack w="full">
+                <Divider />
+                <Text fontSize="sm" color="gray.500" px={3}>
+                  或
+                </Text>
+                <Divider />
+              </HStack>
 
-              <FormControl isRequired>
-                <FormLabel>密碼</FormLabel>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="請輸入您的密碼"
-                />
-              </FormControl>
+              {/* 傳統登入表單 */}
+              <Box w="full">
+                <form onSubmit={handleSubmit}>
+                  <VStack spacing={4}>
+                    {error && (
+                      <Alert status="error">
+                        <AlertIcon />
+                        {error}
+                      </Alert>
+                    )}
 
-              <Button
-                type="submit"
-                colorScheme="brand"
-                size="lg"
-                isLoading={loading}
-                loadingText="登入中..."
-              >
-                登入
-              </Button>
-            </Stack>
-          </form>
+                    <FormControl isRequired>
+                      <FormLabel>電子郵件</FormLabel>
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="請輸入您的電子郵件"
+                        disabled={isLoading}
+                      />
+                    </FormControl>
 
-          <HStack>
-            <Divider />
-            <Text px="3" color="gray.500" fontSize="sm">
-              或
-            </Text>
-            <Divider />
-          </HStack>
+                    <FormControl isRequired>
+                      <FormLabel>密碼</FormLabel>
+                      <Input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="請輸入您的密碼"
+                        disabled={isLoading}
+                      />
+                    </FormControl>
 
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleGoogleLogin}
-            isLoading={loading}
-            loadingText="Google 登入中..."
-          >
-            使用 Google 帳戶登入
-          </Button>
+                    <Button
+                      type="submit"
+                      colorScheme="brand"
+                      size="lg"
+                      width="full"
+                      isLoading={isLoading}
+                      loadingText="登入中..."
+                    >
+                      登入
+                    </Button>
+                  </VStack>
+                </form>
+              </Box>
 
-          <Box textAlign="center">
-            <Text color="gray.600">
-              還沒有帳戶？{' '}
-              <Link as={RouterLink} to="/register" color="brand.500" fontWeight="semibold">
-                立即註冊
-              </Link>
-            </Text>
-          </Box>
-        </Stack>
-      </Box>
+              <Text fontSize="sm" color="gray.600" textAlign="center">
+                還沒有帳戶？{' '}
+                <Link as={RouterLink} to="/register" color="brand.500" fontWeight="semibold">
+                  立即註冊
+                </Link>
+              </Text>
+            </VStack>
+          </CardBody>
+        </Card>
+      </VStack>
     </Container>
   );
 };

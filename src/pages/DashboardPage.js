@@ -20,18 +20,20 @@ import {
   Center,
   Alert,
   AlertIcon,
-
+  useDisclosure,
 } from '@chakra-ui/react';
 import { AddIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { apiClient } from '../api/client';
+import AddResidentModal from '../components/AddResidentModal';
 
 const DashboardPage = () => {
   const [residents, setResidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   // 加載住民列表
   const fetchResidents = async () => {
@@ -55,8 +57,12 @@ const DashboardPage = () => {
   }, []);
 
   const handleAddResident = () => {
-    // TODO: 開啟新增住民的對話框或導航到新增頁面
-    console.log('Add new resident');
+    onOpen();
+  };
+
+  const handleResidentAdded = (newResident) => {
+    // 將新住民添加到列表中
+    setResidents(prev => [...prev, newResident]);
   };
 
   const handleResidentClick = (residentId) => {
@@ -212,6 +218,13 @@ const DashboardPage = () => {
           </Box>
         </VStack>
       </Container>
+
+      {/* 新增住民模態對話框 */}
+      <AddResidentModal 
+        isOpen={isOpen} 
+        onClose={onClose} 
+        onSuccess={handleResidentAdded}
+      />
     </Layout>
   );
 };
