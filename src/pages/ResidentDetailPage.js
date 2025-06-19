@@ -110,7 +110,7 @@ const ResidentDetailPage = () => {
 
   useEffect(() => {
     fetchResident();
-  }, [id]);
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
