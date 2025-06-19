@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 測試</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>API 連接測試</h1>
+    
+    <button onclick="testDevAuth()">測試開發者模式登入</button>
+    <button onclick="testApiStatus()">測試 API 狀態</button>
+    
+    <div id="result"></div>
+
+    <script>
+        // 配置 axios
+        axios.defaults.withCredentials = true;
+        
+        async function testDevAuth() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '測試中...';
+            
+            try {
+                const response = await axios.post('http://localhost:5001/api/v1/auth/google-dev', {
+                    email: 'dev@example.com',
+                    name: 'Developer User'
+                });
+                
+                resultDiv.innerHTML = `
+                    <h3>開發者模式登入成功！</h3>
+                    <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                `;
+                
+                // 測試獲取用戶信息
+                const meResponse = await axios.get('http://localhost:5001/api/v1/auth/me');
+                resultDiv.innerHTML += `
+                    <h3>用戶信息：</h3>
+                    <pre>${JSON.stringify(meResponse.data, null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>錯誤：</h3>
+                    <pre>${JSON.stringify(error.response?.data || error.message, null, 2)}</pre>
+                `;
+            }
+        }
+        
+        async function testApiStatus() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '測試中...';
+            
+            try {
+                const response = await axios.get('http://localhost:5001/api/v1/auth/me');
+                resultDiv.innerHTML = `
+                    <h3>API 狀態：</h3>
+                    <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>API 錯誤：</h3>
+                    <pre>${JSON.stringify(error.response?.data || error.message, null, 2)}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html> 

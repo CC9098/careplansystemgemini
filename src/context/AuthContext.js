@@ -39,6 +39,14 @@ export const AuthProvider = ({ children }) => {
 
   // 登入
   const login = async (email, password) => {
+    // 如果第一個參數是對象（用戶數據），直接設置用戶
+    if (typeof email === 'object' && email !== null) {
+      setUser(email);
+      setIsAuthenticated(true);
+      return { success: true };
+    }
+
+    // 否則進行正常的登入流程
     try {
       const response = await apiClient.post('/auth/login', {
         email,

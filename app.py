@@ -2,6 +2,7 @@
 import os
 from flask import Flask, send_from_directory
 from flask_login import LoginManager
+from flask_cors import CORS
 from models import db, User
 from datetime import timedelta
 
@@ -48,6 +49,13 @@ def create_app():
 
     # --- Extensions Initialization ---
     db.init_app(app)
+    
+    # CORS 配置
+    CORS(app, 
+         origins=['http://localhost:3000'],  # 允許前端域名
+         supports_credentials=True,          # 支持 cookies
+         allow_headers=['Content-Type', 'Authorization'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
     
     login_manager = LoginManager()
     login_manager.init_app(app)
