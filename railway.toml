@@ -1,0 +1,11 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "gunicorn app:app"
+healthcheckPath = "/api/v1/auth/me"
+healthcheckTimeout = 100
+restartPolicyType = "always"
+
+[env]
+PYTHONPATH = "/app" 
