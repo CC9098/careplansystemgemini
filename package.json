@@ -19,7 +19,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "postinstall": "npm run build"
+    "postinstall": "npm run build",
+    "start-server": "node -e \"require('child_process').spawn('python3', ['app.py'], {stdio: 'inherit'})\""
   },
   "eslintConfig": {
     "extends": [
